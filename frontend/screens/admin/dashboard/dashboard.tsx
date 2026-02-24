@@ -1,0 +1,636 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+  Switch,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../navigation/StacNavigation';
+
+// 👇 Importa el componente de navegación
+import BottomNavBar, { TabName } from '../../../components/business/tabNavigation';
+
+type BusinessDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BusinessDashboard'>;
+
+type Props = {
+  navigation: BusinessDashboardNavigationProp;
+};
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+const ShoppingBagIcon = () => (
+  <Svg width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2">
+    <Path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+    <Path d="M3 6h18" />
+  </Svg>
+);
+
+const StarIcon = ({ size = 20, filled = true }: { size?: number; filled?: boolean }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#22c55e' : 'none'} stroke="#22c55e" strokeWidth="2">
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </Svg>
+);
+
+const TrendUpIcon = () => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+    <Path d="m23 6-9.5 9.5-5-5L1 18" />
+    <Path d="M17 6h6v6" />
+  </Svg>
+);
+
+const PizzaIcon = () => (
+  <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+    <Path d="M15 11h.01M9 16h.01M9 11h.01M13 16h.01M6 5c7.18-2.58 12.82-2.58 20 0-2.58 7.18-2.58 12.82 0 20-7.18-2.58-12.82-2.58-20 0 2.58-7.18 2.58-12.82 0-20Z" />
+  </Svg>
+);
+
+const BurgerIcon = () => (
+  <Svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
+    <Path d="M2 17h20M2 12h20M3.5 8h17c.7 0 1.2-.6 1-1.3-.2-.6-.6-1.1-1.1-1.4C18.5 4.2 15.4 3 12 3s-6.5 1.2-8.4 2.3c-.5.3-.9.8-1.1 1.4-.2.7.3 1.3 1 1.3Z" />
+    <Circle cx="6" cy="15" r="1" fill="#F59E0B" />
+    <Circle cx="12" cy="15" r="1" fill="#F59E0B" />
+    <Circle cx="18" cy="15" r="1" fill="#F59E0B" />
+  </Svg>
+);
+
+const CheckCircleIcon = () => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2">
+    <Circle cx="12" cy="12" r="10" />
+    <Path d="m9 12 2 2 4-4" />
+  </Svg>
+);
+
+const PlusIcon = () => (
+  <Svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+    <Path d="M12 5v14M5 12h14" />
+  </Svg>
+);
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  items: string;
+  time: string;
+  customer: string;
+  status: 'preparing' | 'outForDelivery' | 'delivered';
+  icon: 'pizza' | 'burger';
+}
+
+const recentOrders: Order[] = [
+  {
+    id: '1',
+    orderNumber: '#PD-9402',
+    items: '3x Truffle Burger Combo',
+    time: '22 mins ago',
+    customer: 'Marcus J.',
+    status: 'preparing',
+    icon: 'burger',
+  },
+  {
+    id: '2',
+    orderNumber: '#PD-9398',
+    items: '1x Vegan Salad Bowl',
+    time: '22 mins ago',
+    customer: 'Sarah L.',
+    status: 'outForDelivery',
+    icon: 'burger',
+  },
+  {
+    id: '3',
+    orderNumber: '#PD-9395',
+    items: '2x Pizza Margherita',
+    time: '40 mins ago',
+    customer: 'James W.',
+    status: 'delivered',
+    icon: 'pizza',
+  },
+];
+
+const statusConfig = {
+  preparing:      { label: 'Preparing',        color: '#22c55e', bg: '#F0FDF4' },
+  outForDelivery: { label: 'Out for Delivery',  color: '#F59E0B', bg: '#FEF3C7' },
+  delivered:      { label: 'Delivered',         color: '#9CA3AF', bg: '#F9FAFB' },
+};
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
+export default function BusinessDashboard({ navigation }: Props) {
+  const [storeOpen, setStoreOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabName>('Dashboard');
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <View style={styles.logoContainer}>
+              <LinearGradient
+                colors={['#F59E0B', '#D97706']}
+                style={styles.logo}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.logoText}>GT</Text>
+              </LinearGradient>
+            </View>
+            <View>
+              <Text style={styles.businessName}>Green Table Bistro</Text>
+              <Text style={styles.businessAddress}>pidelo.app/green-table</Text>
+            </View>
+          </View>
+          <View style={styles.headerRight}>
+            <Text style={[styles.storeStatusLabel, storeOpen && styles.storeStatusLabelActive]}>
+              STORE STATUS
+            </Text>
+            <Switch
+              value={storeOpen}
+              onValueChange={setStoreOpen}
+              trackColor={{ false: '#D1D5DB', true: '#22c55e' }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor="#D1D5DB"
+            />
+          </View>
+        </View>
+
+        {/* Daily Sales */}
+        <View style={styles.salesSection}>
+          <Text style={styles.sectionLabel}>Daily Sales</Text>
+          <View style={styles.salesHeader}>
+            <Text style={styles.salesAmount}>$1,240.50</Text>
+            <Text style={styles.salesCurrency}>USD</Text>
+          </View>
+          <View style={styles.salesChange}>
+            <TrendUpIcon />
+            <Text style={styles.salesChangeText}>+12.4%</Text>
+          </View>
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressBar}>
+              <LinearGradient
+                colors={['#22c55e', '#16a34a']}
+                style={[styles.progressFill, { width: '62%' }]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              />
+            </View>
+            <Text style={styles.progressText}>Target: $2,000.00 today</Text>
+          </View>
+        </View>
+
+        {/* Stats Cards */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <LinearGradient
+              colors={['#22c55e', '#16a34a']}
+              style={styles.activeOrdersCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.activeOrdersIcon}>
+                <ShoppingBagIcon />
+              </View>
+              <Text style={styles.activeOrdersNumber}>14</Text>
+              <Text style={styles.activeOrdersLabel}>Active Orders</Text>
+            </LinearGradient>
+          </View>
+
+          <View style={styles.statCard}>
+            <View style={styles.reviewsCard}>
+              <View style={styles.reviewsStarContainer}>
+                <StarIcon size={24} />
+              </View>
+              <View style={styles.reviewsContent}>
+                <Text style={styles.reviewsRating}>4.9</Text>
+                <View style={styles.reviewsStars}>
+                  <StarIcon size={16} />
+                </View>
+              </View>
+              <Text style={styles.reviewsCount}>21k Reviews</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Recent Orders */}
+        <View style={styles.ordersSection}>
+          <View style={styles.ordersSectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Orders</Text>
+            <TouchableOpacity>
+              <Text style={styles.viewAllText}>View All →</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.ordersList}>
+            {recentOrders.map((order) => {
+              const statusInfo = statusConfig[order.status];
+              const OrderIcon = order.icon === 'pizza' ? PizzaIcon : BurgerIcon;
+
+              return (
+                <TouchableOpacity key={order.id} style={styles.orderItem}>
+                  <View style={[styles.orderIconContainer, order.status === 'delivered' && styles.orderIconDelivered]}>
+                    {order.status === 'delivered' ? <CheckCircleIcon /> : <OrderIcon />}
+                  </View>
+                  <View style={styles.orderContent}>
+                    <Text style={styles.orderNumber}>{order.orderNumber}</Text>
+                    <Text style={styles.orderItems}>{order.items}</Text>
+                    <Text style={styles.orderMeta}>
+                      Ordered {order.time} • {order.customer}
+                    </Text>
+                  </View>
+                  <View style={[styles.orderStatusBadge, { backgroundColor: statusInfo.bg }]}>
+                    <Text style={[styles.orderStatusText, { color: statusInfo.color }]}>
+                      {statusInfo.label}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Ads Banner */}
+        <View style={styles.adsBanner}>
+          <LinearGradient
+            colors={['#1F2937', '#111827']}
+            style={styles.adsGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.adsContent}>
+              <Text style={styles.adsTitle}>Grow your sales with</Text>
+              <Text style={styles.adsTitle}>Pidelo Ads</Text>
+              <Text style={styles.adsSubtitle}>Target customers in your 5km radius</Text>
+              <TouchableOpacity style={styles.adsButton}>
+                <LinearGradient
+                  colors={['#22c55e', '#16a34a']}
+                  style={styles.adsButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.adsButtonText}>#BOOST NOW</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+        </View>
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* FAB */}
+      <TouchableOpacity style={styles.fab}>
+        <LinearGradient
+          colors={['#22c55e', '#16a34a']}
+          style={styles.fabGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <PlusIcon />
+        </LinearGradient>
+      </TouchableOpacity>
+
+      {/* 👇 Bottom Navigation ahora es un componente reutilizable */}
+      <BottomNavBar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        navigation={navigation}
+      />
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    marginRight: 12,
+  },
+  logo: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  businessName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 2,
+  },
+  businessAddress: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  headerRight: {
+    alignItems: 'flex-end',
+  },
+  storeStatusLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  storeStatusLabelActive: {
+    color: '#22c55e',
+  },
+  salesSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    backgroundColor: '#FFFFFF',
+    marginTop: 8,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  salesHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 4,
+  },
+  salesAmount: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  salesCurrency: {
+    fontSize: 16,
+    color: '#9CA3AF',
+    marginLeft: 4,
+  },
+  salesChange: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 16,
+  },
+  salesChangeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#22c55e',
+  },
+  progressBarContainer: {
+    marginTop: 8,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 8,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 16,
+  },
+  statCard: {
+    flex: 1,
+  },
+  activeOrdersCard: {
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  activeOrdersIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  activeOrdersNumber: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  activeOrdersLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  reviewsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  reviewsStarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F0FDF4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  reviewsContent: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 4,
+  },
+  reviewsRating: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: '#000',
+    marginRight: 4,
+  },
+  reviewsStars: {
+    marginTop: 8,
+  },
+  reviewsCount: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  ordersSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  ordersSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#22c55e',
+  },
+  ordersList: {
+    gap: 12,
+  },
+  orderItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  orderIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  orderIconDelivered: {
+    backgroundColor: '#F3F4F6',
+  },
+  orderContent: {
+    flex: 1,
+  },
+  orderNumber: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 2,
+  },
+  orderItems: {
+    fontSize: 13,
+    color: '#374151',
+    marginBottom: 4,
+  },
+  orderMeta: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  orderStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  orderStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  adsBanner: {
+    marginHorizontal: 20,
+    marginTop: 24,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  adsGradient: {
+    padding: 24,
+  },
+  adsContent: {
+    flex: 1,
+  },
+  adsTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  adsSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  adsButton: {
+    alignSelf: 'flex-start',
+    borderRadius: 30,
+    overflow: 'hidden',
+  },
+  adsButtonGradient: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  adsButtonText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#000',
+    letterSpacing: 0.5,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

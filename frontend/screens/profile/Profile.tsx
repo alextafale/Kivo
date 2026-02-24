@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,108 +11,98 @@ import {
   Modal,
   TextInput,
   Alert,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Line, G, Defs, ClipPath } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/StacNavigation';
 
 type ProfileNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
+type Props = { navigation: ProfileNavigationProp };
 
-type Props = {
-  navigation: ProfileNavigationProp;
-};
+const { width } = Dimensions.get('window');
 
-const BackIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
-    <Path d="M19 12H5M12 19l-7-7 7-7" />
-  </Svg>
-);
+// ─── ICONS ────────────────────────────────────────────────────────────────────
 
-const EditIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+const EditPenIcon = () => (
+  <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
     <Path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-    <Path d="m15 5 4 4" />
   </Svg>
 );
 
-const UserIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
-    <Path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-    <Circle cx="12" cy="7" r="4" />
-  </Svg>
-);
-
-const EmailIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
+const EmailIcon = ({ color = '#22c55e' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Rect x="2" y="4" width="20" height="16" rx="2" />
     <Path d="m2 7 10 7 10-7" />
   </Svg>
 );
 
-const PhoneIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
+const PhoneIcon = ({ color = '#22c55e' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
   </Svg>
 );
 
-const LocationIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
+const LocationIcon = ({ color = '#22c55e' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
     <Circle cx="12" cy="10" r="3" />
   </Svg>
 );
 
-const StoreIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
-    <Path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
-    <Path d="M3 9a2 2 0 0 1 .709-1.528l2.472-2.059A2 2 0 0 1 7.456 5h9.088a2 2 0 0 1 1.275.472l2.472 2.059A2 2 0 0 1 21 9" />
+const OrdersIcon = ({ color = '#22c55e' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+    <Path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+    <Rect x="9" y="3" width="6" height="4" rx="1" />
+    <Path d="M9 12h6M9 16h4" />
+  </Svg>
+);
+
+const PaymentIcon = ({ color = '#22c55e' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+    <Rect x="1" y="4" width="22" height="16" rx="2" />
+    <Path d="M1 10h22" />
+  </Svg>
+);
+
+const HelpIcon = ({ color = '#22c55e' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+    <Circle cx="12" cy="12" r="10" />
+    <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+    <Circle cx="12" cy="17" r="0.5" fill={color} />
   </Svg>
 );
 
 const ChevronRightIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="2.5">
     <Path d="m9 18 6-6-6-6" />
   </Svg>
 );
 
-const SettingsIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
-    <Path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-    <Circle cx="12" cy="12" r="3" />
-  </Svg>
-);
-
-const HelpIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
-    <Circle cx="12" cy="12" r="10" />
-    <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-    <Circle cx="12" cy="17" r="0.5" fill="#6B7280" />
-  </Svg>
-);
-
-const LogoutIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
+const SignOutIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
     <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <Path d="M16 17l5-5-5-5" />
-    <Path d="M21 12H9" />
-  </Svg>
-);
-
-const CameraIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2">
-    <Path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-    <Circle cx="12" cy="13" r="3" />
+    <Path d="M16 17l5-5-5-5M21 12H9" />
   </Svg>
 );
 
 const CloseIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
     <Line x1="18" y1="6" x2="6" y2="18" />
     <Line x1="6" y1="6" x2="18" y2="18" />
   </Svg>
 );
+
+const StarIcon = () => (
+  <Svg width="12" height="12" viewBox="0 0 24 24" fill="#22c55e" stroke="none">
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </Svg>
+);
+
+// ─── INTERFACES ──────────────────────────────────────────────────────────────
 
 interface UserData {
   name: string;
@@ -121,23 +111,83 @@ interface UserData {
   address: string;
   businessName?: string;
   accountType: 'client' | 'business';
+  level?: number;
+  title?: string;
 }
+
+// ─── ANIMATED ROW ─────────────────────────────────────────────────────────────
+
+const AnimatedInfoRow = ({
+  icon,
+  label,
+  value,
+  onEdit,
+  delay = 0,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  onEdit: () => void;
+  delay?: number;
+}) => {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 400,
+      delay,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={{
+        opacity: anim,
+        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
+      }}
+    >
+      <TouchableOpacity style={styles.infoRow} onPress={onEdit} activeOpacity={0.7}>
+        <View style={styles.infoIconWrap}>{icon}</View>
+        <View style={styles.infoTextBlock}>
+          <Text style={styles.infoLabel}>{label}</Text>
+          <Text style={styles.infoValue}>{value}</Text>
+        </View>
+        <View style={styles.editBadge}>
+          <EditPenIcon />
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 export default function Profile({ navigation }: Props) {
   const [userData, setUserData] = useState<UserData>({
     name: 'Juan Pérez',
     email: 'juan.perez@email.com',
-    phone: '5512345678',
+    phone: '+1 (555) 234-5678',
     address: 'Calle Principal #123, CDMX',
     accountType: 'client',
+    level: 12,
+    title: 'Gourmet Explorer',
   });
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editField, setEditField] = useState<keyof UserData | ''>('');
   const [editValue, setEditValue] = useState('');
 
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const cardAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
     loadUserData();
+    Animated.stagger(120, [
+      Animated.timing(headerAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(cardAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+    ]).start();
   }, []);
 
   const loadUserData = async () => {
@@ -148,12 +198,12 @@ export default function Profile({ navigation }: Props) {
         const parsed = JSON.parse(storedData);
         setUserData({
           ...parsed,
-          accountType: accountType as 'client' | 'business' || 'client',
+          accountType: (accountType as 'client' | 'business') || 'client',
+          level: parsed.level ?? 12,
+          title: parsed.title ?? 'Gourmet Explorer',
         });
       }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    }
+    } catch {}
   };
 
   const handleEdit = (field: keyof UserData, currentValue: string) => {
@@ -168,255 +218,236 @@ export default function Profile({ navigation }: Props) {
       setUserData(updatedData);
       await AsyncStorage.setItem('userData', JSON.stringify(updatedData));
       setEditModalVisible(false);
-      Alert.alert('Éxito', 'Información actualizada correctamente');
+      Alert.alert('✓ Actualizado', 'Tu información fue guardada correctamente.');
     }
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro que deseas cerrar sesión?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Cerrar Sesión',
-          style: 'destructive',
-          onPress: async () => {
-            await AsyncStorage.removeItem('userToken');
-            await AsyncStorage.removeItem('userData');
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'AccountTypeSelection' }],
-            });
-          },
+    Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas salir?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Salir',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.multiRemove(['userToken', 'userData']);
+          navigation.reset({ index: 0, routes: [{ name: 'AccountTypeSelection' }] });
         },
-      ]
-    );
+      },
+    ]);
   };
 
-  const getFieldLabel = (field: keyof UserData) => {
-    const labels: Record<string, string> = {
-      name: 'Nombre',
-      email: 'Email',
-      phone: 'Teléfono',
-      address: 'Dirección',
-      businessName: 'Nombre del Negocio',
-    };
-    return labels[field] || field;
+  const fieldLabels: Record<string, string> = {
+    name: 'Nombre', email: 'Email', phone: 'Teléfono', address: 'Dirección', businessName: 'Negocio',
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <BackIcon />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+
+        {/* ── TOP HEADER ─────────────────────────────────────── */}
+        <Animated.View
+          style={[styles.topHeader, {
+            opacity: headerAnim,
+            transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
+          }]}
+        >
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5">
+              <Path d="M19 12H5M12 19l-7-7 7-7" />
+            </Svg>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Perfil</Text>
-          <View style={styles.backButton} />
-        </View>
+          <Text style={styles.topHeaderTitle}>Mi Perfil</Text>
+          <View style={{ width: 40 }} />
+        </Animated.View>
 
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <LinearGradient
-            colors={['#22c55e', '#16a34a']}
-            style={styles.profileGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.avatarContainer}>
-              <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200' }}
-                style={styles.avatar}
-              />
-              <TouchableOpacity style={styles.cameraButton}>
-                <CameraIcon />
+        {/* ── PROFILE HERO ────────────────────────────────────── */}
+        <Animated.View
+          style={{
+            opacity: cardAnim,
+            transform: [{ scale: cardAnim.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) }],
+          }}
+        >
+          <View style={styles.heroSection}>
+            {/* Avatar */}
+            <View style={styles.avatarWrapper}>
+              <View style={styles.avatarRing}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300' }}
+                  style={styles.avatar}
+                />
+              </View>
+              <TouchableOpacity style={styles.editAvatarBtn}>
+                <EditPenIcon />
               </TouchableOpacity>
             </View>
-            <Text style={styles.profileName}>{userData.name}</Text>
-            <Text style={styles.profileEmail}>{userData.email}</Text>
-            <View style={styles.profileBadge}>
-              <Text style={styles.profileBadgeText}>
-                {userData.accountType === 'business' ? '🏪 Negocio' : '👤 Cliente'}
+
+            {/* Name & title */}
+            <Text style={styles.heroName}>{userData.name}</Text>
+            <View style={styles.heroSubRow}>
+              <StarIcon />
+              <Text style={styles.heroSub}>
+                {userData.title}  •  Nivel {userData.level}
               </Text>
             </View>
-          </LinearGradient>
+          </View>
+        </Animated.View>
+
+        {/* ── PERSONAL INFO ────────────────────────────────────── */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>INFORMACIÓN PERSONAL</Text>
+            <TouchableOpacity onPress={() => handleEdit('name', userData.name)}>
+              <Text style={styles.sectionEditLink}>Editar</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.card}>
+            <AnimatedInfoRow
+              icon={<EmailIcon />}
+              label="Correo Electrónico"
+              value={userData.email}
+              onEdit={() => handleEdit('email', userData.email)}
+              delay={100}
+            />
+            <View style={styles.rowDivider} />
+            <AnimatedInfoRow
+              icon={<PhoneIcon />}
+              label="Número de Teléfono"
+              value={userData.phone}
+              onEdit={() => handleEdit('phone', userData.phone)}
+              delay={160}
+            />
+            {userData.address ? (
+              <>
+                <View style={styles.rowDivider} />
+                <AnimatedInfoRow
+                  icon={<LocationIcon />}
+                  label="Dirección"
+                  value={userData.address}
+                  onEdit={() => handleEdit('address', userData.address)}
+                  delay={220}
+                />
+              </>
+            ) : null}
+          </View>
         </View>
 
-        {/* Information Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Información Personal</Text>
-          
-          <View style={styles.infoCard}>
-            <View style={styles.infoItem}>
-              <View style={styles.infoLeft}>
-                <View style={styles.infoIcon}>
-                  <UserIcon />
-                </View>
-                <View style={styles.infoText}>
-                  <Text style={styles.infoLabel}>Nombre completo</Text>
-                  <Text style={styles.infoValue}>{userData.name}</Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={() => handleEdit('name', userData.name)}>
-                <EditIcon />
-              </TouchableOpacity>
-            </View>
-
-            {userData.accountType === 'business' && userData.businessName && (
-              <View style={styles.infoItem}>
-                <View style={styles.infoLeft}>
-                  <View style={styles.infoIcon}>
-                    <StoreIcon />
+        {/* ── QUICK ACTIONS ────────────────────────────────────── */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionLabel}>ACCIONES RÁPIDAS</Text>
+          <View style={styles.card}>
+            {[
+              { icon: <OrdersIcon />, title: 'Mis Pedidos', sub: 'Rastrea y reordena comidas', route: 'Orders' },
+              { icon: <LocationIcon />, title: 'Direcciones', sub: 'Casa, oficina y más', route: 'DeliveryAddresses' },
+              { icon: <PaymentIcon />, title: 'Métodos de Pago', sub: 'Visa terminada en 4242', route: 'PaymentsMethod' },
+              { icon: <HelpIcon />, title: 'Ayuda & Soporte', sub: 'Servicio al cliente 24/7', route: 'Chatbot' },
+            ].map((item, i, arr) => (
+              <View key={item.title}>
+                <TouchableOpacity
+                  style={styles.actionRow}
+                  activeOpacity={0.7}
+                  onPress={() => item.route && navigation.navigate(item.route as any)}
+                >
+                  <View style={styles.actionIconWrap}>{item.icon}</View>
+                  <View style={styles.actionTextBlock}>
+                    <Text style={styles.actionTitle}>{item.title}</Text>
+                    <Text style={styles.actionSub}>{item.sub}</Text>
                   </View>
-                  <View style={styles.infoText}>
-                    <Text style={styles.infoLabel}>Negocio</Text>
-                    <Text style={styles.infoValue}>{userData.businessName}</Text>
-                  </View>
-                </View>
-                <TouchableOpacity onPress={() => handleEdit('businessName', userData.businessName || '')}>
-                  <EditIcon />
+                  <ChevronRightIcon />
                 </TouchableOpacity>
+                {i < arr.length - 1 && <View style={styles.rowDivider} />}
               </View>
-            )}
-
-            <View style={styles.infoItem}>
-              <View style={styles.infoLeft}>
-                <View style={styles.infoIcon}>
-                  <EmailIcon />
-                </View>
-                <View style={styles.infoText}>
-                  <Text style={styles.infoLabel}>Email</Text>
-                  <Text style={styles.infoValue}>{userData.email}</Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={() => handleEdit('email', userData.email)}>
-                <EditIcon />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.infoItem}>
-              <View style={styles.infoLeft}>
-                <View style={styles.infoIcon}>
-                  <PhoneIcon />
-                </View>
-                <View style={styles.infoText}>
-                  <Text style={styles.infoLabel}>Teléfono</Text>
-                  <Text style={styles.infoValue}>{userData.phone}</Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={() => handleEdit('phone', userData.phone)}>
-                <EditIcon />
-              </TouchableOpacity>
-            </View>
-
-            <View style={[styles.infoItem, styles.infoItemLast]}>
-              <View style={styles.infoLeft}>
-                <View style={styles.infoIcon}>
-                  <LocationIcon />
-                </View>
-                <View style={styles.infoText}>
-                  <Text style={styles.infoLabel}>Dirección</Text>
-                  <Text style={styles.infoValue}>{userData.address}</Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={() => handleEdit('address', userData.address)}>
-                <EditIcon />
-              </TouchableOpacity>
-            </View>
+            ))}
           </View>
         </View>
 
-        {/* Options Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Configuración</Text>
-          
-          <View style={styles.optionsCard}>
-            <TouchableOpacity style={styles.optionItem}>
-              <View style={styles.optionLeft}>
-                <View style={styles.optionIcon}>
-                  <SettingsIcon />
-                </View>
-                <Text style={styles.optionText}>Configuración de la cuenta</Text>
+        {/* ── RECENT ORDER ─────────────────────────────────────── */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionLabel}>PEDIDO RECIENTE</Text>
+          <View style={styles.recentOrderCard}>
+            <View style={styles.orderLeft}>
+              <View style={styles.orderImageWrap}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200' }}
+                  style={styles.orderImage}
+                />
               </View>
-              <ChevronRightIcon />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.optionItem}>
-              <View style={styles.optionLeft}>
-                <View style={styles.optionIcon}>
-                  <HelpIcon />
-                </View>
-                <Text style={styles.optionText}>Ayuda y soporte</Text>
+              <View>
+                <Text style={styles.orderName}>Burger King Elite</Text>
+                <Text style={styles.orderMeta}>Oct 24  •  $24.50</Text>
               </View>
-              <ChevronRightIcon />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.optionItem, styles.optionItemLast]} onPress={handleLogout}>
-              <View style={styles.optionLeft}>
-                <View style={styles.optionIcon}>
-                  <LogoutIcon />
-                </View>
-                <Text style={[styles.optionText, styles.logoutText]}>Cerrar sesión</Text>
-              </View>
-              <ChevronRightIcon />
-            </TouchableOpacity>
+            </View>
+            <LinearGradient
+              colors={['#22c55e', '#16a34a']}
+              style={styles.reorderBtn}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.reorderBtnText}>Reordenar</Text>
+            </LinearGradient>
           </View>
         </View>
 
-        <View style={{ height: 40 }} />
+        {/* ── SIGN OUT ─────────────────────────────────────────── */}
+        <View style={[styles.sectionContainer, { marginTop: 8 }]}>
+          <TouchableOpacity style={styles.signOutBtn} onPress={handleLogout} activeOpacity={0.8}>
+            <SignOutIcon />
+            <Text style={styles.signOutText}>Cerrar Sesión</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.versionText}>Pidelo Delivery App  •  v2.4.0</Text>
       </ScrollView>
 
-      {/* Edit Modal */}
+      {/* ── EDIT MODAL ──────────────────────────────────────────── */}
       <Modal
         visible={editModalVisible}
         animationType="slide"
-        transparent={true}
+        transparent
         onRequestClose={() => setEditModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Editar {getFieldLabel(editField as keyof UserData)}</Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHead}>
+              <Text style={styles.modalTitle}>
+                Editar {fieldLabels[editField as string] || editField}
+              </Text>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.modalCloseBtn}>
                 <CloseIcon />
               </TouchableOpacity>
             </View>
-
             <View style={styles.modalBody}>
-              <Text style={styles.modalLabel}>{getFieldLabel(editField as keyof UserData)}</Text>
+              <Text style={styles.modalFieldLabel}>
+                {fieldLabels[editField as string] || editField}
+              </Text>
               <TextInput
                 style={styles.modalInput}
                 value={editValue}
                 onChangeText={setEditValue}
-                placeholder={`Ingresa tu ${getFieldLabel(editField as keyof UserData).toLowerCase()}`}
+                placeholder={`Ingresa tu ${(fieldLabels[editField as string] || '').toLowerCase()}`}
+                placeholderTextColor="#94A3B8"
                 autoFocus
-                keyboardType={editField === 'phone' ? 'phone-pad' : editField === 'email' ? 'email-address' : 'default'}
+                keyboardType={
+                  editField === 'phone' ? 'phone-pad' :
+                  editField === 'email' ? 'email-address' : 'default'
+                }
               />
             </View>
-
             <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={styles.modalCancelButton}
-                onPress={() => setEditModalVisible(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancelar</Text>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>Cancelar</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.modalSaveButton}
-                onPress={handleSaveEdit}
-              >
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSaveEdit}>
                 <LinearGradient
                   colors={['#22c55e', '#16a34a']}
-                  style={styles.modalSaveGradient}
+                  style={styles.saveBtnGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Text style={styles.modalSaveText}>Guardar</Text>
+                  <Text style={styles.saveBtnText}>Guardar</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -427,263 +458,392 @@ export default function Profile({ navigation }: Props) {
   );
 }
 
+// ─── STYLES ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#f0fdf4',
   },
-  header: {
+
+  // Top Header
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  topHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: 0.2,
+  },
+
+  // Hero
+  heroSection: {
+    alignItems: 'center',
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  avatarRing: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    borderWidth: 3,
+    borderColor: '#22c55e',
+    padding: 3,
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 52,
+  },
+  editAvatarBtn: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#22c55e',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2.5,
+    borderColor: '#f0fdf4',
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  heroName: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: -0.3,
+    marginBottom: 6,
+  },
+  heroSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  heroSub: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+
+  // Section
+  sectionContainer: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94a3b8',
+    letterSpacing: 1.2,
+    marginBottom: 10,
+  },
+  sectionEditLink: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#22c55e',
+  },
+
+  // Card
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  rowDivider: {
+    height: 1,
+    backgroundColor: '#f1f5f9',
+    marginHorizontal: 16,
+  },
+
+  // Info rows
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  infoIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#f0fdf4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  infoTextBlock: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 15,
+    color: '#0f172a',
+    fontWeight: '600',
+  },
+  editBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#22c55e',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Action rows
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  actionIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#f0fdf4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  actionTextBlock: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 2,
+  },
+  actionSub: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '400',
+  },
+
+  // Recent order
+  recentOrderCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#22c55e',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  orderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  orderImageWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  orderImage: {
+    width: '100%',
+    height: '100%',
+  },
+  orderName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 3,
+  },
+  orderMeta: {
+    fontSize: 12,
+    color: '#94a3b8',
+  },
+  reorderBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  reorderBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#fff',
+  },
+
+  // Sign out
+  signOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#fff5f5',
+    borderRadius: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: '#fee2e2',
+  },
+  signOutText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#ef4444',
+  },
+
+  // Version
+  versionText: {
+    textAlign: 'center',
+    marginTop: 24,
+    fontSize: 11,
+    color: '#cbd5e1',
+    letterSpacing: 0.4,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingBottom: 36,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#e2e8f0',
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  modalHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  profileCard: {
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  profileGradient: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
-  },
-  cameraButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#16a34a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-  },
-  profileName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 12,
-  },
-  profileBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  profileBadgeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  section: {
-    marginTop: 24,
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 12,
-  },
-  infoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  infoItemLast: {
-    borderBottomWidth: 0,
-  },
-  infoLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  infoIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#F0FDF4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  infoText: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: 16,
-    color: '#000',
-    fontWeight: '500',
-  },
-  optionsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  optionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  optionItemLast: {
-    borderBottomWidth: 0,
-  },
-  optionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  optionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#F9FAFB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  logoutText: {
-    color: '#EF4444',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#f1f5f9',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  modalCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#f8fafc',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalBody: {
     padding: 20,
   },
-  modalLabel: {
-    fontSize: 14,
+  modalFieldLabel: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: '#475569',
     marginBottom: 8,
   },
   modalInput: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 15,
     fontSize: 16,
-    color: '#000',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    color: '#0f172a',
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    fontWeight: '500',
   },
   modalFooter: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     gap: 12,
+    marginTop: 4,
   },
-  modalCancelButton: {
+  cancelBtn: {
     flex: 1,
     paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    borderRadius: 14,
+    backgroundColor: '#f1f5f9',
     alignItems: 'center',
   },
-  modalCancelText: {
-    fontSize: 16,
+  cancelBtnText: {
+    fontSize: 15,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#64748b',
   },
-  modalSaveButton: {
+  saveBtn: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
   },
-  modalSaveGradient: {
+  saveBtnGradient: {
     paddingVertical: 16,
     alignItems: 'center',
   },
-  modalSaveText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
+  saveBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
   },
 });

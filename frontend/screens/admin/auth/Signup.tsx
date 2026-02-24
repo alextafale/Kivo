@@ -16,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/StacNavigation';
+import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { RouteProp } from '@react-navigation/native';
 
 type SignupNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Signup'>;
@@ -85,7 +85,7 @@ const EyeIcon = ({ visible }: { visible: boolean }) => (
   </Svg>
 );
 
-export default function Signup({ navigation, route }: Props) {
+export default function SignupBusiness({ navigation, route }: Props) {
   const { accountType } = route.params;
   const isBusiness = accountType === 'business';
 

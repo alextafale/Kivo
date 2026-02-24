@@ -4,15 +4,17 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Rect } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/StacNavigation';
+import { useNavigation } from '@react-navigation/native';
+import Signup from '../auth/Signup';
 
 type AccountTypeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AccountTypeSelection'>;
 
@@ -50,15 +52,28 @@ export default function AccountTypeSelection({ navigation }: Props) {
   const [selectedType, setSelectedType] = useState<'client' | 'business' | null>(null);
 
   const handleContinue = async () => {
-    if (selectedType) {
-      await AsyncStorage.setItem('accountType', selectedType);
-      // Navegar a la pantalla de registro/login según el tipo
-      navigation.navigate('Auth', { accountType: selectedType });
+    if (!selectedType) return;
+    await AsyncStorage.setItem('accountType', selectedType);
+
+    if (selectedType === 'client') {
+      // Cliente → login de clientes
+      navigation.navigate('Login');
+    } else {
+      // Negocio → login de negocios
+      navigation.navigate('LoginBusiness');
     }
   };
 
   const handleLogin = () => {
-    navigation.navigate('Login');
+    if (!selectedType) return; // debe seleccionar primero
+
+    if (selectedType === 'client') {
+      // Cliente → login de clientes
+      navigation.navigate('Login');
+    } else {
+      // Negocio → login de negocios
+      navigation.navigate('LoginBusiness');
+    }
   };
 
   return (
@@ -91,7 +106,7 @@ export default function AccountTypeSelection({ navigation }: Props) {
               styles.optionCard,
               selectedType === 'client' && styles.optionCardSelected,
             ]}
-            onPress={() => setSelectedType('client')}
+            onPress={() => { setSelectedType('client'); }}
             activeOpacity={0.7}
           >
             <View style={styles.iconContainer}>
@@ -112,7 +127,7 @@ export default function AccountTypeSelection({ navigation }: Props) {
               styles.optionCard,
               selectedType === 'business' && styles.optionCardSelected,
             ]}
-            onPress={() => setSelectedType('business')}
+            onPress={() => { setSelectedType('business'); }}
             activeOpacity={0.7}
           >
             <View style={styles.iconContainer}>
@@ -162,10 +177,15 @@ export default function AccountTypeSelection({ navigation }: Props) {
         {/* Login Link */}
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
-          <TouchableOpacity onPress={handleLogin}>
-            <Text style={styles.loginLink}>Inicia sesión</Text>
+          <TouchableOpacity onPress={handleLogin} disabled={!selectedType}>
+            <Text style={[styles.loginLink, !selectedType && styles.loginLinkDisabled]}>
+              Inicia sesión
+            </Text>
           </TouchableOpacity>
         </View>
+        {!selectedType && (
+          <Text style={styles.loginHint}>Selecciona un perfil primero</Text>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -312,5 +332,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#22c55e',
     fontWeight: 'bold',
+  },
+  loginLinkDisabled: {
+    color: '#D1D5DB',
+  },
+  loginHint: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
