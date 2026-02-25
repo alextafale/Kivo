@@ -28,6 +28,7 @@ import {
   Negocio,
   PedidoEnCurso,
   GeminiMessage,
+  parsePedidoFromResponse,
 } from '../../services/geminiService';
 import { Order } from '../../types/order';
 
@@ -197,40 +198,44 @@ export default function Chatbot({ navigation }: Props) {
 
   // ─── Procesar respuesta de Gemini ─────────────────────────────────────────
 
-  const procesarRespuesta = async (
-    responseText: string
-  ): Promise<{ displayText: string; pedidoCard?: PedidoConId }> => {
-    const match = responseText.match(/PEDIDO_LISTO:(\{[\s\S]*?\})/);
-    if (!match) return { displayText: responseText };
+// Reemplaza la función procesarRespuesta en Chatbot.tsx por esta:
 
-    try {
-      const json = JSON.parse(match[1]);
-      const negocio = negocios.find(n => n.id === json.negocioId) ?? null;
+const procesarRespuesta = async (
+  responseText: string
+): Promise<{ displayText: string; pedidoCard?: PedidoConId }> => {
 
-      const pedido: PedidoEnCurso = {
-        negocio,
-        items: json.items,
-        direccionEntrega: json.direccionEntrega,
-        notas: json.notas ?? '',
-      };
+  const { displayText, pedidoJson } = parsePedidoFromResponse(responseText);
 
-      const result = await guardarPedido(pedido);
-      if (!result) return { displayText: '⚠️ Hubo un error al guardar tu pedido. Inténtalo de nuevo.' };
+  if (!pedidoJson) return { displayText };
 
-      const displayText =
-        responseText.replace(/PEDIDO_LISTO:[\s\S]*/, '').trim() ||
-        '¡Listo! Tu pedido fue registrado 🎉';
+  try {
+    // Buscar negocio en la lista local
+    const negocio = negocios.find(n => n.id === pedidoJson.negocioId) ?? null;
 
-      return {
-        displayText,
-        pedidoCard: { ...pedido, pedidoId: result.pedidoId, order: result.order },
-      };
-    } catch (e) {
-      console.error('Error procesando PEDIDO_LISTO:', e);
-      return { displayText: responseText };
+    if (!negocio) {
+      console.warn('Negocio no encontrado para ID:', pedidoJson.negocioId);
+      return { displayText };
     }
-  };
 
+    const pedido: PedidoEnCurso = {
+      negocio,
+      items: pedidoJson.items,
+      direccionEntrega: pedidoJson.direccionEntrega ?? '',
+      notas: pedidoJson.notas ?? '',
+    };
+
+    const result = await guardarPedido(pedido);
+    if (!result) return { displayText: '⚠️ Error al guardar el pedido. Inténtalo de nuevo.' };
+
+    return {
+      displayText,
+      pedidoCard: { ...pedido, pedidoId: result.pedidoId, order: result.order },
+    };
+  } catch (e) {
+    console.error('Error en procesarRespuesta:', e);
+    return { displayText };
+  }
+};
   // ─── Enviar mensaje ───────────────────────────────────────────────────────
 
   const handleSend = async (overrideText?: string) => {

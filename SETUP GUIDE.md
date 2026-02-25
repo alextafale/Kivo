@@ -98,3 +98,16 @@ El chatbot la llena solo cuando el usuario confirma un pedido.
 /services/geminiService.ts
 /screens/Chatbot.tsx   ← reemplaza el actual
 ```
+
+## PASO 8 — Ejecutar
+
+```bash
+npx expo start --clear
+```
+
+## CHATBOTUSE.md
+
+```
+Para correr el modelo de llama3 desde las pcs, correr el siguiente comando desde powershell:
+$env:OLLAMA_HOST="0.0.0.0:11434"; ollama serve
+```

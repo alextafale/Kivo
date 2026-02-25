@@ -41,3 +41,15 @@ yarn-error.*
 /android
 
 .env
+
+business/serviceAccountKey.json
+
+# scripts (subfolder)
+scripts/serviceAccountKey.json
+scripts/negocios.json
+scripts/node_modules/
+scripts/package-lock.json
+scripts/.expo/
+
+# local data files
+restaurants.json

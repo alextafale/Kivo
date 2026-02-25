@@ -9,10 +9,9 @@ import {
   limit,
 } from 'firebase/firestore';
 import { Linking } from 'react-native';
-
 import { Order, OrderItem } from '../types/order';
 
-// ─── Tipos Firestore ──────────────────────────────────────────────────────────
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface MenuItem {
   nombre: string;
@@ -27,25 +26,34 @@ export interface Negocio {
   direccion: string;
   horario: string;
   telefono: string;
-  whatsapp: string; // formato: 5215512345678 (sin + ni espacios)
+  whatsapp: string;
   categoria: string;
   calificacion: number;
   menu: MenuItem[];
 }
 
-// Usa los mismos tipos que tu types/order.ts
 export interface PedidoEnCurso {
   negocio: Negocio | null;
-  items: OrderItem[]; // { name, quantity, price }
+  items: OrderItem[];
   direccionEntrega: string;
   notas: string;
 }
 
-// ─── Cargar negocios desde Firestore ─────────────────────────────────────────
+export interface GeminiMessage {
+  role: 'user' | 'model';
+  parts: [{ text: string }];
+}
+
+interface OllamaMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+// ─── Firestore ────────────────────────────────────────────────────────────────
 
 export async function cargarNegocios(): Promise<Negocio[]> {
   try {
-    const q = query(collection(db, 'negocios'), limit(30));
+    const q = query(collection(db, 'negocios'), limit(100));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({
       id: doc.id,
@@ -56,9 +64,6 @@ export async function cargarNegocios(): Promise<Negocio[]> {
     return [];
   }
 }
-
-// ─── Guardar pedido en Firestore ──────────────────────────────────────────────
-// Devuelve un Order compatible con tu types/order.ts para navegar a orderTracking
 
 export async function guardarPedido(
   pedido: PedidoEnCurso
@@ -82,7 +87,6 @@ export async function guardarPedido(
       creadoEn: Timestamp.now(),
     });
 
-    // Objeto Order listo para pasar a la ruta 'orderTracking'
     const order: Order = {
       id: docRef.id,
       restaurantName: pedido.negocio.nombre,
@@ -101,8 +105,6 @@ export async function guardarPedido(
     return null;
   }
 }
-
-// ─── Enviar pedido por WhatsApp ───────────────────────────────────────────────
 
 export async function enviarPedidoWhatsApp(pedido: PedidoEnCurso, pedidoId: string) {
   if (!pedido.negocio) return;
@@ -128,61 +130,207 @@ export async function enviarPedidoWhatsApp(pedido: PedidoEnCurso, pedidoId: stri
   await Linking.openURL(canOpen ? waUrl : webUrl);
 }
 
-// ─── Ollama (llama3) ──────────────────────────────────────────────────────────
+// ─── Contexto inteligente ─────────────────────────────────────────────────────
+// Manda solo los negocios relevantes al modelo según lo que pregunta el usuario.
+// Esto evita que el modelo se pierda con 65 negocios y alucine datos.
+
+const CATEGORIA_KEYWORDS: Record<string, string[]> = {
+  taqueria:         ['taco', 'tacos', 'pastor', 'asada', 'bistec', 'suadero', 'tripa', 'buche', 'campechano', 'taquería'],
+  mariscos:         ['mariscos', 'camarón', 'camarones', 'ceviche', 'aguachile', 'coctel', 'pulpo', 'filete', 'marlín', 'jaiba', 'ostión'],
+  pizzeria:         ['pizza', 'pizzas', 'pepperoni', 'hawaiana', 'pizzería'],
+  hamburgueseria:   ['hamburguesa', 'burger', 'doble', 'tocino'],
+  barbacoa:         ['barbacoa', 'borrego', 'cabeza', 'cachete', 'lengua', 'maciza'],
+  pozoleria:        ['pozole', 'pozolería'],
+  antojitos:        ['sope', 'sopes', 'gordita', 'gorditas', 'enchilada', 'enchiladas', 'quesadilla', 'antojito', 'flauta', 'flautas', 'tlacoyo'],
+  parrilla:         ['arrachera', 'corte', 'costilla', 'parrilla', 'carne asada', 'rib eye', 'asadero', 'parrillada'],
+  desayunos:        ['desayuno', 'chilaquiles', 'huevo', 'huevos', 'hotcakes', 'hot cakes', 'waffle', 'molletes', 'omelet'],
+  sushi:            ['sushi', 'rol', 'rollo', 'rollos', 'japonés', 'japonesa', 'ramen'],
+  italiana:         ['pasta', 'lasaña', 'espagueti', 'italiano', 'italiana', 'fetuccini', 'ravioles'],
+  cafeteria:        ['café', 'cafe', 'latte', 'capuchino', 'frappé', 'frappe', 'churro', 'churros', 'pan'],
+  postres:          ['postre', 'pastel', 'flan', 'dona', 'helado', 'gelatina', 'dulce', 'crepa', 'crepas'],
+  cenaduria:        ['cenaduría', 'cenaduria', 'flautas', 'tacos dorados'],
+  torteria:         ['torta', 'tortas', 'ahogada', 'milanesa', 'pierna'],
+  hotdogs:          ['hot dog', 'hotdog'],
+  alitas:           ['alitas', 'alita', 'boneless', 'wings'],
+  burritos:         ['burrito', 'burritos'],
+  birrieria:        ['birria', 'birriería', 'quesabirria', 'consomé'],
+  polleria:         ['pollo', 'rostizado', 'rosticería', 'cuarto', 'medio pollo'],
+  buffet:           ['buffet'],
+  comida_mexicana:  ['mexicano', 'mexicana', 'guisado', 'mole', 'comida casera', 'chile relleno', 'molcajete'],
+  comida_saludable: ['saludable', 'ensalada', 'bowl', 'wrap', 'vegano', 'light', 'quinoa'],
+};
+
+function filtrarNegociosRelevantes(
+  userMessage: string,
+  history: GeminiMessage[],
+  negocios: Negocio[],
+  maxNegocios = 8
+): Negocio[] {
+  // Combinar mensaje actual + últimos 2 turnos del historial para más contexto
+  const recentHistory = history.slice(-4).map(h => h.parts[0].text).join(' ');
+  const contextoCompleto = (userMessage + ' ' + recentHistory).toLowerCase();
+
+  // 1. Coincidencia exacta con nombre de negocio
+  const porNombre = negocios.filter(n =>
+    contextoCompleto.includes(n.nombre.toLowerCase()) ||
+    contextoCompleto.includes(n.id.toLowerCase())
+  );
+  if (porNombre.length > 0) {
+    // Si encontramos por nombre, incluir también su categoría para sugerencias
+    const categorias = new Set(porNombre.map(n => n.categoria));
+    const mismaCategoria = negocios.filter(n => categorias.has(n.categoria) && !porNombre.includes(n));
+    return [...porNombre, ...mismaCategoria.slice(0, 3)].slice(0, maxNegocios);
+  }
+
+  // 2. Coincidencia por palabras clave de categoría
+  const categoriasMatch = new Set<string>();
+  for (const [cat, keywords] of Object.entries(CATEGORIA_KEYWORDS)) {
+    if (keywords.some(k => contextoCompleto.includes(k))) {
+      categoriasMatch.add(cat);
+    }
+  }
+
+  if (categoriasMatch.size > 0) {
+    const porCategoria = negocios
+      .filter(n => categoriasMatch.has(n.categoria))
+      .sort((a, b) => b.calificacion - a.calificacion);
+    if (porCategoria.length > 0) return porCategoria.slice(0, maxNegocios);
+  }
+
+  // 3. Pregunta general → top negocios por calificación con variedad de categorías
+  const topPorCategoria: Negocio[] = [];
+  const categoriasVistas = new Set<string>();
+  const sorted = [...negocios].sort((a, b) => b.calificacion - a.calificacion);
+  for (const n of sorted) {
+    if (topPorCategoria.length >= maxNegocios) break;
+    if (!categoriasVistas.has(n.categoria)) {
+      topPorCategoria.push(n);
+      categoriasVistas.add(n.categoria);
+    }
+  }
+  return topPorCategoria;
+}
+
+// ─── Prompt ───────────────────────────────────────────────────────────────────
+
+function formatNegocio(n: Negocio): string {
+  const menu = n.menu
+    ?.map(m => `      • ${m.nombre}: $${m.precio} — ${m.descripcion}`)
+    .join('\n') ?? '      (sin menú registrado)';
+
+  return `▸ ${n.nombre} [ID: ${n.id}]
+    Categoría: ${n.categoria} | ⭐${n.calificacion}
+    Dirección: ${n.direccion}
+    Horario: ${n.horario}
+    Menú:
+${menu}`;
+}
+
+function buildSystemPrompt(negociosRelevantes: Negocio[], todosLosNegocios: Negocio[]): string {
+  const listaNombres = todosLosNegocios
+    .sort((a, b) => b.calificacion - a.calificacion)
+    .map(n => `${n.nombre} (${n.categoria})`)
+    .join(' | ');
+
+  const detalle = negociosRelevantes.map(formatNegocio).join('\n\n');
+
+  return `Eres el asistente de Pidelo, app de delivery en La Piedad, Michoacán. Hablas en español mexicano informal.
+
+TODOS LOS NEGOCIOS REGISTRADOS (${todosLosNegocios.length}):
+${listaNombres}
+
+INFORMACIÓN DETALLADA DE NEGOCIOS RELEVANTES:
+${detalle}
+
+═══════ REGLAS QUE DEBES SEGUIR SIEMPRE ═══════
+
+REGLA 1 — NO ALUCINES:
+Únicamente menciona negocios, platillos y precios que aparezcan EXACTAMENTE en la información de arriba.
+Si no tienes el dato, di: "No tengo esa información, pero puedo ayudarte con otra cosa."
+NUNCA inventes precios, platillos ni negocios.
+
+REGLA 2 — NO MUESTRES JSON AL USUARIO:
+Responde siempre en texto natural y amigable. El JSON solo va al final cuando el pedido esté confirmado.
+
+REGLA 3 — FLUJO DE PEDIDO (sigue estos pasos en orden):
+  1. Pregunta qué quiere y de qué negocio
+  2. Confirma items y total en texto: "Serían X tacos de Y a $Z cada uno. Total: $W"
+  3. Pide dirección de entrega
+  4. Pregunta si hay notas especiales (si no quiere omitir, está bien)
+  5. Pide confirmación: "¿Confirmas el pedido?"
+  6. Solo cuando el usuario confirme → escribe el PEDIDO_LISTO
+
+REGLA 4 — FORMATO DEL PEDIDO_LISTO:
+Escríbelo en UNA SOLA LÍNEA, sin espacios antes del {, sin saltos de línea dentro:
+PEDIDO_LISTO:{"negocioId":"id-exacto","items":[{"name":"Nombre Exacto Del Platillo","price":120,"quantity":2}],"direccionEntrega":"dirección completa","notas":""}
+
+  - negocioId: ID exacto del negocio (ej: "birria-el-compita")
+  - name: nombre EXACTO del platillo como aparece en el menú
+  - price: número sin $ ni comillas (ej: 120)
+  - quantity: número (ej: 2)
+  - notas: "" si no hay notas
+
+REGLA 5 — FORMATO DE RESPUESTAS:
+  - Listas el menú así: 🍕 Nombre — $precio (descripción)
+  - Sin markdown excesivo
+  - Respuestas cortas y directas
+  - Emojis con moderación`;
+}
+
+// ─── Parser robusto ───────────────────────────────────────────────────────────
+
+export function parsePedidoFromResponse(
+  responseText: string
+): { displayText: string; pedidoJson: any | null } {
+  const marker = responseText.indexOf('PEDIDO_LISTO:');
+  if (marker === -1) return { displayText: responseText, pedidoJson: null };
+
+  let jsonStr = responseText.slice(marker + 'PEDIDO_LISTO:'.length).trim();
+  jsonStr = jsonStr.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  jsonStr = jsonStr.replace(/[\n\r]/g, ' ');
+
+  const start = jsonStr.indexOf('{');
+  if (start === -1) return { displayText: responseText, pedidoJson: null };
+
+  // Encontrar cierre balanceado
+  let depth = 0, end = -1;
+  for (let i = start; i < jsonStr.length; i++) {
+    if (jsonStr[i] === '{') depth++;
+    else if (jsonStr[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+
+  // Si viene incompleto, cerrar lo que falta
+  let finalJson = end !== -1
+    ? jsonStr.slice(start, end + 1)
+    : (() => {
+        let p = jsonStr.slice(start);
+        p += ']'.repeat(Math.max(0, (p.match(/\[/g) || []).length - (p.match(/\]/g) || []).length));
+        p += '}'.repeat(Math.max(0, (p.match(/\{/g) || []).length - (p.match(/\}/g) || []).length));
+        return p;
+      })();
+
+  try {
+    const pedidoJson = JSON.parse(finalJson);
+
+    // Validar estructura mínima
+    if (!pedidoJson.negocioId || !Array.isArray(pedidoJson.items) || pedidoJson.items.length === 0) {
+      console.warn('PEDIDO_LISTO con estructura inválida:', pedidoJson);
+      return { displayText: responseText, pedidoJson: null };
+    }
+
+    const displayText = responseText.slice(0, marker).trim() || '¡Listo! Aquí el resumen de tu pedido 🎉';
+    return { displayText, pedidoJson };
+  } catch (e) {
+    console.error('Error parseando JSON del pedido:', e, '\nJSON:', finalJson);
+    return { displayText: responseText, pedidoJson: null };
+  }
+}
+
+// ─── Ollama ───────────────────────────────────────────────────────────────────
 
 const OLLAMA_URL = 'http://192.168.1.100:11434/api/chat';
 const OLLAMA_MODEL = 'llama3';
 
-export interface GeminiMessage {
-  role: 'user' | 'model';
-  parts: [{ text: string }];
-}
-
-// Formato interno de Ollama
-interface OllamaMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-function buildSystemPrompt(negocios: Negocio[]): string {
-  const info = negocios
-    .map(n => {
-      const menuStr =
-        n.menu?.map(m => `    - ${m.nombre}: $${m.precio} (${m.descripcion})`).join('\n') ?? '';
-      return `
-NEGOCIO: ${n.nombre} | ID: ${n.id}
-  Descripción: ${n.descripcion}
-  Dirección: ${n.direccion}
-  Horario: ${n.horario}
-  Teléfono: ${n.telefono}
-  Calificación: ${n.calificacion}⭐
-  Menú:
-${menuStr}`;
-    })
-    .join('\n\n');
-
-  return `Eres el asistente virtual de Pidelo, una app de delivery de comida. Eres amable, eficiente y hablas en español mexicano informal.
-
-NEGOCIOS DISPONIBLES:
-${info}
-
-TUS RESPONSABILIDADES:
-1. Responder preguntas sobre menú, precios, horarios, dirección y descripción de los negocios.
-2. Tomar pedidos paso a paso:
-   a) Preguntar qué quieren ordenar y de qué negocio
-   b) Confirmar items y total
-   c) Pedir dirección de entrega
-   d) Preguntar si tienen notas especiales (alergias, modificaciones, etc.)
-   e) Al confirmar, responde EXACTAMENTE con este formato (sin markdown ni backticks):
-   PEDIDO_LISTO:{"negocioId":"id","items":[{"name":"nombre","price":0,"quantity":1}],"direccionEntrega":"dirección","notas":"notas"}
-
-3. Si no sabes algo, sé honesto y ofrece alternativas.
-4. Usa emojis con moderación. Respuestas cortas y claras.
-
-CRÍTICO: El JSON debe usar "name", "price", "quantity" en inglés para ser compatible con la app.`;
-}
-
-// Convierte historial formato Gemini → formato Ollama
 function toOllamaHistory(history: GeminiMessage[]): OllamaMessage[] {
   return history.map(m => ({
     role: m.role === 'model' ? 'assistant' : 'user',
@@ -193,10 +341,13 @@ function toOllamaHistory(history: GeminiMessage[]): OllamaMessage[] {
 export async function askGemini(
   userMessage: string,
   history: GeminiMessage[],
-  negocios: Negocio[]
+  todosLosNegocios: Negocio[]
 ): Promise<string> {
+  // Contexto inteligente: solo negocios relevantes para este mensaje
+  const negociosRelevantes = filtrarNegociosRelevantes(userMessage, history, todosLosNegocios);
+
   const messages: OllamaMessage[] = [
-    { role: 'system', content: buildSystemPrompt(negocios) },
+    { role: 'system', content: buildSystemPrompt(negociosRelevantes, todosLosNegocios) },
     ...toOllamaHistory(history),
     { role: 'user', content: userMessage },
   ];
@@ -208,7 +359,12 @@ export async function askGemini(
       model: OLLAMA_MODEL,
       messages,
       stream: false,
-      options: { temperature: 0.7, num_predict: 1024 },
+      options: {
+        temperature: 0.3,     // bajo = más preciso, menos alucinaciones
+        num_predict: 800,
+        repeat_penalty: 1.2,  // evita que repita lo mismo
+        top_p: 0.85,
+      },
     }),
   });
 
