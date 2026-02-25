@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/StacNavigation';
+import { Order, OrderItem } from '../../types/order';
 
 type OrdersNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Orders'>;
 
@@ -90,23 +91,7 @@ const CloseIcon = () => (
   </Svg>
 );
 
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: number;
-}
 
-interface Order {
-  id: string;
-  restaurantName: string;
-  restaurantImage: string;
-  items: OrderItem[];
-  total: number;
-  status: 'pending' | 'inProgress' | 'delivered' | 'cancelled';
-  date: Date;
-  orderNumber: string;
-  deliveryAddress: string;
-}
 
 const mockOrders: Order[] = [
   {
@@ -300,7 +285,7 @@ export default function Orders({ navigation }: Props) {
         </View>
 
         {order.status === 'inProgress' && (
-          <TouchableOpacity style={styles.trackButton}>
+          <TouchableOpacity  onPress={() => navigation.navigate('orderTracking', { order })} style={styles.trackButton}>
             <LinearGradient
               colors={['#22c55e', '#16a34a']}
               style={styles.trackButtonGradient}

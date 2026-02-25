@@ -21,11 +21,13 @@ import Chatbot from '../screens/chatbot/Chatbot';
 import Profile from '../screens/profile/Profile';
 import EdithProfile from '../screens/profile/EdithProfile';
 import Orders from '../screens/orders/Order';
+import { Order } from '../types/order';
 import deliveryAddresses from '../screens/addresses/deliveryAddresses';
 import OrderDetails from '../screens/orders/Order';
 import AddAddress from '../screens/addresses/addAddress';
 import AddCard from '../screens/PaymentsMethod/addCard';
 import PaymentMethods from '../screens/PaymentsMethod/paymentsMethod';
+import OrderTrackingScreen from '../screens/orders/orderTraking';
 
 // ─── Admin / Negocio ──────────────────────────────────────────────────────────
 import BusinessDashboard from '../screens/admin/dashboard/dashboard';
@@ -60,6 +62,7 @@ export type RootStackParamList = {
   AddAddress: undefined;
   AddCard: undefined;
   PaymentsMethod: undefined;
+  orderTracking: { order: Order };
 
   // Admin / Negocio
   dashboard: undefined;
@@ -109,6 +112,8 @@ export default function StackNavigation() {
         <Stack.Screen name="AddAddress" component={AddAddress} />
         <Stack.Screen name="AddCard" component={AddCard} />
         <Stack.Screen name="PaymentsMethod" component={PaymentMethods} />
+        <Stack.Screen name="orderTracking" component={OrderTrackingScreen} />
+
 
         {/* ── Admin / Negocio ────────────────────────────────────────────── */}
         <Stack.Screen name="dashboard" component={BusinessDashboard} />
