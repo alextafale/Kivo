@@ -1,13 +1,5 @@
 // frontend/services/geminiService.ts
-import { db } from '../config/firenaseConfig';
-import {
-  collection,
-  getDocs,
-  addDoc,
-  Timestamp,
-  query,
-  limit,
-} from 'firebase/firestore';
+import { supabase } from '../config/supabaseConfig';
 import { Linking } from 'react-native';
 import { Order, OrderItem } from '../types/order';
 
@@ -49,21 +41,25 @@ interface OllamaMessage {
   content: string;
 }
 
-// ─── Firestore ────────────────────────────────────────────────────────────────
+// ─── Supabase: Negocios ───────────────────────────────────────────────────────
 
 export async function cargarNegocios(): Promise<Negocio[]> {
   try {
-    const q = query(collection(db, 'negocios'), limit(100));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Negocio[];
+    const { data, error } = await supabase
+      .from('negocios')
+      .select('*')
+      .eq('activo', true)
+      .order('calificacion', { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []) as Negocio[];
   } catch (error) {
     console.error('Error cargando negocios:', error);
     return [];
   }
 }
+
+// ─── Supabase: Guardar pedido ─────────────────────────────────────────────────
 
 export async function guardarPedido(
   pedido: PedidoEnCurso
@@ -74,37 +70,44 @@ export async function guardarPedido(
   const orderNumber = `PID-${Date.now().toString().slice(-6)}`;
 
   try {
-    const docRef = await addDoc(collection(db, 'pedidos'), {
-      negocioId: pedido.negocio.id,
-      negocioNombre: pedido.negocio.nombre,
-      negocioWhatsapp: pedido.negocio.whatsapp,
-      items: pedido.items,
-      total,
-      direccionEntrega: pedido.direccionEntrega,
-      notas: pedido.notas,
-      estado: 'pending',
-      orderNumber,
-      creadoEn: Timestamp.now(),
-    });
+    const { data, error } = await supabase
+      .from('pedidos')
+      .insert({
+        negocio_id:        pedido.negocio.id,
+        negocio_nombre:    pedido.negocio.nombre,
+        negocio_whatsapp:  pedido.negocio.whatsapp,
+        items:             pedido.items,
+        total,
+        direccion_entrega: pedido.direccionEntrega,
+        notas:             pedido.notas,
+        estado:            'pending',
+        order_number:      orderNumber,
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
 
     const order: Order = {
-      id: docRef.id,
-      restaurantName: pedido.negocio.nombre,
+      id:              data.id,
+      restaurantName:  pedido.negocio.nombre,
       restaurantImage: '',
-      items: pedido.items,
+      items:           pedido.items,
       total,
-      status: 'pending',
-      date: new Date(),
+      status:          'pending',
+      date:            new Date(),
       orderNumber,
       deliveryAddress: pedido.direccionEntrega,
     };
 
-    return { pedidoId: docRef.id, order };
+    return { pedidoId: data.id, order };
   } catch (error) {
     console.error('Error guardando pedido:', error);
     return null;
   }
 }
+
+// ─── WhatsApp ─────────────────────────────────────────────────────────────────
 
 export async function enviarPedidoWhatsApp(pedido: PedidoEnCurso, pedidoId: string) {
   if (!pedido.negocio) return;
@@ -131,33 +134,31 @@ export async function enviarPedidoWhatsApp(pedido: PedidoEnCurso, pedidoId: stri
 }
 
 // ─── Contexto inteligente ─────────────────────────────────────────────────────
-// Manda solo los negocios relevantes al modelo según lo que pregunta el usuario.
-// Esto evita que el modelo se pierda con 65 negocios y alucine datos.
 
 const CATEGORIA_KEYWORDS: Record<string, string[]> = {
-  taqueria:         ['taco', 'tacos', 'pastor', 'asada', 'bistec', 'suadero', 'tripa', 'buche', 'campechano', 'taquería'],
+  taqueria:         ['taco', 'tacos', 'pastor', 'asada', 'bistec', 'suadero', 'tripa', 'buche', 'campechano'],
   mariscos:         ['mariscos', 'camarón', 'camarones', 'ceviche', 'aguachile', 'coctel', 'pulpo', 'filete', 'marlín', 'jaiba', 'ostión'],
-  pizzeria:         ['pizza', 'pizzas', 'pepperoni', 'hawaiana', 'pizzería'],
+  pizzeria:         ['pizza', 'pizzas', 'pepperoni', 'hawaiana'],
   hamburgueseria:   ['hamburguesa', 'burger', 'doble', 'tocino'],
   barbacoa:         ['barbacoa', 'borrego', 'cabeza', 'cachete', 'lengua', 'maciza'],
   pozoleria:        ['pozole', 'pozolería'],
-  antojitos:        ['sope', 'sopes', 'gordita', 'gorditas', 'enchilada', 'enchiladas', 'quesadilla', 'antojito', 'flauta', 'flautas', 'tlacoyo'],
-  parrilla:         ['arrachera', 'corte', 'costilla', 'parrilla', 'carne asada', 'rib eye', 'asadero', 'parrillada'],
-  desayunos:        ['desayuno', 'chilaquiles', 'huevo', 'huevos', 'hotcakes', 'hot cakes', 'waffle', 'molletes', 'omelet'],
-  sushi:            ['sushi', 'rol', 'rollo', 'rollos', 'japonés', 'japonesa', 'ramen'],
-  italiana:         ['pasta', 'lasaña', 'espagueti', 'italiano', 'italiana', 'fetuccini', 'ravioles'],
-  cafeteria:        ['café', 'cafe', 'latte', 'capuchino', 'frappé', 'frappe', 'churro', 'churros', 'pan'],
-  postres:          ['postre', 'pastel', 'flan', 'dona', 'helado', 'gelatina', 'dulce', 'crepa', 'crepas'],
+  antojitos:        ['sope', 'sopes', 'gordita', 'gorditas', 'enchilada', 'quesadilla', 'flauta', 'flautas'],
+  parrilla:         ['arrachera', 'corte', 'costilla', 'parrilla', 'carne asada', 'rib eye'],
+  desayunos:        ['desayuno', 'chilaquiles', 'huevo', 'huevos', 'hotcakes', 'waffle', 'molletes'],
+  sushi:            ['sushi', 'rol', 'rollo', 'rollos', 'ramen'],
+  italiana:         ['pasta', 'lasaña', 'espagueti', 'italiano'],
+  cafeteria:        ['café', 'cafe', 'latte', 'capuchino', 'frappé', 'churro', 'churros'],
+  postres:          ['postre', 'pastel', 'flan', 'dona', 'helado', 'gelatina', 'crepa'],
   cenaduria:        ['cenaduría', 'cenaduria', 'flautas', 'tacos dorados'],
-  torteria:         ['torta', 'tortas', 'ahogada', 'milanesa', 'pierna'],
+  torteria:         ['torta', 'tortas', 'ahogada', 'milanesa'],
   hotdogs:          ['hot dog', 'hotdog'],
-  alitas:           ['alitas', 'alita', 'boneless', 'wings'],
+  alitas:           ['alitas', 'boneless', 'wings'],
   burritos:         ['burrito', 'burritos'],
-  birrieria:        ['birria', 'birriería', 'quesabirria', 'consomé'],
-  polleria:         ['pollo', 'rostizado', 'rosticería', 'cuarto', 'medio pollo'],
+  birrieria:        ['birria', 'quesabirria', 'consomé'],
+  polleria:         ['pollo', 'rostizado', 'rosticería'],
   buffet:           ['buffet'],
-  comida_mexicana:  ['mexicano', 'mexicana', 'guisado', 'mole', 'comida casera', 'chile relleno', 'molcajete'],
-  comida_saludable: ['saludable', 'ensalada', 'bowl', 'wrap', 'vegano', 'light', 'quinoa'],
+  comida_mexicana:  ['mexicano', 'mexicana', 'guisado', 'mole', 'chile relleno', 'molcajete'],
+  comida_saludable: ['saludable', 'ensalada', 'bowl', 'wrap', 'vegano', 'quinoa'],
 };
 
 function filtrarNegociosRelevantes(
@@ -166,30 +167,24 @@ function filtrarNegociosRelevantes(
   negocios: Negocio[],
   maxNegocios = 8
 ): Negocio[] {
-  // Combinar mensaje actual + últimos 2 turnos del historial para más contexto
   const recentHistory = history.slice(-4).map(h => h.parts[0].text).join(' ');
-  const contextoCompleto = (userMessage + ' ' + recentHistory).toLowerCase();
+  const ctx = (userMessage + ' ' + recentHistory).toLowerCase();
 
-  // 1. Coincidencia exacta con nombre de negocio
+  // 1. Coincidencia por nombre exacto
   const porNombre = negocios.filter(n =>
-    contextoCompleto.includes(n.nombre.toLowerCase()) ||
-    contextoCompleto.includes(n.id.toLowerCase())
+    ctx.includes(n.nombre.toLowerCase()) || ctx.includes(n.id.toLowerCase())
   );
   if (porNombre.length > 0) {
-    // Si encontramos por nombre, incluir también su categoría para sugerencias
     const categorias = new Set(porNombre.map(n => n.categoria));
-    const mismaCategoria = negocios.filter(n => categorias.has(n.categoria) && !porNombre.includes(n));
-    return [...porNombre, ...mismaCategoria.slice(0, 3)].slice(0, maxNegocios);
+    const extras = negocios.filter(n => categorias.has(n.categoria) && !porNombre.includes(n));
+    return [...porNombre, ...extras.slice(0, 3)].slice(0, maxNegocios);
   }
 
-  // 2. Coincidencia por palabras clave de categoría
+  // 2. Coincidencia por categoría
   const categoriasMatch = new Set<string>();
   for (const [cat, keywords] of Object.entries(CATEGORIA_KEYWORDS)) {
-    if (keywords.some(k => contextoCompleto.includes(k))) {
-      categoriasMatch.add(cat);
-    }
+    if (keywords.some(k => ctx.includes(k))) categoriasMatch.add(cat);
   }
-
   if (categoriasMatch.size > 0) {
     const porCategoria = negocios
       .filter(n => categoriasMatch.has(n.categoria))
@@ -197,18 +192,14 @@ function filtrarNegociosRelevantes(
     if (porCategoria.length > 0) return porCategoria.slice(0, maxNegocios);
   }
 
-  // 3. Pregunta general → top negocios por calificación con variedad de categorías
-  const topPorCategoria: Negocio[] = [];
-  const categoriasVistas = new Set<string>();
-  const sorted = [...negocios].sort((a, b) => b.calificacion - a.calificacion);
-  for (const n of sorted) {
-    if (topPorCategoria.length >= maxNegocios) break;
-    if (!categoriasVistas.has(n.categoria)) {
-      topPorCategoria.push(n);
-      categoriasVistas.add(n.categoria);
-    }
+  // 3. General → top con variedad de categorías
+  const top: Negocio[] = [];
+  const vistas = new Set<string>();
+  for (const n of [...negocios].sort((a, b) => b.calificacion - a.calificacion)) {
+    if (top.length >= maxNegocios) break;
+    if (!vistas.has(n.categoria)) { top.push(n); vistas.add(n.categoria); }
   }
-  return topPorCategoria;
+  return top;
 }
 
 // ─── Prompt ───────────────────────────────────────────────────────────────────
@@ -216,65 +207,60 @@ function filtrarNegociosRelevantes(
 function formatNegocio(n: Negocio): string {
   const menu = n.menu
     ?.map(m => `      • ${m.nombre}: $${m.precio} — ${m.descripcion}`)
-    .join('\n') ?? '      (sin menú registrado)';
-
+    .join('\n') ?? '      (sin menú)';
   return `▸ ${n.nombre} [ID: ${n.id}]
     Categoría: ${n.categoria} | ⭐${n.calificacion}
     Dirección: ${n.direccion}
     Horario: ${n.horario}
-    Menú:
-${menu}`;
+    Menú:\n${menu}`;
 }
 
-function buildSystemPrompt(negociosRelevantes: Negocio[], todosLosNegocios: Negocio[]): string {
-  const listaNombres = todosLosNegocios
+function buildSystemPrompt(relevantes: Negocio[], todos: Negocio[]): string {
+  const lista = todos
     .sort((a, b) => b.calificacion - a.calificacion)
     .map(n => `${n.nombre} (${n.categoria})`)
     .join(' | ');
 
-  const detalle = negociosRelevantes.map(formatNegocio).join('\n\n');
+  const detalle = relevantes.map(formatNegocio).join('\n\n');
 
   return `Eres el asistente de Pidelo, app de delivery en La Piedad, Michoacán. Hablas en español mexicano informal.
 
-TODOS LOS NEGOCIOS REGISTRADOS (${todosLosNegocios.length}):
-${listaNombres}
+TODOS LOS NEGOCIOS (${todos.length}):
+${lista}
 
-INFORMACIÓN DETALLADA DE NEGOCIOS RELEVANTES:
+DETALLE DE NEGOCIOS RELEVANTES:
 ${detalle}
 
-═══════ REGLAS QUE DEBES SEGUIR SIEMPRE ═══════
+═══════ REGLAS OBLIGATORIAS ═══════
 
 REGLA 1 — NO ALUCINES:
-Únicamente menciona negocios, platillos y precios que aparezcan EXACTAMENTE en la información de arriba.
-Si no tienes el dato, di: "No tengo esa información, pero puedo ayudarte con otra cosa."
-NUNCA inventes precios, platillos ni negocios.
+Solo menciona negocios, platillos y precios que aparezcan EXACTAMENTE arriba.
+Si no tienes el dato di: "No tengo esa información."
 
-REGLA 2 — NO MUESTRES JSON AL USUARIO:
-Responde siempre en texto natural y amigable. El JSON solo va al final cuando el pedido esté confirmado.
+REGLA 2 — NO MUESTRES JSON:
+Responde siempre en texto natural. Nunca muestres JSON al usuario.
 
-REGLA 3 — FLUJO DE PEDIDO (sigue estos pasos en orden):
-  1. Pregunta qué quiere y de qué negocio
-  2. Confirma items y total en texto: "Serían X tacos de Y a $Z cada uno. Total: $W"
+REGLA 3 — FLUJO DE PEDIDO:
+  1. Confirma qué quiere y de qué negocio
+  2. Muestra resumen en texto con total
   3. Pide dirección de entrega
-  4. Pregunta si hay notas especiales (si no quiere omitir, está bien)
+  4. Pregunta notas especiales (opcional)
   5. Pide confirmación: "¿Confirmas el pedido?"
-  6. Solo cuando el usuario confirme → escribe el PEDIDO_LISTO
+  6. Solo tras confirmación → escribe PEDIDO_LISTO
 
-REGLA 4 — FORMATO DEL PEDIDO_LISTO:
-Escríbelo en UNA SOLA LÍNEA, sin espacios antes del {, sin saltos de línea dentro:
-PEDIDO_LISTO:{"negocioId":"id-exacto","items":[{"name":"Nombre Exacto Del Platillo","price":120,"quantity":2}],"direccionEntrega":"dirección completa","notas":""}
+REGLA 4 — PEDIDO_LISTO en UNA SOLA LÍNEA:
+PEDIDO_LISTO:{"negocioId":"id-exacto","items":[{"name":"Nombre Exacto","price":120,"quantity":1}],"direccionEntrega":"dirección","notas":""}
 
-  - negocioId: ID exacto del negocio (ej: "birria-el-compita")
-  - name: nombre EXACTO del platillo como aparece en el menú
-  - price: número sin $ ni comillas (ej: 120)
+  Reglas del JSON:
+  - negocioId: ID exacto (ej: "birria-el-compita")
+  - name: nombre EXACTO del menú
+  - price: número sin $ (ej: 120)
   - quantity: número (ej: 2)
-  - notas: "" si no hay notas
+  - Sin saltos de línea dentro del JSON
 
-REGLA 5 — FORMATO DE RESPUESTAS:
-  - Listas el menú así: 🍕 Nombre — $precio (descripción)
-  - Sin markdown excesivo
-  - Respuestas cortas y directas
-  - Emojis con moderación`;
+REGLA 5 — FORMATO:
+  Menú: 🍕 Nombre — $precio (descripción)
+  Respuestas cortas y claras, emojis con moderación.`;
 }
 
 // ─── Parser robusto ───────────────────────────────────────────────────────────
@@ -292,14 +278,12 @@ export function parsePedidoFromResponse(
   const start = jsonStr.indexOf('{');
   if (start === -1) return { displayText: responseText, pedidoJson: null };
 
-  // Encontrar cierre balanceado
   let depth = 0, end = -1;
   for (let i = start; i < jsonStr.length; i++) {
     if (jsonStr[i] === '{') depth++;
     else if (jsonStr[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
   }
 
-  // Si viene incompleto, cerrar lo que falta
   let finalJson = end !== -1
     ? jsonStr.slice(start, end + 1)
     : (() => {
@@ -311,24 +295,21 @@ export function parsePedidoFromResponse(
 
   try {
     const pedidoJson = JSON.parse(finalJson);
-
-    // Validar estructura mínima
     if (!pedidoJson.negocioId || !Array.isArray(pedidoJson.items) || pedidoJson.items.length === 0) {
-      console.warn('PEDIDO_LISTO con estructura inválida:', pedidoJson);
+      console.warn('PEDIDO_LISTO inválido:', pedidoJson);
       return { displayText: responseText, pedidoJson: null };
     }
-
-    const displayText = responseText.slice(0, marker).trim() || '¡Listo! Aquí el resumen de tu pedido 🎉';
+    const displayText = responseText.slice(0, marker).trim() || '¡Listo! Aquí el resumen 🎉';
     return { displayText, pedidoJson };
   } catch (e) {
-    console.error('Error parseando JSON del pedido:', e, '\nJSON:', finalJson);
+    console.error('Error parseando pedido:', e);
     return { displayText: responseText, pedidoJson: null };
   }
 }
 
 // ─── Ollama ───────────────────────────────────────────────────────────────────
 
-const OLLAMA_URL = 'http://192.168.1.100:11434/api/chat';
+const OLLAMA_URL = `http://${process.env.OLLAMA_HOST ?? '192.168.1.100'}:11434/api/chat`;
 const OLLAMA_MODEL = 'llama3';
 
 function toOllamaHistory(history: GeminiMessage[]): OllamaMessage[] {
@@ -343,11 +324,10 @@ export async function askGemini(
   history: GeminiMessage[],
   todosLosNegocios: Negocio[]
 ): Promise<string> {
-  // Contexto inteligente: solo negocios relevantes para este mensaje
-  const negociosRelevantes = filtrarNegociosRelevantes(userMessage, history, todosLosNegocios);
+  const relevantes = filtrarNegociosRelevantes(userMessage, history, todosLosNegocios);
 
   const messages: OllamaMessage[] = [
-    { role: 'system', content: buildSystemPrompt(negociosRelevantes, todosLosNegocios) },
+    { role: 'system', content: buildSystemPrompt(relevantes, todosLosNegocios) },
     ...toOllamaHistory(history),
     { role: 'user', content: userMessage },
   ];
@@ -359,12 +339,7 @@ export async function askGemini(
       model: OLLAMA_MODEL,
       messages,
       stream: false,
-      options: {
-        temperature: 0.3,     // bajo = más preciso, menos alucinaciones
-        num_predict: 800,
-        repeat_penalty: 1.2,  // evita que repita lo mismo
-        top_p: 0.85,
-      },
+      options: { temperature: 0.3, num_predict: 800, repeat_penalty: 1.2, top_p: 0.85 },
     }),
   });
 

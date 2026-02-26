@@ -14,6 +14,7 @@ import {
   Animated,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
@@ -450,7 +451,7 @@ const procesarRespuesta = async (
               <MicIcon />
             </TouchableOpacity>
           )}
-        </View>
+        </View>     
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
