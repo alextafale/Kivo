@@ -1,7 +1,7 @@
 // frontend/services/geminiService.ts
-import { supabase } from '../config/supabaseConfig';
+import { supabase } from '../frontend/config/supabaseConfig';
 import { Linking } from 'react-native';
-import { Order, OrderItem } from '../types/order';
+import { Order, OrderItem } from '../frontend/types/order';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
