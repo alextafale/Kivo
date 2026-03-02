@@ -180,7 +180,7 @@ const CardPreview = ({
 
         {/* Top row */}
         <View style={styles.cardTopRow}>
-          <Text style={styles.cardBrand}>PIDELO CARD</Text>
+          <Text style={styles.cardBrand}>KIVU CARD</Text>
           <NfcIcon />
         </View>
 

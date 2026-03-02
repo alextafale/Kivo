@@ -147,7 +147,7 @@ export default function BusinessDashboard({ navigation }: Props) {
             </View>
             <View>
               <Text style={styles.businessName}>Green Table Bistro</Text>
-              <Text style={styles.businessAddress}>pidelo.app/green-table</Text>
+              <Text style={styles.businessAddress}>Kivu.app/green-table</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -268,7 +268,7 @@ export default function BusinessDashboard({ navigation }: Props) {
           >
             <View style={styles.adsContent}>
               <Text style={styles.adsTitle}>Grow your sales with</Text>
-              <Text style={styles.adsTitle}>Pidelo Ads</Text>
+              <Text style={styles.adsTitle}>Kivu Ads</Text>
               <Text style={styles.adsSubtitle}>Target customers in your 5km radius</Text>
               <TouchableOpacity style={styles.adsButton}>
                 <LinearGradient

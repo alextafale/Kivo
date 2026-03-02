@@ -272,7 +272,7 @@ export default function SplashScreen({ navigation }: Props) {
           },
         ]}
       >
-        <Text style={styles.appName}>Pidelo</Text>
+        <Text style={styles.appName}>Kivu</Text>
         <Text style={styles.subtitle}>Ordena con tu asistente virtual</Text>
       </Animated.View>
 

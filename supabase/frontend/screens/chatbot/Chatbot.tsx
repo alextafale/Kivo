@@ -173,7 +173,7 @@ export default function Chatbot({ navigation }: Props) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '¡Hola! 👋 Soy tu asistente de Pidelo.\n\nPuedo ayudarte a:\n🍕 Ver menús y precios\n📍 Info de negocios\n🛵 Tomar tu pedido\n\n¿Qué se te antoja hoy?',
+      text: '¡Hola! 👋 Soy tu asistente de Kivu.\n\nPuedo ayudarte a:\n🍕 Ver menús y precios\n📍 Info de negocios\n🛵 Tomar tu pedido\n\n¿Qué se te antoja hoy?',
       sender: 'bot',
       timestamp: new Date(),
       suggestions: ['Ver restaurantes', 'Hacer un pedido', '¿Cuál es el horario?'],
@@ -388,7 +388,7 @@ const procesarRespuesta = async (
             <BotIcon />
           </View>
           <View>
-            <Text style={styles.headerTitle}>Asistente Pidelo</Text>
+            <Text style={styles.headerTitle}>Asistente Kivu</Text>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, loadingNegocios && styles.statusDotLoading]} />
               <Text style={styles.headerSub}>

@@ -139,7 +139,7 @@ export default function RateOrderScreen() {
         </View>
 
         <Text style={styles.footerNote}>
-          Your feedback helps us improve Pidelo for everyone.
+          Your feedback helps us improve Kivu for everyone.
         </Text>
       </ScrollView>
 

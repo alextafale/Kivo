@@ -94,7 +94,7 @@ export default function AccountTypeSelection({ navigation }: Props) {
       <View style={styles.content}>
         <View style={styles.textSection}>
           <Text style={styles.title}>
-            Únete a <Text style={styles.titleGreen}>Pidelo</Text>
+            Únete a <Text style={styles.titleGreen}>Kivu</Text>
           </Text>
           <Text style={styles.subtitle}>
             Selecciona tu perfil para comenzar a pedir o vender de forma conversacional.

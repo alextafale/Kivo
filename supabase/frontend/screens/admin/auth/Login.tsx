@@ -132,7 +132,7 @@ export default function LoginBusiness({ navigation }: Props) {
             <View style={styles.logoCircle}>
               <ChatBubbleIcon />
             </View>
-            <Text style={styles.logoText}>Pidelo</Text>
+            <Text style={styles.logoText}>Kivu</Text>
           </View>
 
           {/* Title */}

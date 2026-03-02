@@ -13,6 +13,8 @@ import {
   Alert,
   Animated,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Line, G, Defs, ClipPath } from 'react-native-svg';
@@ -241,10 +243,14 @@ export default function Profile({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
+    <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
         {/* ── TOP HEADER ─────────────────────────────────────── */}
         <Animated.View
@@ -408,53 +414,59 @@ export default function Profile({ navigation }: Props) {
         transparent
         onRequestClose={() => setEditModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHandle} />
-            <View style={styles.modalHead}>
-              <Text style={styles.modalTitle}>
-                Editar {fieldLabels[editField as string] || editField}
-              </Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.modalCloseBtn}>
-                <CloseIcon />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.modalBody}>
-              <Text style={styles.modalFieldLabel}>
-                {fieldLabels[editField as string] || editField}
-              </Text>
-              <TextInput
-                style={styles.modalInput}
-                value={editValue}
-                onChangeText={setEditValue}
-                placeholder={`Ingresa tu ${(fieldLabels[editField as string] || '').toLowerCase()}`}
-                placeholderTextColor="#94A3B8"
-                autoFocus
-                keyboardType={
-                  editField === 'phone' ? 'phone-pad' :
-                  editField === 'email' ? 'email-address' : 'default'
-                }
-              />
-            </View>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSaveEdit}>
-                <LinearGradient
-                  colors={['#22c55e', '#16a34a']}
-                  style={styles.saveBtnGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  <Text style={styles.saveBtnText}>Guardar</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalHead}>
+                <Text style={styles.modalTitle}>
+                  Editar {fieldLabels[editField as string] || editField}
+                </Text>
+                <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.modalCloseBtn}>
+                  <CloseIcon />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modalBody}>
+                <Text style={styles.modalFieldLabel}>
+                  {fieldLabels[editField as string] || editField}
+                </Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editValue}
+                  onChangeText={setEditValue}
+                  placeholder={`Ingresa tu ${(fieldLabels[editField as string] || '').toLowerCase()}`}
+                  placeholderTextColor="#94A3B8"
+                  autoFocus
+                  keyboardType={
+                    editField === 'phone' ? 'phone-pad' :
+                    editField === 'email' ? 'email-address' : 'default'
+                  }
+                />
+              </View>
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModalVisible(false)}>
+                  <Text style={styles.cancelBtnText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveBtn} onPress={handleSaveEdit}>
+                  <LinearGradient
+                    colors={['#22c55e', '#16a34a']}
+                    style={styles.saveBtnGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.saveBtnText}>Guardar</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

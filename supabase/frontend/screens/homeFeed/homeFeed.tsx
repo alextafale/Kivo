@@ -9,6 +9,8 @@ import {
   Image,
   Dimensions,
   StatusBar,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -141,159 +143,163 @@ export default function HomeFeed() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.logoText}>Pidelo</Text>
-          <Text style={styles.tagline}>AI-Powered Food Ordering</Text>
-        </View>
-        <View style={styles.headerIcons}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.logoText}>Kivu</Text>
+            <Text style={styles.tagline}>AI-Powered Food Ordering</Text>
+          </View>
+          <View style={styles.headerIcons}>
 
 
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
-            style={styles.avatar}
-          />
-        </TouchableOpacity>
-        </View>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <SearchIcon />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Ask Pidelo: 'Best tacos near me?'"
-              placeholderTextColor="#9CA3AF"
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
+              style={styles.avatar}
             />
-            <TouchableOpacity style={styles.micButton}>
-              <MicIcon />
-            </TouchableOpacity>
+          </TouchableOpacity>
           </View>
         </View>
 
-        {/* Categories */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesContainer}
-          contentContainerStyle={styles.categoriesContent}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryChip,
-                selectedCategory === category && styles.categoryChipActive,
-              ]}
-              onPress={() => setSelectedCategory(category)}
-            >
-              <Text
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <SearchIcon />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Ask Pidelo: 'Best tacos near me?'"
+                placeholderTextColor="#9CA3AF"
+              />
+              <TouchableOpacity style={styles.micButton}>
+                <MicIcon />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Categories */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoriesContainer}
+            contentContainerStyle={styles.categoriesContent}
+          >
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category}
                 style={[
-                  styles.categoryText,
-                  selectedCategory === category && styles.categoryTextActive,
+                  styles.categoryChip,
+                  selectedCategory === category && styles.categoryChipActive,
                 ]}
+                onPress={() => setSelectedCategory(category)}
               >
-                {category === 'Tacos' && '🌮 '}
-                {category === 'Coffee' && '☕ '}
-                {category}
-              </Text>
+                <Text
+                  style={[
+                    styles.categoryText,
+                    selectedCategory === category && styles.categoryTextActive,
+                  ]}
+                >
+                  {category === 'Tacos' && '🌮 '}
+                  {category === 'Coffee' && '☕ '}
+                  {category}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Featured Local Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Local</Text>
+            <TouchableOpacity>
+              <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
-          ))}
+          </View>
+
+          {/* Restaurant Cards */}
+          <View style={styles.cardsContainer}>
+            {restaurants.map((restaurant) => (
+              <View key={restaurant.id} style={styles.card}>
+                <View style={styles.cardImageContainer}>
+                  <Image
+                    source={{ uri: restaurant.image }}
+                    style={styles.cardImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.ratingBadge}>
+                    <StarIcon />
+                    <Text style={styles.ratingText}>{restaurant.rating}</Text>
+                  </View>
+                  {restaurant.deliveryTime && (
+                    <View style={styles.deliveryBadge}>
+                      <Text style={styles.deliveryText}>{restaurant.deliveryTime} Delivery</Text>
+                    </View>
+                  )}
+                </View>
+                
+                <View style={styles.cardContent}>
+                  <Text style={styles.restaurantName}>{restaurant.name}</Text>
+                  <Text style={styles.restaurantDescription}>{restaurant.description}</Text>
+                  
+                  {restaurant.badge && (
+                    <View style={styles.specialBadge}>
+                      <Text style={styles.specialBadgeText}>✨ {restaurant.badge}</Text>
+                    </View>
+                  )}
+                  
+                  <TouchableOpacity style={styles.orderButton}>
+                    <MessageIcon />
+                    <Text style={styles.orderButtonText}>Chat & Order</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <View style={{ height: 100 }} />
         </ScrollView>
 
-        {/* Featured Local Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Featured Local</Text>
-          <TouchableOpacity>
-            <Text style={styles.viewAllText}>View All</Text>
+        {/* Bottom Navigation */}
+        <View style={styles.bottomNav}>
+          <TouchableOpacity style={styles.navItem}>
+            <HomeIcon active />
+            <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.navItem}>
+            <ExploreIcon />
+            <Text style={styles.navText}>Explore</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.fabButton} onPress={ () => {navigation.navigate('Chatbot')}}>
+            <LinearGradient
+              colors={['#22c55e', '#16a34a']}
+              style={styles.fab}
+            >
+              <Svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                <Path d="M9 15C8.44771 15 8 15.4477 8 16C8 16.5523 8.44771 17 9 17C9.55229 17 10 16.5523 10 16C10 15.4477 9.55229 15 9 15Z" fill="white" />
+                <Path d="M14 16C14 15.4477 14.4477 15 15 15C15.5523 15 16 15.4477 16 16C16 16.5523 15.5523 17 15 17C14.4477 17 14 16.5523 14 16Z" fill="white" />
+                <Path fillRule="evenodd" clipRule="evenodd" d="M12 1C10.8954 1 10 1.89543 10 3C10 3.74028 10.4022 4.38663 11 4.73244V7H6C4.34315 7 3 8.34315 3 10V20C3 21.6569 4.34315 23 6 23H18C19.6569 23 21 21.6569 21 20V10C21 8.34315 19.6569 7 18 7H13V4.73244C13.5978 4.38663 14 3.74028 14 3C14 1.89543 13.1046 1 12 1ZM5 10C5 9.44772 5.44772 9 6 9H7.38197L8.82918 11.8944C9.16796 12.572 9.86049 13 10.618 13H13.382C14.1395 13 14.832 12.572 15.1708 11.8944L16.618 9H18C18.5523 9 19 9.44772 19 10V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20V10ZM13.382 11L14.382 9H9.61803L10.618 11H13.382Z" fill="white" />
+                <Path d="M1 14C0.447715 14 0 14.4477 0 15V17C0 17.5523 0.447715 18 1 18C1.55228 18 2 17.5523 2 17V15C2 14.4477 1.55228 14 1 14Z" fill="white" />
+                <Path d="M22 15C22 14.4477 22.4477 14 23 14C23.5523 14 24 14.4477 24 15V17C24 17.5523 23.5523 18 23 18C22.4477 18 22 17.5523 22 17V15Z" fill="white" />
+              </Svg>
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Orders')}  >
+            <OrdersIcon />
+            <Text style={styles.navText}>Orders</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
+            <ProfileIcon />
+            <Text style={styles.navText}>Profile</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Restaurant Cards */}
-        <View style={styles.cardsContainer}>
-          {restaurants.map((restaurant) => (
-            <View key={restaurant.id} style={styles.card}>
-              <View style={styles.cardImageContainer}>
-                <Image
-                  source={{ uri: restaurant.image }}
-                  style={styles.cardImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.ratingBadge}>
-                  <StarIcon />
-                  <Text style={styles.ratingText}>{restaurant.rating}</Text>
-                </View>
-                {restaurant.deliveryTime && (
-                  <View style={styles.deliveryBadge}>
-                    <Text style={styles.deliveryText}>{restaurant.deliveryTime} Delivery</Text>
-                  </View>
-                )}
-              </View>
-              
-              <View style={styles.cardContent}>
-                <Text style={styles.restaurantName}>{restaurant.name}</Text>
-                <Text style={styles.restaurantDescription}>{restaurant.description}</Text>
-                
-                {restaurant.badge && (
-                  <View style={styles.specialBadge}>
-                    <Text style={styles.specialBadgeText}>✨ {restaurant.badge}</Text>
-                  </View>
-                )}
-                
-                <TouchableOpacity style={styles.orderButton}>
-                  <MessageIcon />
-                  <Text style={styles.orderButtonText}>Chat & Order</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        <View style={{ height: 100 }} />
-      </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <HomeIcon active />
-          <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem}>
-          <ExploreIcon />
-          <Text style={styles.navText}>Explore</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.fabButton} onPress={ () => {navigation.navigate('Chatbot')}}>
-          <LinearGradient
-            colors={['#22c55e', '#16a34a']}
-            style={styles.fab}
-          >
-            <Svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-              <Path d="M9 15C8.44771 15 8 15.4477 8 16C8 16.5523 8.44771 17 9 17C9.55229 17 10 16.5523 10 16C10 15.4477 9.55229 15 9 15Z" fill="white" />
-              <Path d="M14 16C14 15.4477 14.4477 15 15 15C15.5523 15 16 15.4477 16 16C16 16.5523 15.5523 17 15 17C14.4477 17 14 16.5523 14 16Z" fill="white" />
-              <Path fillRule="evenodd" clipRule="evenodd" d="M12 1C10.8954 1 10 1.89543 10 3C10 3.74028 10.4022 4.38663 11 4.73244V7H6C4.34315 7 3 8.34315 3 10V20C3 21.6569 4.34315 23 6 23H18C19.6569 23 21 21.6569 21 20V10C21 8.34315 19.6569 7 18 7H13V4.73244C13.5978 4.38663 14 3.74028 14 3C14 1.89543 13.1046 1 12 1ZM5 10C5 9.44772 5.44772 9 6 9H7.38197L8.82918 11.8944C9.16796 12.572 9.86049 13 10.618 13H13.382C14.1395 13 14.832 12.572 15.1708 11.8944L16.618 9H18C18.5523 9 19 9.44772 19 10V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20V10ZM13.382 11L14.382 9H9.61803L10.618 11H13.382Z" fill="white" />
-              <Path d="M1 14C0.447715 14 0 14.4477 0 15V17C0 17.5523 0.447715 18 1 18C1.55228 18 2 17.5523 2 17V15C2 14.4477 1.55228 14 1 14Z" fill="white" />
-              <Path d="M22 15C22 14.4477 22.4477 14 23 14C23.5523 14 24 14.4477 24 15V17C24 17.5523 23.5523 18 23 18C22.4477 18 22 17.5523 22 17V15Z" fill="white" />
-            </Svg>
-          </LinearGradient>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Orders')}  >
-          <OrdersIcon />
-          <Text style={styles.navText}>Orders</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-          <ProfileIcon />
-          <Text style={styles.navText}>Profile</Text>
-        </TouchableOpacity>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

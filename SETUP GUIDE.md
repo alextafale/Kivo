@@ -105,7 +105,7 @@ El chatbot la llena solo cuando el usuario confirma un pedido.
 npx expo start --clear
 ```
 
-## CHATBOTUSE.md
+## CHATBOT USE.md
 
 ```
 Para correr el modelo de llama3 desde las pcs, correr el siguiente comando desde powershell:

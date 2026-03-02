@@ -10,6 +10,8 @@ import {
   TextInput,
   Image,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
@@ -310,103 +312,107 @@ export default function Orders({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <BackIcon />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mis Pedidos</Text>
-        <View style={styles.backButton} />
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <SearchIcon />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar por restaurante..."
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-        <TouchableOpacity
-          style={[styles.dateFilterButton, selectedDate && styles.dateFilterButtonActive]}
-          onPress={() => setDateFilterVisible(true)}
-        >
-          <CalendarIcon />
-        </TouchableOpacity>
-      </View>
-
-      {/* Active Date Filter */}
-      {selectedDate && (
-        <View style={styles.activeDateFilter}>
-          <Text style={styles.activeDateFilterText}>
-            Filtrado: {selectedDate.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
-          </Text>
-          <TouchableOpacity onPress={clearDateFilter}>
-            <Text style={styles.clearFilterText}>Limpiar</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Filter Tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterTabsContainer}
-        contentContainerStyle={styles.filterTabsContent}
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {filterTabs.map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.filterTab, selectedFilter === tab && styles.filterTabActive]}
-            onPress={() => setSelectedFilter(tab)}
-          >
-            <Text style={[styles.filterTabText, selectedFilter === tab && styles.filterTabTextActive]}>
-              {tab}
-            </Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <BackIcon />
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          <Text style={styles.headerTitle}>Mis Pedidos</Text>
+          <View style={styles.backButton} />
+        </View>
 
-      {/* Orders List */}
-      <ScrollView style={styles.ordersList} showsVerticalScrollIndicator={false}>
-        {filteredOrders.length > 0 ? (
-          filteredOrders.map(renderOrder)
-        ) : (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyStateIcon}>
-              <Svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5">
-                <Path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                <Path d="M3 6h18" />
-                <Path d="M16 10a4 4 0 0 1-8 0" />
-              </Svg>
-            </View>
-            <Text style={styles.emptyStateTitle}>No hay pedidos</Text>
-            <Text style={styles.emptyStateText}>
-              {searchQuery || selectedDate
-                ? 'No se encontraron pedidos con los filtros seleccionados'
-                : 'Aún no has realizado ningún pedido'}
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <SearchIcon />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar por restaurante..."
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <TouchableOpacity
+            style={[styles.dateFilterButton, selectedDate && styles.dateFilterButtonActive]}
+            onPress={() => setDateFilterVisible(true)}
+          >
+            <CalendarIcon />
+          </TouchableOpacity>
+        </View>
+
+        {/* Active Date Filter */}
+        {selectedDate && (
+          <View style={styles.activeDateFilter}>
+            <Text style={styles.activeDateFilterText}>
+              Filtrado: {selectedDate.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
             </Text>
-            {!searchQuery && !selectedDate && (
-              <TouchableOpacity style={styles.emptyStateButton} onPress={() => navigation.navigate('HomeFeed')}>
-                <LinearGradient
-                  colors={['#22c55e', '#16a34a']}
-                  style={styles.emptyStateButtonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  <Text style={styles.emptyStateButtonText}>Explorar Restaurantes</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity onPress={clearDateFilter}>
+              <Text style={styles.clearFilterText}>Limpiar</Text>
+            </TouchableOpacity>
           </View>
         )}
-        <View style={{ height: 40 }} />
-      </ScrollView>
+
+        {/* Filter Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterTabsContainer}
+          contentContainerStyle={styles.filterTabsContent}
+        >
+          {filterTabs.map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[styles.filterTab, selectedFilter === tab && styles.filterTabActive]}
+              onPress={() => setSelectedFilter(tab)}
+            >
+              <Text style={[styles.filterTabText, selectedFilter === tab && styles.filterTabTextActive]}>
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Orders List */}
+        <ScrollView style={styles.ordersList} showsVerticalScrollIndicator={false}>
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map(renderOrder)
+          ) : (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyStateIcon}>
+                <Svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5">
+                  <Path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <Path d="M3 6h18" />
+                  <Path d="M16 10a4 4 0 0 1-8 0" />
+                </Svg>
+              </View>
+              <Text style={styles.emptyStateTitle}>No hay pedidos</Text>
+              <Text style={styles.emptyStateText}>
+                {searchQuery || selectedDate
+                  ? 'No se encontraron pedidos con los filtros seleccionados'
+                  : 'Aún no has realizado ningún pedido'}
+              </Text>
+              {!searchQuery && !selectedDate && (
+                <TouchableOpacity style={styles.emptyStateButton} onPress={() => navigation.navigate('HomeFeed')}>
+                  <LinearGradient
+                    colors={['#22c55e', '#16a34a']}
+                    style={styles.emptyStateButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.emptyStateButtonText}>Explorar Restaurantes</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Date Filter Modal */}
       <Modal
