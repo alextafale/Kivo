@@ -49,7 +49,7 @@ const ArrowIcon = () => (
 );
 
 export default function AccountTypeSelection({ navigation }: Props) {
-  const [selectedType, setSelectedType] = useState<'client' | 'business' | null>(null);
+  const [selectedType, setSelectedType] = useState<'client' | 'business' | 'delivery' | null>(null);
 
   const handleContinue = async () => {
     if (!selectedType) return;
@@ -58,9 +58,12 @@ export default function AccountTypeSelection({ navigation }: Props) {
     if (selectedType === 'client') {
       // Cliente → login de clientes
       navigation.navigate('Login');
-    } else {
+    } else if (selectedType === 'business') {
       // Negocio → login de negocios
       navigation.navigate('LoginBusiness');
+    } else if (selectedType === 'delivery') {
+      // Repartidor → login de repartidores
+      navigation.navigate('LoginDelivery');
     }
   };
 
@@ -142,6 +145,29 @@ export default function AccountTypeSelection({ navigation }: Props) {
             {selectedType === 'business' && <View style={styles.checkmark} />}
           </TouchableOpacity>
         </View>
+
+
+        {/* Delivery Option */}
+          <TouchableOpacity
+            style={[
+              styles.optionCard,
+              selectedType === 'delivery' && styles.optionCardSelected,
+            ]}
+            onPress={() => { setSelectedType('delivery'); }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconContainer}>
+              <ChatIcon />
+            </View>
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionTitle}>Soy un Repartidor</Text>
+              <Text style={styles.optionDescription}>
+                Quiero repartir comida deliciosa a través del chat de forma rápida y fácil.
+              </Text>
+            </View>
+            {selectedType === 'delivery' && <View style={styles.checkmark} />}
+          </TouchableOpacity>
+        
 
         {/* Decorative Image */}
         <View style={styles.imageContainer}>

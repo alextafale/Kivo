@@ -50,7 +50,7 @@ const slides: OnboardingSlide[] = [
     title: 'Chatea y ',
     titleHighlight: 'Ordena',
     description: 'Olvídate de las llamadas. Pide tus platos favoritos hablando con nuestro asistente inteligente.',
-    image: require('../../assets/chatbot.png'), 
+    image: require('../../../assets/chatbot.png'), 
     backgroundColor: '#F0FDF4',
   },
   {
@@ -58,7 +58,7 @@ const slides: OnboardingSlide[] = [
     title: 'Apoya lo ',
     titleHighlight: 'Local',
     description: 'Encuentra las mejores fondas, cafeterías y negocios de tu zona en un solo lugar.',
-    image: require('../../assets/restaurant.png'),
+    image: require('../../../assets/restaurant.png'),
     backgroundColor: '#F0FDF4',
   },
   {
@@ -66,7 +66,7 @@ const slides: OnboardingSlide[] = [
     title: 'Fácil y ',
     titleHighlight: 'Rápido',
     description: 'Sin filas ni complicaciones. Tu pedido llegará a tu puerta en minutos.',
-    image: require('../../assets/moto.png'),
+    image: require('../../../assets/moto.png'),
     backgroundColor: '#F0FDF4',
   },
 ];

@@ -15,6 +15,10 @@ import Login from '../screens/auth/Login';
 import LoginBusiness from '../screens/admin/auth/Login';
 import SignupBusiness from '../screens/admin/auth/Signup';
 
+// ─── Auth (Delivery) ───────────────────────────────────────────────────────────
+import LoginDelivery from '../screens/delivery/LoginBusiness';
+import SignupDelivery from '../screens/delivery/SignupBusiness';
+
 // ─── Cliente ──────────────────────────────────────────────────────────────────
 import HomeFeed from '../screens/homeFeed/homeFeed';
 import Chatbot from '../screens/chatbot/Chatbot';
@@ -51,6 +55,10 @@ export type RootStackParamList = {
   LoginBusiness: undefined;
   SignupBusiness: { accountType: 'business' };
 
+  // Auth (Delivery)
+  LoginDelivery: undefined;
+  SignupDelivery: { accountType: 'delivery' };
+
   // Cliente
   HomeFeed: undefined;
   Chatbot: undefined;
@@ -78,6 +86,7 @@ export default function StackNavigation() {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        id="RootStack"
         initialRouteName="Splash"
         screenOptions={{
           headerShown: false,
@@ -100,6 +109,10 @@ export default function StackNavigation() {
         {/* ── Auth (Negocio) ─────────────────────────────────────────────── */}
         <Stack.Screen name="LoginBusiness" component={LoginBusiness} />
         <Stack.Screen name="SignupBusiness" component={SignupBusiness} />
+
+        {/* ── Auth (Delivery) ─────────────────────────────────────────────── */}
+        <Stack.Screen name="LoginDelivery" component={LoginDelivery} />
+        <Stack.Screen name="SignupDelivery" component={SignupDelivery} />
 
         {/* ── Cliente ────────────────────────────────────────────────────── */}
         <Stack.Screen name="HomeFeed" component={HomeFeed} />

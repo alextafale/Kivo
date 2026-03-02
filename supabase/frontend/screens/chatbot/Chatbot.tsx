@@ -30,7 +30,7 @@ import {
   PedidoEnCurso,
   GeminiMessage,
   parsePedidoFromResponse,
-} from '../../services/geminiService';
+} from '../../../services/geminiService';
 import { Order } from '../../types/order';
 
 type ChatbotNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chatbot'>;
