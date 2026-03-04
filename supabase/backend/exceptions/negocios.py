@@ -1,0 +1,2 @@
+class NegocioNoExistente(Exception):
+    pass
