@@ -1,0 +1,2 @@
+class SucursalNoExistente(Exception):
+    pass

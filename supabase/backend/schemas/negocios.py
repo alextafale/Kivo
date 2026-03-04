@@ -40,7 +40,6 @@ class NegocioUpdate(BaseModel):
 
 class NegocioOut(NegocioBase):
     id: UUID
-    fecha_entrega: Optional[datetime] = None
     creado_en: datetime
     actualizado_en: datetime
 

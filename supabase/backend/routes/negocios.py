@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from db.database import SessionLocal
 from schemas.negocios import NegocioOut
 from services.negocios import get_negocios,get_negocio_por_id
-from starlette import status
 
 router = APIRouter(prefix="/negocios",tags=["Negocios"])
 
@@ -24,5 +23,5 @@ def obtener_negocios(
     return get_negocios(db, categoria=categoria, ciudad=ciudad)
 
 @router.get('/{id}',response_model=NegocioOut)
-def obtener_domicilios_por_id(id:str,db:Session=Depends(get_db)):
+def obtener_negocios_por_id(id:str,db:Session=Depends(get_db)):
     return get_negocio_por_id(db,id)

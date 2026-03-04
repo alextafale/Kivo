@@ -3,7 +3,6 @@ from models.negocios import Negocio
 from schemas.negocios import NegocioOut
 from exceptions.negocios import NegocioNoExistente
 from typing import List,Optional
-from sqlalchemy import desc
 
 
 def get_negocios(db: Session,categoria: Optional[str] = None,ciudad: Optional[str] = None) -> List[Negocio]:

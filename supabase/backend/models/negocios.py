@@ -8,7 +8,7 @@ from db.database import Base
 class Negocio(Base):
     __tablename__ = "negocios"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True),nullable=False,primary_key=True,default=uuid.uuid4)
     slug = Column(String, nullable=False)
     nombre = Column(String, nullable=False)
     descripcion = Column(String, nullable=True)
