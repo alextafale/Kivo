@@ -56,9 +56,6 @@ scripts/.expo/
 # local data files
 restaurants.json
 
-# Python
-__pycache__/
-*.pyc
 
 # Chatbot
 GUIDEFOROLLAMA.md
