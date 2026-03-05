@@ -7,4 +7,5 @@ declare module '@env' {
   export const POSTGRES_HOST: string;
   export const POSTGRES_PORT: string;
   export const POSTGRES_DB: string;
+  export const API_URL: string;
 }

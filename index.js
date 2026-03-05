@@ -1,5 +1,4 @@
-import { registerRootComponent } from 'expo';
+import { registerRootComponent } from 'expo'
+import App from './App'
 
-import StackNavigation from './supabase/frontend/navigation/StacNavigation';
-
-registerRootComponent(StackNavigation);
+registerRootComponent(App)

@@ -57,13 +57,13 @@ export default function AccountTypeSelection({ navigation }: Props) {
 
     if (selectedType === 'client') {
       // Cliente → login de clientes
-      navigation.navigate('Login');
+      navigation.navigate('Signup', { accountType: 'client' });
     } else if (selectedType === 'business') {
       // Negocio → login de negocios
-      navigation.navigate('LoginBusiness');
+      navigation.navigate('SignupBusiness', { accountType: 'business' });
     } else if (selectedType === 'delivery') {
       // Repartidor → login de repartidores
-      navigation.navigate('LoginDelivery');
+      navigation.navigate('SignupDelivery', { accountType: 'delivery' });
     }
   };
 
