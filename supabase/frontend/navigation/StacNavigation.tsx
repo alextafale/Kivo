@@ -39,6 +39,7 @@ import MenuEditor from '../screens/admin/menuEdit/menuEdit';
 import SettingsScreen from '../screens/admin/settingsBusiness/settingsBusiness';
 import EditMenuItem from '../screens/admin/businessSettings/menu/edithMenu';
 import MenuItemEditor from '../screens/admin/menuEdit/MenuItemEditor'; // ✅ archivo correcto
+import { Domicilio } from '../domain/entities/Domicilio';
 
 // ─── Tipos de rutas ───────────────────────────────────────────────────────────
 export type RootStackParamList = {
@@ -67,7 +68,7 @@ export type RootStackParamList = {
   Orders: undefined;
   OrderDetails: { orderId: string };
   DeliveryAddresses: undefined;
-  AddAddress: undefined;
+  AddAddress: { domicilioId?: Domicilio } | undefined;
   AddCard: undefined;
   PaymentsMethod: undefined;
   orderTracking: { order: Order };

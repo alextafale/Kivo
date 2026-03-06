@@ -1,48 +1,42 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  Alert,
-  Animated,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
+  View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
+  StatusBar, ScrollView, TextInput, Alert, Animated, Dimensions,
+  KeyboardAvoidingView, Platform, Switch,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
-import Svg, { Path, Circle, Line, Rect, G } from 'react-native-svg';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/StacNavigation';
+import { useDomicilioForm } from '../../application/hooks/useDomicilioForm';
+import { ETIQUETAS } from '../../domain/entities/Domicilio';
+import type { Domicilio, Coordenadas } from '../../domain/entities/Domicilio';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'AddAddress'>;
-type Props = { navigation: Nav };
+// ⚠️  Agrega esto en RootStackParamList de StacNavigation.tsx:
+//   AddAddress: { domicilio?: Domicilio } | undefined;
 
-const { width, height } = Dimensions.get('window');
-const MAP_HEIGHT = height * 0.42;
+type Nav   = NativeStackNavigationProp<RootStackParamList, 'AddAddress'>;
+type Route = RouteProp<{ AddAddress: { domicilio?: Domicilio } }, 'AddAddress'>;
+type Props = { navigation: Nav; route: Route };
 
-// ─── ICONS ────────────────────────────────────────────────────────────────────
+const { height } = Dimensions.get('window');
+const MAP_HEIGHT  = height * 0.42;
+
+const DEFAULT_REGION = {
+  latitude: 19.9894, longitude: -102.2838,   // Zamora de Hidalgo
+  latitudeDelta: 0.08, longitudeDelta: 0.08,
+};
+
+// ─── ICONS (idénticos a los tuyos) ───────────────────────────────────────────
 
 const BackIcon = () => (
   <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2.5">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
-
-const SearchIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
-    <Circle cx="11" cy="11" r="8" />
-    <Path d="m21 21-4.35-4.35" />
-  </Svg>
-);
-
 const TargetIcon = () => (
   <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
     <Circle cx="12" cy="12" r="10" />
@@ -50,28 +44,6 @@ const TargetIcon = () => (
     <Path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
   </Svg>
 );
-
-const HomeIcon = ({ active }: { active: boolean }) => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? '#fff' : '#22c55e'} strokeWidth="2">
-    <Path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
-    <Path d="M9 21V12h6v9" />
-  </Svg>
-);
-
-const WorkIcon = ({ active }: { active: boolean }) => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? '#fff' : '#64748b'} strokeWidth="2">
-    <Rect x="2" y="7" width="20" height="15" rx="2" />
-    <Path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-  </Svg>
-);
-
-const PinIcon = ({ active }: { active: boolean }) => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? '#fff' : '#64748b'} strokeWidth="2">
-    <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-    <Circle cx="12" cy="10" r="3" />
-  </Svg>
-);
-
 const SaveIcon = () => (
   <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
     <Path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -79,36 +51,7 @@ const SaveIcon = () => (
   </Svg>
 );
 
-// ─── TYPES ───────────────────────────────────────────────────────────────────
-
-type AddressType = 'home' | 'work' | 'other';
-
-interface Address {
-  id: string;
-  type: AddressType;
-  label: string;
-  street: string;
-  interior?: string;
-  instructions?: string;
-  latitude: number;
-  longitude: number;
-  isDefault: boolean;
-}
-
-const TYPE_CONFIG: Record<AddressType, { label: string; icon: (active: boolean) => React.ReactNode }> = {
-  home:  { label: 'Casa',    icon: (a) => <HomeIcon active={a} /> },
-  work:  { label: 'Trabajo', icon: (a) => <WorkIcon active={a} /> },
-  other: { label: 'Otro',    icon: (a) => <PinIcon  active={a} /> },
-};
-
-const DEFAULT_REGION = {
-  latitude: 19.4326,
-  longitude: -99.1332,
-  latitudeDelta: 0.08,
-  longitudeDelta: 0.08,
-};
-
-// ─── CUSTOM MAP PIN ───────────────────────────────────────────────────────────
+// ─── CUSTOM MAP PIN (idéntico al tuyo) ───────────────────────────────────────
 
 const MapPin = () => (
   <View style={styles.mapPinContainer}>
@@ -122,21 +65,21 @@ const MapPin = () => (
 
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 
-export default function AddAddress({ navigation }: Props) {
-  const mapRef = useRef<MapView>(null);
+export default function AddAddress({ navigation, route }: Props) {
+  const domicilioExistente = route.params?.domicilio;
+  const esEdicion          = !!domicilioExistente;
 
-  const [region, setRegion] = useState(DEFAULT_REGION);
+  const {
+    form, errors, isLoading,
+    setField, onMapPinDrop, submit,
+  } = useDomicilioForm(domicilioExistente);
+
+  const mapRef = useRef<MapView>(null);
   const [markerCoord, setMarkerCoord] = useState({
-    latitude: DEFAULT_REGION.latitude,
-    longitude: DEFAULT_REGION.longitude,
+    latitude:  domicilioExistente?.coordenadas?.latitud  ?? DEFAULT_REGION.latitude,
+    longitude: domicilioExistente?.coordenadas?.longitud ?? DEFAULT_REGION.longitude,
   });
   const [loadingLocation, setLoadingLocation] = useState(false);
-
-  const [street, setStreet]           = useState('');
-  const [interior, setInterior]       = useState('');
-  const [instructions, setInstructions] = useState('');
-  const [addressType, setAddressType] = useState<AddressType>('home');
-  const [saving, setSaving]           = useState(false);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const formAnim  = useRef(new Animated.Value(0)).current;
@@ -146,85 +89,87 @@ export default function AddAddress({ navigation }: Props) {
       Animated.timing(slideAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
       Animated.timing(formAnim,  { toValue: 1, duration: 350, delay: 80, useNativeDriver: true }),
     ]).start();
+
+    // Modo edición: centrar mapa en coords existentes
+    if (domicilioExistente?.coordenadas) {
+      const { latitud, longitud } = domicilioExistente.coordenadas;
+      setTimeout(() => {
+        mapRef.current?.animateToRegion({
+          latitude: latitud, longitude: longitud,
+          latitudeDelta: 0.01, longitudeDelta: 0.01,
+        }, 600);
+      }, 500);
+    }
   }, []);
 
-  // ── Get current location ──────────────────────────────────────────────────
-  const handleCurrentLocation = async () => {
+  // ── Soltar pin en el mapa ─────────────────────────────────────────────────
+
+  const handleMapPress = useCallback(async (e: any) => {
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    setMarkerCoord({ latitude, longitude });
+    onMapPinDrop({ latitud: latitude, longitud: longitude });
+
+    // Geocoding inverso para rellenar la calle automáticamente
+    try {
+      const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
+      if (geo) {
+        const parts = [geo.street, geo.streetNumber].filter(Boolean);
+        if (parts.length > 0) setField('calle', parts.join(' ').trim());
+        if (geo.district || geo.subregion) setField('colonia', (geo.district ?? geo.subregion)!);
+        if (geo.city)    setField('ciudad', geo.city);
+        if (geo.region)  setField('estado', geo.region);
+        if (geo.postalCode) setField('codigoPostal', geo.postalCode);
+      }
+    } catch {}
+  }, [onMapPinDrop, setField]);
+
+  // ── Usar ubicación actual ─────────────────────────────────────────────────
+
+  const handleCurrentLocation = useCallback(async () => {
     setLoadingLocation(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permiso denegado', 'Necesitamos acceso a tu ubicación para esta función.');
+        Alert.alert('Permiso denegado', 'Necesitamos acceso a tu ubicación.');
         return;
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = loc.coords;
 
-      const newRegion = { latitude, longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 };
-      setRegion(newRegion);
+      const coords: Coordenadas = { latitud: latitude, longitud: longitude };
       setMarkerCoord({ latitude, longitude });
-      mapRef.current?.animateToRegion(newRegion, 600);
+      onMapPinDrop(coords);
+      mapRef.current?.animateToRegion({
+        latitude, longitude, latitudeDelta: 0.01, longitudeDelta: 0.01,
+      }, 600);
 
-      // Reverse geocode
+      // Geocoding inverso
       const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
       if (geo) {
-        const parts = [geo.street, geo.streetNumber, geo.district].filter(Boolean);
-        setStreet(parts.join(' ').trim());
+        const parts = [geo.street, geo.streetNumber].filter(Boolean);
+        if (parts.length > 0) setField('calle', parts.join(' ').trim());
+        if (geo.district || geo.subregion) setField('colonia', (geo.district ?? geo.subregion)!);
+        if (geo.city)       setField('ciudad',       geo.city);
+        if (geo.region)     setField('estado',       geo.region);
+        if (geo.postalCode) setField('codigoPostal', geo.postalCode);
       }
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'No se pudo obtener tu ubicación.');
     } finally {
       setLoadingLocation(false);
     }
-  };
+  }, [onMapPinDrop, setField]);
 
-  // ── Map drag → update marker ──────────────────────────────────────────────
-  const handleMapPress = async (e: any) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    setMarkerCoord({ latitude, longitude });
+  // ── Guardar ───────────────────────────────────────────────────────────────
 
-    try {
-      const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
-      if (geo) {
-        const parts = [geo.street, geo.streetNumber, geo.district].filter(Boolean);
-        setStreet(parts.join(' ').trim());
-      }
-    } catch {}
-  };
-
-  // ── Save ─────────────────────────────────────────────────────────────────
-  const handleSave = async () => {
-    if (!street.trim()) {
-      Alert.alert('Campo requerido', 'Por favor ingresa o selecciona una dirección en el mapa.');
-      return;
-    }
-    setSaving(true);
-    try {
-      const stored = await AsyncStorage.getItem('deliveryAddresses');
-      const existing: Address[] = stored ? JSON.parse(stored) : [];
-
-      const newAddress: Address = {
-        id: Date.now().toString(),
-        type: addressType,
-        label: TYPE_CONFIG[addressType].label,
-        street: street.trim(),
-        interior: interior.trim() || undefined,
-        instructions: instructions.trim() || undefined,
-        latitude: markerCoord.latitude,
-        longitude: markerCoord.longitude,
-        isDefault: existing.length === 0,
-      };
-
-      await AsyncStorage.setItem('deliveryAddresses', JSON.stringify([...existing, newAddress]));
+  const handleSave = useCallback(async () => {
+    const result = await submit();
+    if (result) {
       Alert.alert('✓ Guardado', 'Tu dirección fue guardada correctamente.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
+        { text: 'OK', onPress: () => navigation.navigate('DeliveryAddresses') },
       ]);
-    } catch {
-      Alert.alert('Error', 'No se pudo guardar la dirección.');
-    } finally {
-      setSaving(false);
     }
-  };
+  }, [submit, navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -234,17 +179,17 @@ export default function AddAddress({ navigation }: Props) {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* ── HEADER ────────────────────────────────────────────── */}
-        <Animated.View
-          style={[styles.header, {
-            opacity: slideAnim,
-            transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
-          }]}
-        >
+        {/* ── HEADER ──────────────────────────────────────────────── */}
+        <Animated.View style={[styles.header, {
+          opacity: slideAnim,
+          transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
+        }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <BackIcon />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Añadir Dirección</Text>
+          <Text style={styles.headerTitle}>
+            {esEdicion ? 'Editar Dirección' : 'Añadir Dirección'}
+          </Text>
           <View style={{ width: 42 }} />
         </Animated.View>
 
@@ -253,13 +198,11 @@ export default function AddAddress({ navigation }: Props) {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 32 }}
         >
-          {/* ── MAP ───────────────────────────────────────────────── */}
-          <Animated.View
-            style={[styles.mapWrapper, {
-              opacity: slideAnim,
-              transform: [{ scale: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }],
-            }]}
-          >
+          {/* ── MAPA ────────────────────────────────────────────────── */}
+          <Animated.View style={[styles.mapWrapper, {
+            opacity: slideAnim,
+            transform: [{ scale: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) }],
+          }]}>
             <MapView
               ref={mapRef}
               style={styles.map}
@@ -269,7 +212,6 @@ export default function AddAddress({ navigation }: Props) {
               showsUserLocation={false}
               showsMyLocationButton={false}
               showsCompass={false}
-              showsScale={false}
               customMapStyle={mapStyle}
             >
               <Marker coordinate={markerCoord} anchor={{ x: 0.5, y: 1 }}>
@@ -277,17 +219,17 @@ export default function AddAddress({ navigation }: Props) {
               </Marker>
             </MapView>
 
-            {/* Current location button */}
+            {/* Botón ubicación actual */}
             <TouchableOpacity
               style={styles.locationBtn}
               onPress={handleCurrentLocation}
               activeOpacity={0.85}
+              disabled={loadingLocation}
             >
               <LinearGradient
                 colors={['#22c55e', '#16a34a']}
                 style={styles.locationBtnGrad}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               >
                 <TargetIcon />
                 <Text style={styles.locationBtnText}>
@@ -297,82 +239,39 @@ export default function AddAddress({ navigation }: Props) {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* ── FORM ──────────────────────────────────────────────── */}
-          <Animated.View
-            style={[styles.formContainer, {
-              opacity: formAnim,
-              transform: [{ translateY: formAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
-            }]}
-          >
-            {/* Dirección */}
-            <Text style={styles.fieldLabel}>Dirección</Text>
-            <View style={styles.searchInputWrap}>
-              <View style={styles.searchIcon}>
-                <SearchIcon />
-              </View>
-              <TextInput
-                style={styles.searchInput}
-                value={street}
-                onChangeText={setStreet}
-                placeholder="Buscar calle y número..."
-                placeholderTextColor="#94a3b8"
-                returnKeyType="done"
-              />
-            </View>
+          {/* ── FORMULARIO ──────────────────────────────────────────── */}
+          <Animated.View style={[styles.formContainer, {
+            opacity: formAnim,
+            transform: [{ translateY: formAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
+          }]}>
 
-            {/* Interior */}
-            <Text style={styles.fieldLabel}>Número Interior / Depto <Text style={styles.optional}>(Opcional)</Text></Text>
-            <TextInput
-              style={styles.input}
-              value={interior}
-              onChangeText={setInterior}
-              placeholder="Ej: Apt 402, Int B"
-              placeholderTextColor="#94a3b8"
-              returnKeyType="done"
-            />
-
-            {/* Instrucciones */}
-            <Text style={styles.fieldLabel}>Instrucciones de entrega</Text>
-            <TextInput
-              style={[styles.input, styles.inputMulti]}
-              value={instructions}
-              onChangeText={setInstructions}
-              placeholder="Ej: Portón blanco, tocar timbre fuerte..."
-              placeholderTextColor="#94a3b8"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              returnKeyType="done"
-            />
-
-            {/* Guardar como */}
+            {/* Tipo / Etiqueta */}
             <Text style={styles.fieldLabel}>Guardar como:</Text>
             <View style={styles.typeRow}>
-              {(Object.keys(TYPE_CONFIG) as AddressType[]).map((t) => {
-                const active = addressType === t;
+              {ETIQUETAS.map((etiqueta) => {
+                const active = form.etiqueta === etiqueta;
                 return (
                   <TouchableOpacity
-                    key={t}
+                    key={etiqueta}
                     style={[styles.typeChip, active && styles.typeChipActive]}
-                    onPress={() => setAddressType(t)}
+                    onPress={() => setField('etiqueta', etiqueta)}
                     activeOpacity={0.8}
                   >
                     {active ? (
                       <LinearGradient
                         colors={['#22c55e', '#16a34a']}
                         style={styles.typeChipGrad}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                       >
-                        {TYPE_CONFIG[t].icon(true)}
                         <Text style={[styles.typeChipText, styles.typeChipTextActive]}>
-                          {TYPE_CONFIG[t].label}
+                          {etiqueta === 'Casa' ? '🏠' : etiqueta === 'Trabajo' ? '💼' : etiqueta === 'Gym' ? '🏋️' : '📍'} {etiqueta}
                         </Text>
                       </LinearGradient>
                     ) : (
                       <View style={styles.typeChipInner}>
-                        {TYPE_CONFIG[t].icon(false)}
-                        <Text style={styles.typeChipText}>{TYPE_CONFIG[t].label}</Text>
+                        <Text style={styles.typeChipText}>
+                          {etiqueta === 'Casa' ? '🏠' : etiqueta === 'Trabajo' ? '💼' : etiqueta === 'Gym' ? '🏋️' : '📍'} {etiqueta}
+                        </Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -380,25 +279,160 @@ export default function AddAddress({ navigation }: Props) {
               })}
             </View>
 
-            {/* Save button */}
+            {/* Calle */}
+            <Text style={styles.fieldLabel}>
+              Calle <Text style={styles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={[styles.input, !!errors.calle && styles.inputError]}
+              value={form.calle}
+              onChangeText={v => setField('calle', v)}
+              placeholder="Av. Insurgentes Sur #1234"
+              placeholderTextColor="#94a3b8"
+            />
+            {!!errors.calle && <Text style={styles.errorText}>{errors.calle}</Text>}
+
+            {/* Número ext / int */}
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Núm. Exterior</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.numeroExt}
+                  onChangeText={v => setField('numeroExt', v)}
+                  placeholder="123"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Núm. Interior <Text style={styles.optional}>(Opcional)</Text></Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.numeroInt}
+                  onChangeText={v => setField('numeroInt', v)}
+                  placeholder="Depto. 4"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+            </View>
+
+            {/* Colonia */}
+            <Text style={styles.fieldLabel}>Colonia</Text>
+            <TextInput
+              style={styles.input}
+              value={form.colonia}
+              onChangeText={v => setField('colonia', v)}
+              placeholder="Centro"
+              placeholderTextColor="#94a3b8"
+            />
+
+            {/* Ciudad / Estado */}
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>
+                  Ciudad <Text style={styles.required}>*</Text>
+                </Text>
+                <TextInput
+                  style={[styles.input, !!errors.ciudad && styles.inputError]}
+                  value={form.ciudad}
+                  onChangeText={v => setField('ciudad', v)}
+                  placeholder="Zamora"
+                  placeholderTextColor="#94a3b8"
+                />
+                {!!errors.ciudad && <Text style={styles.errorText}>{errors.ciudad}</Text>}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Estado</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.estado}
+                  onChangeText={v => setField('estado', v)}
+                  placeholder="Michoacán"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+            </View>
+
+            {/* CP / País */}
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Código Postal</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.codigoPostal}
+                  onChangeText={v => setField('codigoPostal', v)}
+                  placeholder="59600"
+                  placeholderTextColor="#94a3b8"
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>País</Text>
+                <TextInput
+                  style={styles.input}
+                  value={form.pais}
+                  onChangeText={v => setField('pais', v)}
+                  placeholder="MX"
+                  placeholderTextColor="#94a3b8"
+                  autoCapitalize="characters"
+                  maxLength={2}
+                />
+              </View>
+            </View>
+
+            {/* Referencias */}
+            <Text style={styles.fieldLabel}>
+              Instrucciones de entrega <Text style={styles.optional}>(Opcional)</Text>
+            </Text>
+            <TextInput
+              style={[styles.input, styles.inputMulti]}
+              value={form.referencias}
+              onChangeText={v => setField('referencias', v)}
+              placeholder="Portón blanco, tocar timbre fuerte..."
+              placeholderTextColor="#94a3b8"
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            {/* Predeterminado */}
+            <View style={styles.defaultToggleRow}>
+              <View>
+                <Text style={styles.defaultToggleTitle}>Establecer como predeterminada</Text>
+                <Text style={styles.defaultToggleSub}>Se usará automáticamente al ordenar</Text>
+              </View>
+              <Switch
+                value={form.esPredeterminado}
+                onValueChange={v => setField('esPredeterminado', v)}
+                trackColor={{ false: '#e2e8f0', true: '#86efac' }}
+                thumbColor={form.esPredeterminado ? '#22c55e' : '#fff'}
+              />
+            </View>
+
+            <View style={{ height: 16 }} />
+
+            {/* Botón guardar */}
             <TouchableOpacity
               style={styles.saveBtn}
               onPress={handleSave}
               activeOpacity={0.88}
-              disabled={saving}
+              disabled={isLoading}
             >
               <LinearGradient
                 colors={['#22c55e', '#16a34a']}
                 style={styles.saveBtnGrad}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               >
                 <SaveIcon />
                 <Text style={styles.saveBtnText}>
-                  {saving ? 'Guardando...' : 'Guardar Dirección'}
+                  {isLoading
+                    ? (esEdicion ? 'Guardando...' : 'Agregando...')
+                    : (esEdicion ? 'Guardar cambios' : 'Guardar Dirección')
+                  }
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -406,248 +440,110 @@ export default function AddAddress({ navigation }: Props) {
   );
 }
 
-// ─── STYLES ──────────────────────────────────────────────────────────────────
+// ─── STYLES (idénticos a los tuyos + ajustes de layout) ──────────────────────
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
 
-  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 14,
+    backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
   },
   backBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: '#f8fafc',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 42, height: 42, borderRadius: 13, backgroundColor: '#f8fafc',
+    alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0f172a',
-    letterSpacing: 0.1,
-  },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a', letterSpacing: 0.1 },
 
-  // Map
-  mapWrapper: {
-    width: '100%',
-    height: MAP_HEIGHT,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  mapWrapper: { width: '100%', height: MAP_HEIGHT, position: 'relative', overflow: 'hidden' },
+  map:        { ...StyleSheet.absoluteFillObject },
 
-  // Map custom pin
-  mapPinContainer: {
-    alignItems: 'center',
-  },
+  mapPinContainer: { alignItems: 'center' },
   mapPinBubble: {
-    backgroundColor: '#22c55e',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    marginBottom: 4,
-    shadowColor: '#22c55e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 6,
+    backgroundColor: '#22c55e', paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: 20, marginBottom: 4,
+    shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5, shadowRadius: 8, elevation: 6,
   },
-  mapPinText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 13,
-    letterSpacing: 0.2,
-  },
+  mapPinText:   { color: '#fff', fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
   mapPinDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#22c55e',
-    borderWidth: 3,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+    width: 16, height: 16, borderRadius: 8, backgroundColor: '#22c55e',
+    borderWidth: 3, borderColor: '#fff',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25, shadowRadius: 4, elevation: 4,
   },
   mapPinShadow: {
-    width: 10,
-    height: 4,
-    borderRadius: 5,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-    marginTop: 2,
+    width: 10, height: 4, borderRadius: 5,
+    backgroundColor: 'rgba(0,0,0,0.15)', marginTop: 2,
   },
 
-  // Location button
   locationBtn: {
-    position: 'absolute',
-    bottom: 18,
-    alignSelf: 'center',
-    borderRadius: 28,
-    overflow: 'hidden',
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 8,
+    position: 'absolute', bottom: 18, alignSelf: 'center',
+    borderRadius: 28, overflow: 'hidden',
+    shadowColor: '#16a34a', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45, shadowRadius: 14, elevation: 8,
   },
   locationBtnGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 22,
-    paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 22, paddingVertical: 14,
   },
-  locationBtnText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 15,
-    letterSpacing: 0.2,
-  },
+  locationBtnText: { color: '#fff', fontWeight: '800', fontSize: 15, letterSpacing: 0.2 },
 
-  // Form
-  formContainer: {
-    paddingHorizontal: 22,
-    paddingTop: 26,
-  },
-  fieldLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 10,
-    marginTop: 20,
-  },
-  optional: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#94a3b8',
-  },
+  formContainer: { paddingHorizontal: 22, paddingTop: 26 },
 
-  // Search input
-  searchInputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#0f172a',
-    paddingVertical: 15,
-    fontWeight: '500',
-  },
+  fieldLabel: { fontSize: 15, fontWeight: '700', color: '#0f172a', marginBottom: 10, marginTop: 20 },
+  optional:   { fontSize: 13, fontWeight: '400', color: '#94a3b8' },
+  required:   { color: '#ef4444' },
+  errorText:  { color: '#ef4444', fontSize: 12, marginTop: 4 },
 
-  // Regular input
+  row: { flexDirection: 'row', gap: 12 },
+
   input: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 15,
-    fontSize: 15,
-    color: '#0f172a',
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
-    fontWeight: '500',
+    backgroundColor: '#f8fafc', borderRadius: 16,
+    paddingHorizontal: 16, paddingVertical: 15,
+    fontSize: 15, color: '#0f172a',
+    borderWidth: 1.5, borderColor: '#e2e8f0', fontWeight: '500',
   },
-  inputMulti: {
-    minHeight: 88,
-    paddingTop: 14,
-  },
+  inputMulti: { minHeight: 88, textAlignVertical: 'top', paddingTop: 14 },
+  inputError: { borderColor: '#ef4444' },
 
-  // Type chips
-  typeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
+  typeRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   typeChip: {
-    borderRadius: 50,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#f8fafc',
+    borderRadius: 50, overflow: 'hidden',
+    borderWidth: 1.5, borderColor: '#e2e8f0', backgroundColor: '#f8fafc',
   },
   typeChipActive: {
     borderColor: 'transparent',
-    shadowColor: '#22c55e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35, shadowRadius: 8, elevation: 5,
   },
-  typeChipGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-  },
-  typeChipInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-  },
-  typeChipText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  typeChipTextActive: {
-    color: '#fff',
-  },
+  typeChipGrad:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 12 },
+  typeChipInner: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 12 },
+  typeChipText:       { fontSize: 14, fontWeight: '700', color: '#475569' },
+  typeChipTextActive: { color: '#fff' },
 
-  // Save button
+  defaultToggleRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#f8fafc', borderRadius: 16, padding: 16, marginTop: 14,
+    borderWidth: 1, borderColor: '#e2e8f0',
+  },
+  defaultToggleTitle: { fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 2 },
+  defaultToggleSub:   { fontSize: 12, color: '#94a3b8' },
+
   saveBtn: {
-    marginTop: 32,
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#16a34a',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
+    marginTop: 32, borderRadius: 20, overflow: 'hidden',
+    shadowColor: '#16a34a', shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4, shadowRadius: 16, elevation: 8,
   },
   saveBtnGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 18,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 10, paddingVertical: 18,
   },
-  saveBtnText: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: 0.3,
-  },
+  saveBtnText: { fontSize: 17, fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
 });
 
-// ─── CUSTOM MAP STYLE (clean, minimal) ───────────────────────────────────────
+// ─── CUSTOM MAP STYLE  ─────────────────────────────────────
 
 const mapStyle = [
   { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
