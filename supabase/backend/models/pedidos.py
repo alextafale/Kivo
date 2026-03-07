@@ -2,7 +2,8 @@ import uuid
 from sqlalchemy import (Column, String, Numeric, Integer, Text, TIMESTAMP, func)
 from sqlalchemy.dialects.postgresql import UUID
 from db.database import Base
-
+from sqlalchemy import Enum as SAEnum
+from schemas.pedidos import PedidoEstado
 
 class Pedido(Base):
     __tablename__ = "pedidos"
@@ -15,7 +16,7 @@ class Pedido(Base):
     repartidor_id        = Column(UUID(as_uuid=True), nullable=True)
     domicilio_id         = Column(UUID(as_uuid=True), nullable=True)
     direccion_entrega    = Column(Text, nullable=True)
-    estado               = Column(String, nullable=False)
+    estado               = Column(SAEnum(PedidoEstado, name="pedido_estado"), nullable=False)
     notas                = Column(Text, nullable=True)
     cupon_id             = Column(UUID(as_uuid=True), nullable=True)
     subtotal             = Column(Numeric, nullable=True)

@@ -18,6 +18,7 @@
     "@react-navigation/native": "^7.1.28",
     "@react-navigation/native-stack": "^7.12.0",
     "@supabase/supabase-js": "^2.98.0",
+    "babel-preset-expo": "~54.0.10",
     "expo": "~54.0.33",
     "expo-constants": "~18.0.13",
     "expo-linear-gradient": "~15.0.8",
@@ -35,5 +36,9 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
   }
 }

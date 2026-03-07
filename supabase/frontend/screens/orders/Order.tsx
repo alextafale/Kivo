@@ -1,3 +1,5 @@
+import { usePedidos } from '../../application/hooks/usePedidos';
+import { ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import {
   View,
@@ -95,7 +97,7 @@ const CloseIcon = () => (
 
 
 
-const mockOrders: Order[] = [
+/*const mockOrders: Order[] = [
   {
     id: '1',
     restaurantName: 'El Pastoricto Real',
@@ -165,13 +167,18 @@ const mockOrders: Order[] = [
     orderNumber: 'ORD-001230',
     deliveryAddress: 'Calle Principal #123, CDMX',
   },
-];
+];*/
 
 const statusConfig = {
-  pending: { label: 'Pendiente', color: '#F59E0B', icon: ClockIcon },
-  inProgress: { label: 'En Camino', color: '#3B82F6', icon: TruckIcon },
-  delivered: { label: 'Entregado', color: '#22c55e', icon: CheckCircleIcon },
-  cancelled: { label: 'Cancelado', color: '#EF4444', icon: XCircleIcon },
+  pending:    { label: 'Pendiente',   color: '#F59E0B', icon: ClockIcon },
+  confirmed:  { label: 'Confirmado',  color: '#8B5CF6', icon: ClockIcon },
+  preparing:  { label: 'Preparando',  color: '#F97316', icon: ClockIcon },
+  ready:      { label: 'Listo',       color: '#06B6D4', icon: CheckCircleIcon },
+  picked_up:  { label: 'Recogido',    color: '#3B82F6', icon: TruckIcon },
+  on_the_way: { label: 'En Camino',   color: '#3B82F6', icon: TruckIcon },
+  delivered:  { label: 'Entregado',   color: '#22c55e', icon: CheckCircleIcon },
+  cancelled:  { label: 'Cancelado',   color: '#EF4444', icon: XCircleIcon },
+  refunded:   { label: 'Reembolsado', color: '#6B7280', icon: XCircleIcon },
 };
 
 const filterTabs = ['Todos', 'En Progreso', 'Completados', 'Cancelados'];
@@ -181,10 +188,10 @@ export default function Orders({ navigation }: Props) {
   const [selectedFilter, setSelectedFilter] = useState('Todos');
   const [dateFilterVisible, setDateFilterVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const { pedidos, isLoading } = usePedidos();
 
   const filterOrders = () => {
-    let filtered = [...mockOrders];
+    let filtered = [...pedidos];
 
     // Filtrar por búsqueda
     if (searchQuery.trim() !== '') {
@@ -196,7 +203,7 @@ export default function Orders({ navigation }: Props) {
     // Filtrar por estado
     if (selectedFilter !== 'Todos') {
       const statusMap: { [key: string]: Order['status'] } = {
-        'En Progreso': 'inProgress',
+        'En Progreso': 'on_the_way', // Consideramos "En Progreso" como pedidos en camino o recogidos
         'Completados': 'delivered',
         'Cancelados': 'cancelled',
       };
@@ -286,7 +293,7 @@ export default function Orders({ navigation }: Props) {
           <Text style={styles.orderTotal}>${order.total}</Text>
         </View>
 
-        {order.status === 'inProgress' && (
+       {(order.status === 'on_the_way' || order.status === 'picked_up') && (
           <TouchableOpacity  onPress={() => navigation.navigate('orderTracking', { order })} style={styles.trackButton}>
             <LinearGradient
               colors={['#22c55e', '#16a34a']}
