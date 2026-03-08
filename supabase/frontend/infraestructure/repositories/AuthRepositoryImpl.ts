@@ -2,7 +2,6 @@ import { supabase } from '../../config/supabaseConfig'
 import type { IAuthRepository } from '../../domain/ports/repositories/lAuthRepository'
 import type { AuthSession } from '../../domain/entities/User'
 
-// Implementación concreta — usa Supabase Auth
 export class AuthRepositoryImpl implements IAuthRepository {
 
   async login(email: string, password: string): Promise<AuthSession> {
@@ -18,14 +17,32 @@ export class AuthRepositoryImpl implements IAuthRepository {
   }
 
   async register(email: string, password: string): Promise<AuthSession> {
+    // 1. Intentar registrar
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) throw new Error(error.message)
-    if (!data.session) throw new Error('Revisa tu correo para confirmar el registro')
+
+    // 2. Si Supabase devuelve sesión directamente (confirmación desactivada)
+    if (data.session) {
+      return {
+        accessToken: data.session.access_token,
+        userId: data.session.user.id,
+        email: data.session.user.email ?? '',
+      }
+    }
+
+    // 3. Si no hay sesión (confirmación de email activa en Supabase),
+    //    hacemos login automático para saltarla en desarrollo
+    const { data: loginData, error: loginError } =
+      await supabase.auth.signInWithPassword({ email, password })
+
+    if (loginError || !loginData.session) {
+      throw new Error('Cuenta creada. Si no puedes entrar, revisa tu correo.')
+    }
 
     return {
-      accessToken: data.session.access_token,
-      userId: data.session.user.id,
-      email: data.session.user.email ?? '',
+      accessToken: loginData.session.access_token,
+      userId: loginData.session.user.id,
+      email: loginData.session.user.email ?? '',
     }
   }
 

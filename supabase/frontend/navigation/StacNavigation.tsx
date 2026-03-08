@@ -40,7 +40,7 @@ import SettingsScreen from '../screens/admin/settingsBusiness/settingsBusiness';
 import EditMenuItem from '../screens/admin/businessSettings/menu/edithMenu';
 import MenuItemEditor from '../screens/admin/menuEdit/MenuItemEditor'; // ✅ archivo correcto
 import { Domicilio } from '../domain/entities/Domicilio';
-
+import BusinessOnboarding from '../screens/admin/onBoarding/BusinessOnboarding';
 // ─── Tipos de rutas ───────────────────────────────────────────────────────────
 export type RootStackParamList = {
   // Onboarding
@@ -79,6 +79,7 @@ export type RootStackParamList = {
   MenuEditor: undefined;
   MenuItemEditor: { itemId: string };
   Settings: undefined;
+  BusinessOnboarding: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -102,6 +103,7 @@ export default function StackNavigation() {
           component={AccountTypeSelection}
           options={{ animation: 'fade' }}
         />
+        <Stack.Screen name="BusinessOnboarding" component={BusinessOnboarding} />
 
         {/* ── Auth (Cliente) ─────────────────────────────────────────────── */}
         <Stack.Screen name="Login" component={Login} />
