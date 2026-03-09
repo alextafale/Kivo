@@ -177,21 +177,24 @@ export default function SettingsScreen({ navigation }: Props) {
       setCatEdit(negocio.categoria);
     }
   }, [negocio]);
+// sincroniza siempre que sucursal cambie y tenga horarios reales
+React.useEffect(() => {
+  if (!sucursal) return;
 
-  React.useEffect(() => {
-    if (sucursal) {
-      setRadius(sucursal.radio_entrega_km);
-      if (!horariosReady) {
-        const sucursalHorarios = sucursal.horarios || [];
-        const base: HorarioDia[] = DIAS.map(dia => {
-          const existente = sucursalHorarios.find(h => h.dia === dia);
-          return existente ?? { dia, abre: '09:00', cierra: '22:00', cerrado: false };
-        });
-        setHorariosEdit(base);
-        setHorariosReady(true);
-      }
-    }
-  }, [sucursal]);
+  setRadius(sucursal.radio_entrega_km);
+
+  const sucursalHorarios = sucursal.horarios ?? [];
+
+  // Solo sobreescribir si llegaron horarios reales del backend,
+  // o si el usuario aún no ha editado nada (horariosEdit vacío)
+  if (sucursalHorarios.length > 0 || horariosEdit.length === 0) {
+    const base: HorarioDia[] = DIAS.map(dia => {
+      const existente = sucursalHorarios.find(h => h.dia === dia);
+      return existente ?? { dia, abre: '09:00', cierra: '22:00', cerrado: false };
+    });
+    setHorariosEdit(base);
+  }
+}, [sucursal]);
 
   function toggleDia(dia: string) {
     setHorariosEdit(prev =>

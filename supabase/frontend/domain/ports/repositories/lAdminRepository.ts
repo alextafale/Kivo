@@ -9,7 +9,7 @@ export interface IAdminRepository {
   // Sucursales
   createSucursal(negocioId: string, data: SucursalCreate): Promise<Sucursal>
   patchSucursal(negocioId: string, sucursalId: string, data: SucursalPatch): Promise<Sucursal>
-
+  getSucursal(negocioId: string, sucursalId: string): Promise<Sucursal>
   // Horarios
   getHorarios(negocioId: string, sucursalId: string): Promise<Sucursal['horarios']>
   patchHorarios(negocioId: string, sucursalId: string, horarios: Sucursal['horarios']): Promise<Sucursal>

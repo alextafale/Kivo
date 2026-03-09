@@ -11,13 +11,10 @@ import AccountTypeSelection from '../screens/accountTypeSelection/AccountTypeSel
 import Signup from '../screens/auth/Signup';
 import Login from '../screens/auth/Login';
 
-// ─── Auth (Negocio) ───────────────────────────────────────────────────────────
-import LoginBusiness from '../screens/admin/auth/Login';
-import SignupBusiness from '../screens/admin/auth/Signup';
 
 // ─── Auth (Delivery) ───────────────────────────────────────────────────────────
-import LoginDelivery from '../screens/delivery/LoginBusiness';
-import SignupDelivery from '../screens/delivery/SignupBusiness';
+import LoginDelivery from '../screens/delivery/LoginDelivery';
+import SignupDelivery from '../screens/delivery/SignupDelivery';
 
 // ─── Cliente ──────────────────────────────────────────────────────────────────
 import HomeFeed from '../screens/homeFeed/homeFeed';
@@ -38,9 +35,11 @@ import BusinessDashboard from '../screens/admin/dashboard/dashboard';
 import MenuEditor from '../screens/admin/menuEdit/menuEdit';
 import SettingsScreen from '../screens/admin/settingsBusiness/settingsBusiness';
 import EditMenuItem from '../screens/admin/businessSettings/menu/edithMenu';
-import MenuItemEditor from '../screens/admin/menuEdit/MenuItemEditor'; // ✅ archivo correcto
+import MenuItemEditor from '../screens/admin/menuEdit/MenuItemEditor';
 import { Domicilio } from '../domain/entities/Domicilio';
 import BusinessOnboarding from '../screens/admin/onBoarding/BusinessOnboarding';
+import LoginBusiness from '../screens/business/auth/LoginBusiness';
+import RegisterBusiness from '../screens/business/auth/RegisterBusiness';
 // ─── Tipos de rutas ───────────────────────────────────────────────────────────
 export type RootStackParamList = {
   // Onboarding
@@ -49,15 +48,15 @@ export type RootStackParamList = {
   AccountTypeSelection: undefined;
 
   // Auth (Cliente)
-  Login: undefined;
-  Signup: { accountType: 'client' | 'business' };
+  Login: { accountType: 'client' };
+  Signup: { accountType: 'client' };
 
   // Auth (Negocio)
-  LoginBusiness: undefined;
-  SignupBusiness: { accountType: 'business' };
+  LoginBusiness: { accountType: 'business' };
+  RegisterBusiness: { accountType: 'business' };
 
   // Auth (Delivery)
-  LoginDelivery: undefined;
+  LoginDelivery: { accountType: 'delivery' };
   SignupDelivery: { accountType: 'delivery' };
 
   // Cliente
@@ -111,7 +110,7 @@ export default function StackNavigation() {
 
         {/* ── Auth (Negocio) ─────────────────────────────────────────────── */}
         <Stack.Screen name="LoginBusiness" component={LoginBusiness} />
-        <Stack.Screen name="SignupBusiness" component={SignupBusiness} />
+        <Stack.Screen name="RegisterBusiness" component={RegisterBusiness} />
 
         {/* ── Auth (Delivery) ─────────────────────────────────────────────── */}
         <Stack.Screen name="LoginDelivery" component={LoginDelivery} />

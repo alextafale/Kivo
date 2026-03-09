@@ -60,7 +60,16 @@ export class AdminRepositoryImpl implements IAdminRepository {
     if (error || !nueva) throw new Error(error?.message ?? 'Error al crear sucursal')
     return nueva as Sucursal
   }
-
+  async getSucursal(negocioId: string, sucursalId: string): Promise<Sucursal> {
+  const { data, error } = await supabase
+    .from('sucursales')
+    .select('*')
+    .eq('id', sucursalId)
+    .eq('negocio_id', negocioId)
+    .single()
+  if (error || !data) throw new Error(error?.message ?? 'Sucursal no encontrada')
+  return data as Sucursal
+}
   async patchSucursal(negocioId: string, sucursalId: string, data: SucursalPatch): Promise<Sucursal> {
     const { data: updated, error } = await supabase
       .from('sucursales')

@@ -10,22 +10,22 @@ export function useAdminSucursal(negocioId: string, sucursalId?: string) {
   const [isSaving, setSaving]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
 
-  // Carga los horarios de la sucursal activa
-  const fetchHorarios = useCallback(async () => {
+  // Carga la sucursal completa (datos base + horarios) en una sola query
+  const fetchSucursal = useCallback(async () => {
     if (!negocioId || !sucursalId) return
     setLoading(true)
     setError(null)
     try {
-      const horarios = await adminRepo.getHorarios(negocioId, sucursalId)
-      setSucursal(prev => prev ? { ...prev, horarios } : null)
+      const data = await adminRepo.getSucursal(negocioId, sucursalId)
+      setSucursal(data)
     } catch (e: any) {
-      setError(e.message ?? 'Error al cargar horarios')
+      setError(e.message ?? 'Error al cargar sucursal')
     } finally {
       setLoading(false)
     }
   }, [negocioId, sucursalId])
 
-  useEffect(() => { if (sucursalId) fetchHorarios() }, [fetchHorarios])
+  useEffect(() => { if (sucursalId) fetchSucursal() }, [fetchSucursal])
 
   // Crea una nueva sucursal
   const createSucursal = useCallback(async (data: SucursalCreate): Promise<Sucursal | null> => {
@@ -85,6 +85,6 @@ export function useAdminSucursal(negocioId: string, sucursalId?: string) {
     createSucursal,
     updateSucursal,
     updateHorarios,
-    refetchHorarios: fetchHorarios,
+    refetchSucursal: fetchSucursal,
   }
 }

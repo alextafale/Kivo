@@ -7,6 +7,7 @@ import {
   StatusBar,
   Image,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Rect } from 'react-native-svg';
@@ -15,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/StacNavigation';
 import { useNavigation } from '@react-navigation/native';
 import Signup from '../auth/Signup';
-
+import LoginBusiness from '../business/auth/LoginBusiness';
 type AccountTypeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AccountTypeSelection'>;
 
 type Props = {
@@ -60,7 +61,7 @@ export default function AccountTypeSelection({ navigation }: Props) {
       navigation.navigate('Signup', { accountType: 'client' });
     } else if (selectedType === 'business') {
       // Negocio → login de negocios
-      navigation.navigate('SignupBusiness', { accountType: 'business' });
+      navigation.navigate('LoginBusiness', { accountType: 'business' });
     } else if (selectedType === 'delivery') {
       // Repartidor → login de repartidores
       navigation.navigate('SignupDelivery', { accountType: 'delivery' });
