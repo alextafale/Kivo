@@ -29,48 +29,73 @@ export class AdminRepositoryImpl implements IAdminRepository {
   // ── Negocio ────────────────────────────────────────────────────────────────
 
   async getNegocio(negocioId: string): Promise<Negocio> {
-    return apiFetch<Negocio>(`/api/v1/admin/negocios/${negocioId}`)
+    const { data, error } = await supabase
+      .from('negocios')
+      .select('*')
+      .eq('id', negocioId)
+      .single()
+    if (error || !data) throw new Error(error?.message ?? 'Negocio no encontrado')
+    return data as Negocio
   }
 
   async patchNegocio(negocioId: string, data: NegocioPatch): Promise<Negocio> {
-    return apiFetch<Negocio>(`/api/v1/admin/negocios/${negocioId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    })
+    const { data: updated, error } = await supabase
+      .from('negocios')
+      .update(data)
+      .eq('id', negocioId)
+      .select('*')
+      .single()
+    if (error || !updated) throw new Error(error?.message ?? 'Error al actualizar negocio')
+    return updated as Negocio
   }
 
   // ── Sucursales ─────────────────────────────────────────────────────────────
 
   async createSucursal(negocioId: string, data: SucursalCreate): Promise<Sucursal> {
-    return apiFetch<Sucursal>(`/api/v1/admin/negocios/${negocioId}/sucursales`, {
-      method: 'POST',
-      body: JSON.stringify({ ...data, negocio_id: negocioId }),
-    })
+    const { data: nueva, error } = await supabase
+      .from('sucursales')
+      .insert({ ...data, negocio_id: negocioId })
+      .select('*')
+      .single()
+    if (error || !nueva) throw new Error(error?.message ?? 'Error al crear sucursal')
+    return nueva as Sucursal
   }
 
   async patchSucursal(negocioId: string, sucursalId: string, data: SucursalPatch): Promise<Sucursal> {
-    return apiFetch<Sucursal>(`/api/v1/admin/negocios/${negocioId}/sucursales/${sucursalId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    })
+    const { data: updated, error } = await supabase
+      .from('sucursales')
+      .update(data)
+      .eq('id', sucursalId)
+      .eq('negocio_id', negocioId)
+      .select('*')
+      .single()
+    if (error || !updated) throw new Error(error?.message ?? 'Error al actualizar sucursal')
+    return updated as Sucursal
   }
 
   // ── Horarios ───────────────────────────────────────────────────────────────
 
   async getHorarios(negocioId: string, sucursalId: string): Promise<Sucursal['horarios']> {
-    const res = await apiFetch<{ sucursal_id: string; horarios: Sucursal['horarios'] }>(
-      `/api/v1/admin/negocios/${negocioId}/sucursales/${sucursalId}/horarios`
-    )
-    return res.horarios
+    const { data, error } = await supabase
+      .from('sucursales')
+      .select('horarios')
+      .eq('id', sucursalId)
+      .eq('negocio_id', negocioId)
+      .single()
+    if (error) throw new Error(error.message)
+    // En Supabase JSONB puede retornar null si no hay horarios
+    return (data?.horarios as Sucursal['horarios']) ?? []
   }
 
   async patchHorarios(negocioId: string, sucursalId: string, horarios: Sucursal['horarios']): Promise<Sucursal> {
-    return apiFetch<Sucursal>(
-      `/api/v1/admin/negocios/${negocioId}/sucursales/${sucursalId}/horarios`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({ horarios }),
-      }
-    )
+    const { data: updated, error } = await supabase
+      .from('sucursales')
+      .update({ horarios })
+      .eq('id', sucursalId)
+      .eq('negocio_id', negocioId)
+      .select('*')
+      .single()
+    if (error || !updated) throw new Error(error?.message ?? 'Error al actualizar horarios')
+    return updated as Sucursal
   }
 }

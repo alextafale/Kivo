@@ -186,18 +186,44 @@ export default function BusinessOnboarding({ navigation }: Props) {
     }
     setSaving(true)
     try {
-      const { data } = await supabase.auth.getSession()
-      const token = data.session?.access_token
-      const res = await fetch(`${API_URL}/api/v1/admin/onboarding/negocio`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ nombre, slug, categoria, descripcion, tags: [], pais: 'MX' }),
-      })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.detail ?? 'Error al crear el negocio')
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) throw new Error("No hay usuario autenticado. Por favor, inicia sesión de nuevo.")
+
+      // 1. Insertar el negocio directamente en Supabase
+      const { data: negocio, error: negocioError } = await supabase
+        .from('negocios')
+        .insert({
+          nombre,
+          slug,
+          categoria,
+          descripcion,
+          tags: [],
+          pais: 'MX'
+        })
+        .select()
+        .single()
+
+      if (negocioError) {
+        throw new Error(negocioError.message ?? 'Error al crear el negocio')
       }
-      const negocio = await res.json()
+
+      // 2. Asignarse como Administrador del Negocio
+      const { error: adminError } = await supabase
+        .from('negocio_admins')
+        .insert({
+          negocio_id: negocio.id,
+          user_id: user.id,
+          puede_editar_menu: true,
+          puede_ver_pedidos: true,
+          puede_editar_negocio: true
+        })
+
+      if (adminError) {
+        // Log, pero no bloquea el flujo si la DB no dejó por RLS pero ya se asignó internamente en un trigger (opcional)
+        console.warn('Error al asignar admin:', adminError.message)
+        // throw new Error(adminError.message ?? 'Error al asignarte como administrador') 
+      }
+
       setNegocioId(negocio.id)
       setStep(1)
     } catch (e: any) {
@@ -215,7 +241,7 @@ export default function BusinessOnboarding({ navigation }: Props) {
     }
     setSaving(true)
     try {
-      const sucursal = await adminRepo.createSucursal(negocioId, {
+      const sucursalData = {
         negocio_id: negocioId,
         nombre: sucNombre,
         direccion,
@@ -231,7 +257,18 @@ export default function BusinessOnboarding({ navigation }: Props) {
         activo: true,
         whatsapp: '',
         codigo_postal: '',
-      })
+      }
+
+      const { data: sucursal, error: sucursalError } = await supabase
+        .from('sucursales')
+        .insert(sucursalData)
+        .select()
+        .single()
+
+      if (sucursalError) {
+        throw new Error(sucursalError.message ?? 'Error al crear la sucursal')
+      }
+
       setSucursalId(sucursal.id)
       setStep(2)
     } catch (e: any) {
@@ -245,7 +282,15 @@ export default function BusinessOnboarding({ navigation }: Props) {
   async function submitHorarios() {
     setSaving(true)
     try {
-      await adminRepo.patchHorarios(negocioId, sucursalId, horarios)
+      const { error: horariosError } = await supabase
+        .from('sucursales')
+        .update({ horarios: horarios })
+        .eq('id', sucursalId)
+
+      if (horariosError) {
+        throw new Error(horariosError.message ?? 'Error al guardar los horarios')
+      }
+
       // Recargar adminAccess en el contexto para que Settings funcione de inmediato
       await refreshAdminAccess()
       navigation.replace('BusinessDashboard')

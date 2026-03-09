@@ -182,8 +182,9 @@ export default function SettingsScreen({ navigation }: Props) {
     if (sucursal) {
       setRadius(sucursal.radio_entrega_km);
       if (!horariosReady) {
+        const sucursalHorarios = sucursal.horarios || [];
         const base: HorarioDia[] = DIAS.map(dia => {
-          const existente = sucursal.horarios.find(h => h.dia === dia);
+          const existente = sucursalHorarios.find(h => h.dia === dia);
           return existente ?? { dia, abre: '09:00', cierra: '22:00', cerrado: false };
         });
         setHorariosEdit(base);

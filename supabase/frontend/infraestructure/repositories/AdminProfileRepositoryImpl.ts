@@ -14,21 +14,53 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 }
 
 export class AdminProfileRepositoryImpl implements IAdminProfileRepository {
-  /**
-   * Consulta si el usuario autenticado es admin de algún negocio.
-   * Retorna null si no tiene ningún negocio asignado (es cliente/driver).
-   */
   async getMyAdminProfile(): Promise<AdminProfile | null> {
     try {
-      const headers = await getAuthHeaders()
-      const res = await fetch(`${API_URL}/api/v1/admin/me`, { headers })
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        console.log('[getMyAdminProfile] Error: No user authenticated', authError)
+        return null
+      }
 
-      // 403/404 → usuario no es admin, no es error crítico
-      if (res.status === 403 || res.status === 404) return null
-      if (!res.ok) throw new Error(`Error ${res.status}`)
+      console.log(`[getMyAdminProfile] Buscando roles admin para usuario: ${user.id}`)
 
-      return res.json() as Promise<AdminProfile>
-    } catch {
+      // Consultar la tabla negocio_admins para ver si el usuario es administrador de algún negocio
+      const { data: adminRecord, error: adminError } = await supabase
+        .from('negocio_admins')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (adminError || !adminRecord) {
+        console.log('[getMyAdminProfile] Error/Not Found en negocio_admins:', adminError)
+        return null // No es admin o no se encontró
+      }
+
+      console.log(`[getMyAdminProfile] Negocio Admin encontrado:`, adminRecord)
+
+      // Consultar si hay una sucursal para este negocio
+      const { data: sucursalRecord, error: sucursalError } = await supabase
+        .from('sucursales')
+        .select('id')
+        .eq('negocio_id', adminRecord.negocio_id)
+        .limit(1)
+        .maybeSingle()
+
+      if (sucursalError) {
+        console.log('[getMyAdminProfile] Error buscando sucursal:', sucursalError)
+      } else {
+        console.log(`[getMyAdminProfile] Sucursal encontrada:`, sucursalRecord)
+      }
+
+      return {
+        negocioId: adminRecord.negocio_id,
+        sucursalId: sucursalRecord?.id ?? null,
+        puedeEditarMenu: adminRecord.puede_editar_menu,
+        puedeVerPedidos: adminRecord.puede_ver_pedidos,
+        puedeEditarNegocio: adminRecord.puede_editar_negocio,
+      } as AdminProfile
+    } catch (e) {
+      console.log('[getMyAdminProfile] Catch Exception:', e)
       return null
     }
   }
