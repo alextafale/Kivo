@@ -8,9 +8,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { RootStackParamList } from '../../navigation/StacNavigation'
-import { useAuth } from '../../application/context/AuthContext'      // ← sesión real
-import { useProfile } from '../../application/hooks/useProfile'     // ← perfil real
+import { RootStackParamList } from '../../../navigation/StacNavigation'
+import { useAuth } from '../../../application/context/AuthContext'      // ← sesión real
+import { useProfile } from '../../../application/hooks/useProfile'     // ← perfil real
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'> }
 const { width } = Dimensions.get('window')

@@ -1,4 +1,4 @@
-import { usePedidos } from '../../application/hooks/usePedidos';
+import { usePedidos } from '../../../application/hooks/usePedidos';
 import { ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import {
@@ -18,8 +18,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/StacNavigation';
-import { Order, OrderItem } from '../../types/order';
+import { RootStackParamList } from '../../../navigation/StacNavigation';
+import { Order, OrderItem } from '../../../types/order';
 
 type OrdersNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Orders'>;
 

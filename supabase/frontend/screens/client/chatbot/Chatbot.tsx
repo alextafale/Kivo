@@ -19,7 +19,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/StacNavigation';
+import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useNavigation } from '@react-navigation/native';
 import {
   askGemini,
@@ -30,8 +30,8 @@ import {
   PedidoEnCurso,
   GeminiMessage,
   parsePedidoFromResponse,
-} from '../../../services/geminiService';
-import { Order } from '../../types/order';
+} from '../../../../services/geminiService';
+import { Order } from '../../../types/order';
 
 type ChatbotNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chatbot'>;
 type Props = { navigation: ChatbotNavigationProp };

@@ -228,6 +228,7 @@
 - [ ] `GET /pedidos/:id/pago` → estado del pago
 - [ ] Lógica de reembolso → estado `refunded`
 
+
 **Frontend**
 - [ ] Selector de método de pago (efectivo, tarjeta, transferencia)
 - [ ] Flujo de pago con tarjeta via Stripe SDK en Expo

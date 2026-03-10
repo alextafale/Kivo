@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, G, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/StacNavigation';
+import { RootStackParamList } from '../../../navigation/StacNavigation';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AddCard'>;
 type Props = { navigation: Nav };
