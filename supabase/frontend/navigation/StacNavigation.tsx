@@ -2,44 +2,44 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-// ─── Onboarding ───────────────────────────────────────────────────────────────
-import SplashScreen from '../screens/SplashScreen';
+// ─── Onboarding & Shared ─────────────────────────────────────────────────────
+import SplashScreen from '../screens/shared/SplashScreen';
 import Onboarding from '../onboarding/Onboarding';
-import AccountTypeSelection from '../screens/accountTypeSelection/AccountTypeSelection';
 
 // ─── Auth (Cliente) ───────────────────────────────────────────────────────────
-import Signup from '../screens/auth/Signup';
-import Login from '../screens/auth/Login';
+import Signup from '../screens/client/auth/Signup';
+import Login from '../screens/client/auth/Login';
+import AccountTypeSelection from '../screens/client/auth/AccountTypeSelection';
 
+// ─── Auth (Negocio - Placeholders) ───────────────────────────────────────────
+import LoginBusiness from '../screens/delivery/LoginDelivery';
+import RegisterBusiness from '../screens/delivery/SignupDelivery';
 
-// ─── Auth (Delivery) ───────────────────────────────────────────────────────────
+// ─── Auth (Delivery) ─────────────────────────────────────────────────────────
 import LoginDelivery from '../screens/delivery/LoginDelivery';
 import SignupDelivery from '../screens/delivery/SignupDelivery';
 
 // ─── Cliente ──────────────────────────────────────────────────────────────────
-import HomeFeed from '../screens/homeFeed/homeFeed';
-import Chatbot from '../screens/chatbot/Chatbot';
-import Profile from '../screens/profile/Profile';
-import EdithProfile from '../screens/profile/EdithProfile';
-import Orders from '../screens/orders/Order';
+import HomeFeed from '../screens/client/home/homeFeed';
+import Chatbot from '../screens/client/chatbot/Chatbot';
+import Profile from '../screens/client/profile/Profile';
+import EditProfile from '../screens/client/profile/EditProfile';
+import Orders from '../screens/client/orders/Order';
 import { Order } from '../types/order';
-import deliveryAddresses from '../screens/addresses/deliveryAddresses';
-import OrderDetails from '../screens/orders/Order';
-import AddAddress from '../screens/addresses/addAddress';
-import AddCard from '../screens/PaymentsMethod/addCard';
-import PaymentMethods from '../screens/PaymentsMethod/paymentsMethod';
-import OrderTrackingScreen from '../screens/orders/orderTraking';
+import DeliveryAddresses from '../screens/client/addresses/DeliveryAddresses';
+import AddAddress from '../screens/client/addresses/AddAddress';
+import AddCard from '../screens/client/payments/AddCard';
+import PaymentMethods from '../screens/client/payments/PaymentsMethod';
+import OrderTrackingScreen from '../screens/client/orders/OrderTracking';
 
 // ─── Admin / Negocio ──────────────────────────────────────────────────────────
-import BusinessDashboard from '../screens/admin/dashboard/dashboard';
-import MenuEditor from '../screens/admin/menuEdit/menuEdit';
-import SettingsScreen from '../screens/admin/settingsBusiness/settingsBusiness';
-import EditMenuItem from '../screens/admin/businessSettings/menu/edithMenu';
-import MenuItemEditor from '../screens/admin/menuEdit/MenuItemEditor';
+import BusinessDashboard from '../screens/business/dashboard/Dashboard';
+import MenuEditor from '../screens/business/menu/MenuEdit';
+import SettingsScreen from '../screens/business/settings/SettingsBusiness';
+import EditMenuItem from '../screens/business/menu/EditMenu';
+import MenuItemEditor from '../screens/business/menu/MenuItemEditor';
 import { Domicilio } from '../domain/entities/Domicilio';
-import BusinessOnboarding from '../screens/admin/onBoarding/BusinessOnboarding';
-import LoginBusiness from '../screens/business/auth/LoginBusiness';
-import RegisterBusiness from '../screens/business/auth/RegisterBusiness';
+import BusinessOnboarding from '../screens/business/onboarding/BusinessOnboarding';
 // ─── Tipos de rutas ───────────────────────────────────────────────────────────
 export type RootStackParamList = {
   // Onboarding
@@ -120,10 +120,10 @@ export default function StackNavigation() {
         <Stack.Screen name="HomeFeed" component={HomeFeed} />
         <Stack.Screen name="Chatbot" component={Chatbot} />
         <Stack.Screen name="Profile" component={Profile} />
-        <Stack.Screen name="EdithProfile" component={EdithProfile} />
+        <Stack.Screen name="EdithProfile" component={EditProfile} />
         <Stack.Screen name="Orders" component={Orders} />
-        <Stack.Screen name="OrderDetails" component={OrderDetails} />
-        <Stack.Screen name="DeliveryAddresses" component={deliveryAddresses} />
+        <Stack.Screen name="OrderDetails" component={Orders} />
+        <Stack.Screen name="DeliveryAddresses" component={DeliveryAddresses} />
         <Stack.Screen name="AddAddress" component={AddAddress} />
         <Stack.Screen name="AddCard" component={AddCard} />
         <Stack.Screen name="PaymentsMethod" component={PaymentMethods} />
