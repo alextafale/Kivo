@@ -8,8 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Rect, Circle } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
-import { RootStackParamList } from '../../navigation/StacNavigation'
-import { useAuth } from '../../application/context/AuthContext'   // ← real
+import { RootStackParamList } from '../../../navigation/StacNavigation'
+import { useAuth } from '../../../application/context/AuthContext'   // ← real
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Signup'>
@@ -42,7 +42,7 @@ const EyeIcon = ({ visible }: { visible: boolean }) => (
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function Signup({ navigation, route }: Props) {
-  const { register } = useAuth()                        // ← hook real
+  const { registerCustomer } = useAuth()                        // ← hook real
   const { accountType } = route.params
 
   const [email, setEmail]                           = useState('')
@@ -73,7 +73,7 @@ export default function Signup({ navigation, route }: Props) {
 
     setLoading(true)
     try {
-      await register(email.trim(), password)             // ← Supabase Auth real
+      await registerCustomer(email.trim(), password)             // ← Supabase Auth real
       // El trigger handle_new_user crea el profile automáticamente en Supabase
       navigation.replace('HomeFeed')
     } catch (e: any) {

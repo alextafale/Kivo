@@ -7,9 +7,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Line, Rect, Polyline } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/StacNavigation';
-import { useDomicilios } from '../../application/context/DomiciliosContext';
-import type { Domicilio } from '../../domain/entities/Domicilio';
+import { RootStackParamList } from '../../../navigation/StacNavigation';
+import { useDomicilios } from '../../../application/context/DomiciliosContext';
+import type { Domicilio } from '../../../domain/entities/Domicilio';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'DeliveryAddresses'>;
 type Props = { navigation: Nav };

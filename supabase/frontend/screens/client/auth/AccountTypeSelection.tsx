@@ -13,15 +13,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Rect } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/StacNavigation';
-import { useNavigation } from '@react-navigation/native';
-import Signup from '../auth/Signup';
-import LoginBusiness from '../business/auth/LoginBusiness';
-type AccountTypeNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AccountTypeSelection'>;
+import { RootStackParamList } from '../../../navigation/StacNavigation';
 
 type Props = {
-  navigation: AccountTypeNavigationProp;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'AccountTypeSelection'>;
 };
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 const BackIcon = () => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
@@ -43,40 +41,50 @@ const StoreIcon = () => (
   </Svg>
 );
 
+const BikeIcon = () => (
+  <Svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+    <Path d="M5.5 17.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+    <Path d="M18.5 17.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+    <Path d="M15 6a1 1 0 0 0 0-2h-3l-3 9" />
+    <Path d="M9 15h6l1.5-6H7.5" />
+  </Svg>
+);
+
 const ArrowIcon = () => (
   <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3">
     <Path d="M5 12h14M12 5l7 7-7 7" />
   </Svg>
 );
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function AccountTypeSelection({ navigation }: Props) {
   const [selectedType, setSelectedType] = useState<'client' | 'business' | 'delivery' | null>(null);
 
+  // Continuar → registro
   const handleContinue = async () => {
     if (!selectedType) return;
     await AsyncStorage.setItem('accountType', selectedType);
 
     if (selectedType === 'client') {
-      // Cliente → login de clientes
       navigation.navigate('Signup', { accountType: 'client' });
     } else if (selectedType === 'business') {
-      // Negocio → login de negocios
-      navigation.navigate('LoginBusiness', { accountType: 'business' });
+      navigation.navigate('RegisterBusiness');
     } else if (selectedType === 'delivery') {
-      // Repartidor → login de repartidores
-      navigation.navigate('SignupDelivery', { accountType: 'delivery' });
+      navigation.navigate('RegisterDriver');
     }
   };
 
+  // Iniciar sesión → login según tipo
   const handleLogin = () => {
-    if (!selectedType) return; // debe seleccionar primero
+    if (!selectedType) return;
 
     if (selectedType === 'client') {
-      // Cliente → login de clientes
       navigation.navigate('Login');
-    } else {
-      // Negocio → login de negocios
+    } else if (selectedType === 'business') {
       navigation.navigate('LoginBusiness');
+    } else if (selectedType === 'delivery') {
+      navigation.navigate('LoginDriver');
     }
   };
 
@@ -95,7 +103,7 @@ export default function AccountTypeSelection({ navigation }: Props) {
       <View style={styles.content}>
         <View style={styles.textSection}>
           <Text style={styles.title}>
-            Únete a <Text style={styles.titleGreen}>Kivu</Text>
+            Únete a <Text style={styles.titleGreen}>Pidelo</Text>
           </Text>
           <Text style={styles.subtitle}>
             Selecciona tu perfil para comenzar a pedir o vender de forma conversacional.
@@ -104,73 +112,58 @@ export default function AccountTypeSelection({ navigation }: Props) {
 
         {/* Options */}
         <View style={styles.optionsContainer}>
-          {/* Cliente Option */}
+
+          {/* Cliente */}
           <TouchableOpacity
-            style={[
-              styles.optionCard,
-              selectedType === 'client' && styles.optionCardSelected,
-            ]}
-            onPress={() => { setSelectedType('client'); }}
+            style={[styles.optionCard, selectedType === 'client' && styles.optionCardSelected]}
+            onPress={() => setSelectedType('client')}
             activeOpacity={0.7}
           >
-            <View style={styles.iconContainer}>
-              <ChatIcon />
-            </View>
+            <View style={styles.iconContainer}><ChatIcon /></View>
             <View style={styles.optionTextContainer}>
               <Text style={styles.optionTitle}>Soy un Cliente</Text>
               <Text style={styles.optionDescription}>
-                Quiero pedir comida deliciosa a través del chat de forma rápida y fácil.
+                Quiero pedir comida deliciosa de forma rápida y fácil.
               </Text>
             </View>
             {selectedType === 'client' && <View style={styles.checkmark} />}
           </TouchableOpacity>
 
-          {/* Negocio Option */}
+          {/* Negocio */}
           <TouchableOpacity
-            style={[
-              styles.optionCard,
-              selectedType === 'business' && styles.optionCardSelected,
-            ]}
-            onPress={() => { setSelectedType('business'); }}
+            style={[styles.optionCard, selectedType === 'business' && styles.optionCardSelected]}
+            onPress={() => setSelectedType('business')}
             activeOpacity={0.7}
           >
-            <View style={styles.iconContainer}>
-              <StoreIcon />
-            </View>
+            <View style={styles.iconContainer}><StoreIcon /></View>
             <View style={styles.optionTextContainer}>
               <Text style={styles.optionTitle}>Tengo un Negocio</Text>
               <Text style={styles.optionDescription}>
-                Quiero gestionar mis pedidos y llegar a más clientes con inteligencia artificial.
+                Quiero gestionar mis pedidos y llegar a más clientes.
               </Text>
             </View>
             {selectedType === 'business' && <View style={styles.checkmark} />}
           </TouchableOpacity>
-        </View>
 
-
-        {/* Delivery Option */}
+          {/* Repartidor */}
           <TouchableOpacity
-            style={[
-              styles.optionCard,
-              selectedType === 'delivery' && styles.optionCardSelected,
-            ]}
-            onPress={() => { setSelectedType('delivery'); }}
+            style={[styles.optionCard, selectedType === 'delivery' && styles.optionCardSelected]}
+            onPress={() => setSelectedType('delivery')}
             activeOpacity={0.7}
           >
-            <View style={styles.iconContainer}>
-              <ChatIcon />
-            </View>
+            <View style={styles.iconContainer}><BikeIcon /></View>
             <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>Soy un Repartidor</Text>
+              <Text style={styles.optionTitle}>Soy Repartidor</Text>
               <Text style={styles.optionDescription}>
-                Quiero repartir comida deliciosa a través del chat de forma rápida y fácil.
+                Quiero hacer entregas y ganar dinero con mi tiempo libre.
               </Text>
             </View>
             {selectedType === 'delivery' && <View style={styles.checkmark} />}
           </TouchableOpacity>
-        
 
-        {/* Decorative Image */}
+        </View>
+
+        {/* Imagen decorativa */}
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800' }}
@@ -180,9 +173,8 @@ export default function AccountTypeSelection({ navigation }: Props) {
         </View>
       </View>
 
-      {/* Bottom Section */}
+      {/* Bottom */}
       <View style={styles.bottomSection}>
-        {/* Continue Button */}
         <TouchableOpacity
           onPress={handleContinue}
           disabled={!selectedType}
@@ -201,7 +193,6 @@ export default function AccountTypeSelection({ navigation }: Props) {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Login Link */}
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
           <TouchableOpacity onPress={handleLogin} disabled={!selectedType}>
@@ -218,155 +209,36 @@ export default function AccountTypeSelection({ navigation }: Props) {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  textSection: {
-    marginBottom: 30,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 12,
-  },
-  titleGreen: {
-    color: '#22c55e',
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#6B7280',
-    lineHeight: 22,
-  },
-  optionsContainer: {
-    gap: 16,
-    marginBottom: 20,
-  },
-  optionCard: {
-    flexDirection: 'row',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: '#F3F4F6',
-    alignItems: 'center',
-  },
-  optionCardSelected: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#22c55e',
-  },
-  iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  optionTextContainer: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 4,
-  },
-  optionDescription: {
-    fontSize: 13,
-    color: '#6B7280',
-    lineHeight: 18,
-  },
-  checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#22c55e',
-    marginLeft: 12,
-  },
-  imageContainer: {
-    flex: 1,
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginTop: 10,
-  },
-  decorativeImage: {
-    width: '100%',
-    height: '100%',
-    opacity: 0.3,
-  },
-  bottomSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-  },
-  button: {
-    width: '100%',
-    borderRadius: 30,
-    overflow: 'hidden',
-    shadowColor: '#22c55e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-    marginBottom: 16,
-  },
-  buttonDisabled: {
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  buttonGradient: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 18,
-    gap: 8,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  buttonTextDisabled: {
-    color: '#9CA3AF',
-  },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loginText: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  loginLink: {
-    fontSize: 14,
-    color: '#22c55e',
-    fontWeight: 'bold',
-  },
-  loginLinkDisabled: {
-    color: '#D1D5DB',
-  },
-  loginHint: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    marginTop: 4,
-  },
+  container:           { flex: 1, backgroundColor: '#FFFFFF' },
+  header:              { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20 },
+  backButton:          { width: 40, height: 40, justifyContent: 'center' },
+  content:             { flex: 1, paddingHorizontal: 20 },
+  textSection:         { marginBottom: 24 },
+  title:               { fontSize: 32, fontWeight: 'bold', color: '#000', marginBottom: 12 },
+  titleGreen:          { color: '#22c55e' },
+  subtitle:            { fontSize: 15, color: '#6B7280', lineHeight: 22 },
+  optionsContainer:    { gap: 12, marginBottom: 16 },
+  optionCard:          { flexDirection: 'row', backgroundColor: '#F9FAFB', borderRadius: 16, padding: 18, borderWidth: 2, borderColor: '#F3F4F6', alignItems: 'center' },
+  optionCardSelected:  { backgroundColor: '#F0FDF4', borderColor: '#22c55e' },
+  iconContainer:       { width: 56, height: 56, borderRadius: 12, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  optionTextContainer: { flex: 1 },
+  optionTitle:         { fontSize: 17, fontWeight: 'bold', color: '#000', marginBottom: 4 },
+  optionDescription:   { fontSize: 13, color: '#6B7280', lineHeight: 18 },
+  checkmark:           { width: 24, height: 24, borderRadius: 12, backgroundColor: '#22c55e', marginLeft: 12 },
+  imageContainer:      { flex: 1, borderRadius: 16, overflow: 'hidden', marginTop: 8 },
+  decorativeImage:     { width: '100%', height: '100%', opacity: 0.3 },
+  bottomSection:       { paddingHorizontal: 20, paddingBottom: 30 },
+  button:              { width: '100%', borderRadius: 30, overflow: 'hidden', shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5, marginBottom: 16 },
+  buttonDisabled:      { shadowOpacity: 0, elevation: 0 },
+  buttonGradient:      { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 18, gap: 8 },
+  buttonText:          { fontSize: 18, fontWeight: 'bold', color: '#000' },
+  buttonTextDisabled:  { color: '#9CA3AF' },
+  loginContainer:      { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  loginText:           { fontSize: 14, color: '#6B7280' },
+  loginLink:           { fontSize: 14, color: '#22c55e', fontWeight: 'bold' },
+  loginLinkDisabled:   { color: '#D1D5DB' },
+  loginHint:           { fontSize: 12, color: '#9CA3AF', textAlign: 'center', marginTop: 4 },
 });

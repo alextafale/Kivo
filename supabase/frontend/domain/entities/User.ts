@@ -16,4 +16,5 @@ export type AuthSession = {
   accessToken: string
   userId: string
   email: string
+  role: string
 }

@@ -10,10 +10,10 @@ import * as Location from 'expo-location';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../../navigation/StacNavigation';
-import { useDomicilioForm } from '../../application/hooks/useDomicilioForm';
-import { ETIQUETAS } from '../../domain/entities/Domicilio';
-import type { Domicilio, Coordenadas } from '../../domain/entities/Domicilio';
+import { RootStackParamList } from '../../../navigation/StacNavigation';
+import { useDomicilioForm } from '../../../application/hooks/useDomicilioForm';
+import { ETIQUETAS } from '../../../domain/entities/Domicilio';
+import type { Domicilio, Coordenadas } from '../../../domain/entities/Domicilio';
 
 // ⚠️  Agrega esto en RootStackParamList de StacNavigation.tsx:
 //   AddAddress: { domicilio?: Domicilio } | undefined;

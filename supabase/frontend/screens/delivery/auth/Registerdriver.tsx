@@ -5,12 +5,12 @@ import {
   Platform, ScrollView, Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import Svg, { Path, Rect, Circle } from 'react-native-svg'
+import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
 
-type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'RegisterBusiness'> }
+type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'RegisterDriver'> }
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 const BackIcon = () => (
@@ -38,10 +38,24 @@ const PhoneIcon = () => (
     <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.07 3.4 2 2 0 0 1 3.04 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 5.99 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z" />
   </Svg>
 )
-const StoreIcon = () => (
+const BikeIcon = () => (
   <Svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-    <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <Path d="M9 22V12h6v10" />
+    <Circle cx="5.5" cy="17.5" r="3.5" />
+    <Circle cx="18.5" cy="17.5" r="3.5" />
+    <Path d="M15 6a1 1 0 0 0 0-2h-3l-3 9" />
+    <Path d="M9 15h6l1.5-6H7.5" />
+  </Svg>
+)
+const CarIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+    <Path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h11l4 4v4a2 2 0 0 1-2 2h-1" />
+    <Circle cx="7" cy="17" r="2" /><Circle cx="17" cy="17" r="2" />
+  </Svg>
+)
+const PlateIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+    <Rect x="2" y="7" width="20" height="10" rx="2" />
+    <Path d="M6 11h.01M10 11h4M18 11h.01" />
   </Svg>
 )
 const EyeIcon = ({ visible }: { visible: boolean }) => (
@@ -54,19 +68,25 @@ const EyeIcon = ({ visible }: { visible: boolean }) => (
   </Svg>
 )
 
-// ─── Component ───────────────────────────────────────────────────────────────
-export default function RegisterBusiness({ navigation }: Props) {
-  const { registerBusiness } = useAuth()
+// ─── Tipo vehículo selector ───────────────────────────────────────────────────
+const VEHICULOS = ['moto', 'bici', 'auto'] as const
+type Vehiculo = typeof VEHICULOS[number]
 
-  const [nombre, setNombre]             = useState('')
-  const [apellido, setApellido]         = useState('')
-  const [telefono, setTelefono]         = useState('')
-  const [email, setEmail]               = useState('')
-  const [password, setPassword]         = useState('')
+// ─── Component ───────────────────────────────────────────────────────────────
+export default function RegisterDriver({ navigation }: Props) {
+  const { registerDriver } = useAuth()
+
+  const [nombre, setNombre]                   = useState('')
+  const [apellido, setApellido]               = useState('')
+  const [telefono, setTelefono]               = useState('')
+  const [email, setEmail]                     = useState('')
+  const [password, setPassword]               = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm]   = useState(false)
-  const [loading, setLoading]           = useState(false)
+  const [vehiculo, setVehiculo]               = useState<Vehiculo>('moto')
+  const [placa, setPlaca]                     = useState('')
+  const [showPassword, setShowPassword]       = useState(false)
+  const [showConfirm, setShowConfirm]         = useState(false)
+  const [loading, setLoading]                 = useState(false)
 
   const handleRegister = async () => {
     if (!nombre.trim() || !apellido.trim() || !email.trim() || !password.trim()) {
@@ -83,13 +103,17 @@ export default function RegisterBusiness({ navigation }: Props) {
     }
     setLoading(true)
     try {
-      await registerBusiness(email.trim(), password, {
+      // 1. Crear cuenta en Supabase Auth + profile con role 'driver'
+      await registerDriver(email.trim(), password, {
         nombre:   nombre.trim(),
         apellido: apellido.trim(),
         telefono: telefono.trim(),
+        vehiculo,
+        placa: placa.trim(),
       })
-      // Después del registro va al onboarding de negocio
-      navigation.replace('BusinessOnboarding')
+      // 2. Después del registro ir al onboarding de repartidor
+      //    (ahí se llama POST /repartidores/registro con vehiculo y placa)
+      navigation.replace('DriverOnboarding', { vehiculo, placa: placa.trim() })
     } catch (e: any) {
       Alert.alert('Error al registrarse', e.message ?? 'Intenta nuevamente')
     } finally {
@@ -112,21 +136,21 @@ export default function RegisterBusiness({ navigation }: Props) {
           {/* Badge */}
           <View style={styles.badgeContainer}>
             <View style={styles.badge}>
-              <StoreIcon />
+              <BikeIcon />
             </View>
             <View style={styles.badgePill}>
-              <Text style={styles.badgePillText}>Cuenta Negocio</Text>
+              <Text style={styles.badgePillText}>Cuenta Repartidor</Text>
             </View>
           </View>
 
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Crea tu cuenta</Text>
-            <Text style={styles.subtitle}>Registra tu negocio en Pidelo</Text>
+            <Text style={styles.title}>Únete como repartidor</Text>
+            <Text style={styles.subtitle}>Empieza a ganar con Pidelo</Text>
           </View>
 
           <View style={styles.formContainer}>
 
-            {/* Nombre + Apellido en fila */}
+            {/* Nombre + Apellido */}
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
                 <Text style={styles.label}>Nombre</Text>
@@ -173,6 +197,40 @@ export default function RegisterBusiness({ navigation }: Props) {
               </View>
             </View>
 
+            {/* Tipo de vehículo */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Tipo de vehículo</Text>
+              <View style={styles.vehiculoRow}>
+                {VEHICULOS.map((v) => (
+                  <TouchableOpacity
+                    key={v}
+                    style={[styles.vehiculoChip, vehiculo === v && styles.vehiculoChipActive]}
+                    onPress={() => setVehiculo(v)}
+                  >
+                    <Text style={[styles.vehiculoChipText, vehiculo === v && styles.vehiculoChipTextActive]}>
+                      {v === 'moto' ? '🏍 Moto' : v === 'bici' ? '🚲 Bici' : '🚗 Auto'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Placa */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Placa <Text style={styles.optional}>(opcional)</Text></Text>
+              <View style={styles.inputWrapper}>
+                <PlateIcon />
+                <TextInput
+                  style={styles.input}
+                  placeholder="ABC-123"
+                  placeholderTextColor="#9CA3AF"
+                  value={placa}
+                  onChangeText={setPlaca}
+                  autoCapitalize="characters"
+                />
+              </View>
+            </View>
+
             {/* Email */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Correo electrónico</Text>
@@ -180,7 +238,7 @@ export default function RegisterBusiness({ navigation }: Props) {
                 <EmailIcon />
                 <TextInput
                   style={styles.input}
-                  placeholder="negocio@email.com"
+                  placeholder="tu@email.com"
                   placeholderTextColor="#9CA3AF"
                   value={email}
                   onChangeText={setEmail}
@@ -248,7 +306,7 @@ export default function RegisterBusiness({ navigation }: Props) {
 
       <View style={styles.loginContainer}>
         <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('LoginBusiness')}>
+        <TouchableOpacity onPress={() => navigation.navigate('LoginDriver')}>
           <Text style={styles.loginLink}>Inicia sesión</Text>
         </TouchableOpacity>
       </View>
@@ -257,45 +315,56 @@ export default function RegisterBusiness({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container:             { flex: 1, backgroundColor: '#FFFFFF' },
-  header:                { paddingHorizontal: 20, paddingTop: 10 },
-  backButton:            { width: 40, height: 40, justifyContent: 'center' },
-  badgeContainer:        { alignItems: 'center', marginTop: 16, marginBottom: 8, gap: 10 },
-  badge:                 {
+  container:              { flex: 1, backgroundColor: '#FFFFFF' },
+  header:                 { paddingHorizontal: 20, paddingTop: 10 },
+  backButton:             { width: 40, height: 40, justifyContent: 'center' },
+  badgeContainer:         { alignItems: 'center', marginTop: 16, marginBottom: 8, gap: 10 },
+  badge:                  {
     width: 72, height: 72, borderRadius: 20,
     backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0',
     justifyContent: 'center', alignItems: 'center',
   },
-  badgePill:             {
+  badgePill:              {
     backgroundColor: '#DCFCE7', borderRadius: 20,
     paddingHorizontal: 14, paddingVertical: 4,
   },
-  badgePillText:         { fontSize: 12, fontWeight: '600', color: '#16a34a' },
-  titleContainer:        { paddingHorizontal: 20, marginTop: 12, marginBottom: 30 },
-  title:                 { fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 8, textAlign: 'center' },
-  subtitle:              { fontSize: 15, color: '#6B7280', textAlign: 'center' },
-  formContainer:         { paddingHorizontal: 20, paddingBottom: 20 },
-  row:                   { flexDirection: 'row' },
-  inputGroup:            { marginBottom: 20 },
-  label:                 { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  optional:              { fontWeight: '400', color: '#9CA3AF' },
-  inputWrapper:          {
+  badgePillText:          { fontSize: 12, fontWeight: '600', color: '#16a34a' },
+  titleContainer:         { paddingHorizontal: 20, marginTop: 12, marginBottom: 30 },
+  title:                  { fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 8, textAlign: 'center' },
+  subtitle:               { fontSize: 15, color: '#6B7280', textAlign: 'center' },
+  formContainer:          { paddingHorizontal: 20, paddingBottom: 20 },
+  row:                    { flexDirection: 'row' },
+  inputGroup:             { marginBottom: 20 },
+  label:                  { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  optional:               { fontWeight: '400', color: '#9CA3AF' },
+  inputWrapper:           {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#F9FAFB', borderRadius: 12,
     paddingHorizontal: 16, borderWidth: 1, borderColor: '#E5E7EB',
   },
-  input:                 { flex: 1, paddingVertical: 16, paddingHorizontal: 12, fontSize: 16, color: '#000' },
-  registerButton:        {
+  input:                  { flex: 1, paddingVertical: 16, paddingHorizontal: 12, fontSize: 16, color: '#000' },
+  vehiculoRow:            { flexDirection: 'row', gap: 10 },
+  vehiculoChip:           {
+    flex: 1, paddingVertical: 12, borderRadius: 12,
+    borderWidth: 1, borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB', alignItems: 'center',
+  },
+  vehiculoChipActive:     {
+    borderColor: '#22c55e', backgroundColor: '#F0FDF4',
+  },
+  vehiculoChipText:       { fontSize: 13, fontWeight: '600', color: '#6B7280' },
+  vehiculoChipTextActive: { color: '#16a34a' },
+  registerButton:         {
     borderRadius: 30, overflow: 'hidden', marginTop: 8,
     shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
   },
   registerButtonGradient: { paddingVertical: 18, alignItems: 'center' },
-  registerButtonText:    { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  loginContainer:        {
+  registerButtonText:     { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  loginContainer:         {
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
     paddingVertical: 20, borderTopWidth: 1, borderTopColor: '#F3F4F6',
   },
-  loginText:             { fontSize: 14, color: '#6B7280' },
-  loginLink:             { fontSize: 14, color: '#22c55e', fontWeight: 'bold' },
+  loginText:              { fontSize: 14, color: '#6B7280' },
+  loginLink:              { fontSize: 14, color: '#22c55e', fontWeight: 'bold' },
 })

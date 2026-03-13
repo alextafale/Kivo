@@ -4,6 +4,7 @@ import { AuthRepositoryImpl } from '../../infraestructure/repositories/AuthRepos
 import { AdminProfileRepositoryImpl } from '../../infraestructure/repositories/AdminProfileRepositoryImpl'
 import type { AuthSession } from '../../domain/entities/User'
 import type { AdminProfile } from '../../domain/ports/repositories/lAdminProfileRepository'
+import type { BusinessRegisterData, DriverRegisterData } from '../../domain/ports/repositories/lAuthRepository'
 
 const authRepo         = new AuthRepositoryImpl()
 const adminProfileRepo = new AdminProfileRepositoryImpl()
@@ -11,12 +12,14 @@ const adminProfileRepo = new AdminProfileRepositoryImpl()
 const SESSION_KEY = 'pidelo_session'
 
 type AuthContextType = {
-  session: AuthSession | null
-  isLoading: boolean
-  adminAccess: AdminProfile | null
-  login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
+  session:            AuthSession | null
+  isLoading:          boolean
+  adminAccess:        AdminProfile | null
+  login:              (email: string, password: string) => Promise<void>
+  registerCustomer:   (email: string, password: string) => Promise<void>
+  registerBusiness:   (email: string, password: string, data: BusinessRegisterData) => Promise<void>
+  registerDriver:     (email: string, password: string, data: DriverRegisterData) => Promise<void>
+  logout:             () => Promise<void>
   refreshAdminAccess: () => Promise<void>
 }
 
@@ -27,7 +30,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [adminAccess, setAdminAccess] = useState<AdminProfile | null>(null)
   const [isLoading,   setIsLoading]   = useState(true)
 
-  const loadAdminAccess = useCallback(async () => {
+  // Solo carga adminAccess si el rol es business_admin.
+  // Evita el error PGRST116 para clientes y repartidores.
+  const loadAdminAccess = useCallback(async (role?: string) => {
+    if (role !== 'business_admin') {
+      setAdminAccess(null)
+      return
+    }
     try {
       const access = await adminProfileRepo.getMyAdminProfile()
       setAdminAccess(access)
@@ -36,11 +45,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [])
 
-  // Llamado por BusinessOnboarding tras crear el negocio
+  // refreshAdminAccess se llama desde BusinessOnboarding, siempre es business_admin
   const refreshAdminAccess = useCallback(async () => {
-    await loadAdminAccess()
+    await loadAdminAccess('business_admin')
   }, [loadAdminAccess])
 
+  // Restaurar sesión al arrancar la app
   useEffect(() => {
     const restore = async () => {
       try {
@@ -48,13 +58,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (activeSession) {
           setSession(activeSession)
           await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(activeSession))
-          await loadAdminAccess()
+          await loadAdminAccess(activeSession.role)
         } else {
           const stored = await SecureStore.getItemAsync(SESSION_KEY)
           if (stored) {
             const parsed: AuthSession = JSON.parse(stored)
             setSession(parsed)
-            await loadAdminAccess()
+            await loadAdminAccess(parsed.role)
           }
         }
       } catch {
@@ -66,19 +76,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     restore()
   }, [loadAdminAccess])
 
+  // ─── Login ────────────────────────────────────────────────────────────────
+
   const login = async (email: string, password: string) => {
     const newSession = await authRepo.login(email, password)
     setSession(newSession)
     await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
-    await loadAdminAccess()
+    await loadAdminAccess(newSession.role)
   }
 
-  const register = async (email: string, password: string) => {
-    const newSession = await authRepo.register(email, password)
+  // ─── Registros ────────────────────────────────────────────────────────────
+
+  const registerCustomer = async (email: string, password: string) => {
+    const newSession = await authRepo.registerCustomer(email, password)
     setSession(newSession)
     await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
-    setAdminAccess(null) // nuevo usuario aún sin negocio
+    setAdminAccess(null)
   }
+
+  const registerBusiness = async (
+    email:    string,
+    password: string,
+    data:     BusinessRegisterData,
+  ) => {
+    const newSession = await authRepo.registerBusiness(email, password, data)
+    setSession(newSession)
+    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
+    setAdminAccess(null)
+  }
+
+  const registerDriver = async (
+    email:    string,
+    password: string,
+    data:     DriverRegisterData,
+  ) => {
+    const newSession = await authRepo.registerDriver(email, password, data)
+    setSession(newSession)
+    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
+    setAdminAccess(null)
+  }
+
+  // ─── Logout ───────────────────────────────────────────────────────────────
 
   const logout = async () => {
     await authRepo.logout()
@@ -88,7 +126,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, adminAccess, login, register, logout, refreshAdminAccess }}>
+    <AuthContext.Provider value={{
+      session,
+      isLoading,
+      adminAccess,
+      login,
+      registerCustomer,
+      registerBusiness,
+      registerDriver,
+      logout,
+      refreshAdminAccess,
+    }}>
       {children}
     </AuthContext.Provider>
   )

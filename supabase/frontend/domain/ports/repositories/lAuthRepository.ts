@@ -1,9 +1,30 @@
 import type { AuthSession } from '../../entities/User'
 
-// Contrato de autenticación — la infraestructura lo implementa
+// ─── Tipos de metadata por rol ────────────────────────────────────────────────
+
+export type BusinessRegisterData = {
+  nombre:    string
+  apellido:  string
+  telefono?: string
+}
+
+export type DriverRegisterData = {
+  nombre:    string
+  apellido:  string
+  telefono?: string
+  vehiculo:  'moto' | 'bici' | 'auto'
+  placa?:    string
+}
+
+// ─── Contrato ─────────────────────────────────────────────────────────────────
+
 export interface IAuthRepository {
   login(email: string, password: string): Promise<AuthSession>
-  register(email: string, password: string): Promise<AuthSession>
+
+  registerCustomer(email: string, password: string): Promise<AuthSession>
+  registerBusiness(email: string, password: string, data: BusinessRegisterData): Promise<AuthSession>
+  registerDriver(email: string, password: string, data: DriverRegisterData): Promise<AuthSession>
+
   logout(): Promise<void>
   getSession(): Promise<AuthSession | null>
 }

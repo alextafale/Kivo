@@ -21,7 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Line, Polyline, G } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../../navigation/StacNavigation';
+import { RootStackParamList } from '../../../navigation/StacNavigation';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'MenuEditor'>;
 type Props = { navigation: Nav; route: any };

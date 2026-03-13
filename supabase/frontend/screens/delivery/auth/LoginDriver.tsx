@@ -8,11 +8,11 @@ import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
-import { useAuth } from '../../../application/context/AuthContext'   // ← real
+import { useAuth } from '../../../application/context/AuthContext'
 
-type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Login'> }
+type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'LoginDriver'> }
 
-// ─── Icons (sin cambios) ──────────────────────────────────────────────────────
+// ─── Icons ───────────────────────────────────────────────────────────────────
 const BackIcon = () => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
@@ -28,6 +28,14 @@ const LockIcon = () => (
     <Rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><Path d="M7 11V7a5 5 0 0 1 10 0v4" />
   </Svg>
 )
+const BikeIcon = () => (
+  <Svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+    <Circle cx="5.5" cy="17.5" r="3.5" />
+    <Circle cx="18.5" cy="17.5" r="3.5" />
+    <Path d="M15 6a1 1 0 0 0 0-2h-3l-3 9" />
+    <Path d="M9 15h6l1.5-6H7.5" />
+  </Svg>
+)
 const EyeIcon = ({ visible }: { visible: boolean }) => (
   <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
     {visible ? (
@@ -38,9 +46,9 @@ const EyeIcon = ({ visible }: { visible: boolean }) => (
   </Svg>
 )
 
-// ─── Component ────────────────────────────────────────────────────────────────
-export default function Login({ navigation }: Props) {
-  const { login } = useAuth()                          // ← hook real
+// ─── Component ───────────────────────────────────────────────────────────────
+export default function LoginDriver({ navigation }: Props) {
+  const { login } = useAuth()
 
   const [email, setEmail]               = useState('')
   const [password, setPassword]         = useState('')
@@ -54,8 +62,8 @@ export default function Login({ navigation }: Props) {
     }
     setLoading(true)
     try {
-      await login(email.trim(), password)              // ← Supabase Auth real
-      navigation.replace('HomeFeed')
+      await login(email.trim(), password)
+      navigation.replace('DriverDashboard')
     } catch (e: any) {
       Alert.alert('Error al iniciar sesión', e.message ?? 'Intenta nuevamente')
     } finally {
@@ -68,15 +76,26 @@ export default function Login({ navigation }: Props) {
       <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false}>
+
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <BackIcon />
             </TouchableOpacity>
           </View>
 
+          {/* Badge de repartidor */}
+          <View style={styles.badgeContainer}>
+            <View style={styles.badge}>
+              <BikeIcon />
+            </View>
+            <View style={styles.badgePill}>
+              <Text style={styles.badgePillText}>Acceso Repartidor</Text>
+            </View>
+          </View>
+
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>¡Bienvenido de nuevo!</Text>
-            <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+            <Text style={styles.title}>Panel Repartidor</Text>
+            <Text style={styles.subtitle}>Inicia sesión para comenzar a repartir</Text>
           </View>
 
           <View style={styles.formContainer}>
@@ -133,12 +152,13 @@ export default function Login({ navigation }: Props) {
               </LinearGradient>
             </TouchableOpacity>
           </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
 
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>¿No tienes una cuenta? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('AccountTypeSelection')}>
+        <TouchableOpacity onPress={() => navigation.navigate('RegisterDriver')}>
           <Text style={styles.signupLink}>Regístrate</Text>
         </TouchableOpacity>
       </View>
@@ -147,34 +167,45 @@ export default function Login({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: { paddingHorizontal: 20, paddingTop: 10 },
-  backButton: { width: 40, height: 40, justifyContent: 'center' },
-  titleContainer: { paddingHorizontal: 20, marginTop: 20, marginBottom: 30 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#6B7280' },
-  formContainer: { paddingHorizontal: 20 },
-  inputGroup: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  inputWrapper: {
+  container:          { flex: 1, backgroundColor: '#FFFFFF' },
+  header:             { paddingHorizontal: 20, paddingTop: 10 },
+  backButton:         { width: 40, height: 40, justifyContent: 'center' },
+  badgeContainer:     { alignItems: 'center', marginTop: 16, marginBottom: 8, gap: 10 },
+  badge:              {
+    width: 72, height: 72, borderRadius: 20,
+    backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  badgePill:          {
+    backgroundColor: '#DCFCE7', borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 4,
+  },
+  badgePillText:      { fontSize: 12, fontWeight: '600', color: '#16a34a' },
+  titleContainer:     { paddingHorizontal: 20, marginTop: 12, marginBottom: 30 },
+  title:              { fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 8, textAlign: 'center' },
+  subtitle:           { fontSize: 15, color: '#6B7280', textAlign: 'center' },
+  formContainer:      { paddingHorizontal: 20 },
+  inputGroup:         { marginBottom: 20 },
+  label:              { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  inputWrapper:       {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#F9FAFB', borderRadius: 12,
     paddingHorizontal: 16, borderWidth: 1, borderColor: '#E5E7EB',
   },
-  input: { flex: 1, paddingVertical: 16, paddingHorizontal: 12, fontSize: 16, color: '#000' },
-  forgotPassword: { alignSelf: 'flex-end', marginBottom: 24 },
+  input:              { flex: 1, paddingVertical: 16, paddingHorizontal: 12, fontSize: 16, color: '#000' },
+  forgotPassword:     { alignSelf: 'flex-end', marginBottom: 24 },
   forgotPasswordText: { fontSize: 14, color: '#22c55e', fontWeight: '600' },
-  loginButton: {
+  loginButton:        {
     borderRadius: 30, overflow: 'hidden',
     shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
   },
   loginButtonGradient: { paddingVertical: 18, alignItems: 'center' },
-  loginButtonText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  signupContainer: {
+  loginButtonText:    { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  signupContainer:    {
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
     paddingVertical: 20, borderTopWidth: 1, borderTopColor: '#F3F4F6',
   },
-  signupText: { fontSize: 14, color: '#6B7280' },
-  signupLink: { fontSize: 14, color: '#22c55e', fontWeight: 'bold' },
+  signupText:         { fontSize: 14, color: '#6B7280' },
+  signupLink:         { fontSize: 14, color: '#22c55e', fontWeight: 'bold' },
 })

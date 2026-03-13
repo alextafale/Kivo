@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/StacNavigation';
+import { RootStackParamList } from '../../../navigation/StacNavigation';
 import Orders from '../orders/Order';
 
 const { width } = Dimensions.get('window');
