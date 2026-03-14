@@ -221,8 +221,33 @@ export default function HomeFeed() {
 
           {/* Restaurant Cards */}
           <View style={styles.cardsContainer}>
-            {restaurants.map((restaurant) => (
-              <View key={restaurant.id} style={styles.card}>
+            {restaurants.map((restaurant) => {
+              // Map local data format to what BusinessDetailScreen expects
+              const mappedBusiness = {
+                id: restaurant.id,
+                name: restaurant.name,
+                category: restaurant.description.split(' • ')[0] || 'Restaurant',
+                logo: 'https://via.placeholder.com/80x80/22c55e/ffffff?text=' + restaurant.name.charAt(0),
+                coverImage: restaurant.image,
+                rating: restaurant.rating,
+                deliveryTime: restaurant.deliveryTime || '15-30',
+                deliveryFee: 0,
+                description: restaurant.description,
+                address: 'Dirección del negocio pendiente',
+                openingHours: { weekdays: '9:00 AM - 10:00 PM', weekends: '10:00 AM - 11:00 PM' },
+                menu: [
+                  { id: 'm1', name: 'Platillo 1', price: 50, image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400', description: 'Delicioso platillo', category: 'General' },
+                  { id: 'm2', name: 'Bebida', price: 25, image: 'https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=400', description: 'Bebida refrescante', category: 'General' }
+                ]
+              };
+
+              return (
+              <TouchableOpacity
+                key={restaurant.id}
+                style={styles.card}
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('BusinessDetail', { business: mappedBusiness })}
+              >
                 <View style={styles.cardImageContainer}>
                   <Image
                     source={{ uri: restaurant.image }}
@@ -255,8 +280,9 @@ export default function HomeFeed() {
                     <Text style={styles.orderButtonText}>Chat & Order</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
-            ))}
+              </TouchableOpacity>
+              );
+            })}
           </View>
 
           <View style={{ height: 100 }} />

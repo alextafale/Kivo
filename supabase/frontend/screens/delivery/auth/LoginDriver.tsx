@@ -78,7 +78,7 @@ export default function LoginDriver({ navigation }: Props) {
         <ScrollView showsVerticalScrollIndicator={false}>
 
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('AccountTypeSelection')} style={styles.backButton}>
               <BackIcon />
             </TouchableOpacity>
           </View>
