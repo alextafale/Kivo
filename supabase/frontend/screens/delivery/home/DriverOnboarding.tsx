@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, SafeAreaView, StatusBar,
   ScrollView, TextInput, TouchableOpacity,
@@ -132,37 +132,44 @@ const VEHICULO_LABEL: Record<Vehiculo, string> = {
 
 export default function DriverOnboarding({ navigation, route }: Props) {
   const { session } = useAuth()
-  const [step, setStep]     = useState(0)
-  const [saving, setSaving] = useState(false)
+  const [step, setStep]               = useState(0)
+  const [saving, setSaving]           = useState(false)
+  // Si viene del registro, los datos ya están capturados — auto-registrar sin mostrar el form
+  const fromRegister                  = route.params?.fromRegister === true
+  const [autoSubmitting, setAutoSubmitting] = useState(fromRegister)
+  const hasAutoSubmitted              = useRef(false)
 
-  // Paso 1 — Vehículo
-  // Pre-llenar desde params si vienen del RegisterDriver
   const [vehiculo, setVehiculo] = useState<Vehiculo>(
     (route.params?.vehiculo as Vehiculo) ?? 'moto'
   )
   const [placa, setPlaca] = useState(route.params?.placa ?? '')
 
-  // ── Paso 0: confirmar vehículo y registrar repartidor ──
-async function submitVehiculo() {
-  if (!session?.userId) {
-    Alert.alert('Error', 'No hay sesión activa')
-    return
-  }
-  
-  console.log('[submitVehiculo] session.userId:', session.userId)
+  // ── Auto-submit al montar si viene del flujo de registro ──────────────────
+  useEffect(() => {
+    if (!fromRegister || hasAutoSubmitted.current) return
+    hasAutoSubmitted.current = true
+    submitVehiculo().finally(() => setAutoSubmitting(false))
+  }, [])
 
-  setSaving(true)
-  try {
-    await repartidorRepo.register(
-      session.userId,
-      'platform',
-      vehiculo,
-      placa.trim() || null
-    )
-    setStep(1)
-  } catch (e: any) {
+  // ── Paso 0: confirmar vehículo y registrar repartidor ────────────────────
+  async function submitVehiculo() {
+    if (!session?.userId) {
+      Alert.alert('Error', 'No hay sesión activa')
+      return
+    }
+
+    setSaving(true)
+    try {
+      await repartidorRepo.register(
+        session.userId,
+        'platform',
+        vehiculo,
+        placa.trim() || null
+      )
+      setStep(1)
+    } catch (e: any) {
       if (e.message?.includes('duplicate key') || e.message?.includes('ya existe')) {
-        // If they are somehow already registered, just proceed
+        // Ya registrado — pasar directo a confirmación
         setStep(1)
       } else {
         Alert.alert('Error', e.message ?? 'Error al registrar repartidor')
@@ -172,14 +179,14 @@ async function submitVehiculo() {
     }
   }
 
-  // ── Paso 1: confirmación final ──
+  // ── Paso 1: ir al dashboard ───────────────────────────────────────────────
   function goToDashboard() {
     navigation.replace('DriverDashboard')
   }
 
   const STEPS = [
-    { icon: <BikeIcon />,        title: 'Tu Vehículo',   subtitle: 'Con qué harás las entregas' },
-    { icon: <CheckCircleIcon />, title: '¡Todo listo!',  subtitle: 'Ya puedes comenzar a repartir' },
+    { icon: <BikeIcon />,        title: 'Tu Vehículo',  subtitle: 'Con qué harás las entregas' },
+    { icon: <CheckCircleIcon />, title: '¡Todo listo!', subtitle: 'Ya puedes comenzar a repartir' },
   ]
 
   return (
@@ -203,11 +210,19 @@ async function submitVehiculo() {
           </View>
         </View>
 
-        {/* ── Paso 0: Vehículo ─────────────────────────────────────────── */}
-        {step === 0 && (
+        {/* ── Paso 0A: auto-registrando (viene del registro) ───────────── */}
+        {step === 0 && autoSubmitting && (
           <View style={styles.form}>
+            <View style={styles.autoSubmitCard}>
+              <ActivityIndicator size="large" color="#22c55e" />
+              <Text style={styles.autoSubmitText}>Configurando tu perfil...</Text>
+            </View>
+          </View>
+        )}
 
-            {/* Selector de tipo */}
+        {/* ── Paso 0B: selector manual (entrada directa al onboarding) ─── */}
+        {step === 0 && !autoSubmitting && (
+          <View style={styles.form}>
             <Text style={fieldStyles.label}>Tipo de vehículo *</Text>
             <View style={styles.vehiculoRow}>
               {VEHICULOS.map((v) => (
@@ -236,7 +251,7 @@ async function submitVehiculo() {
           </View>
         )}
 
-        {/* ── Paso 1: Confirmación ──────────────────────────────────────── */}
+        {/* ── Paso 1: Confirmación ─────────────────────────────────────── */}
         {step === 1 && (
           <View style={styles.form}>
             <View style={styles.successCard}>
@@ -276,31 +291,33 @@ async function submitVehiculo() {
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        {step > 0 && step < 1 && (
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep(s => s - 1)}>
-            <Text style={styles.backBtnText}>← Atrás</Text>
+      {/* Footer — ocultar mientras se auto-registra */}
+      {!autoSubmitting && (
+        <View style={styles.footer}>
+          {step > 0 && step < 1 && (
+            <TouchableOpacity style={styles.backBtn} onPress={() => setStep(s => s - 1)}>
+              <Text style={styles.backBtnText}>← Atrás</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={[styles.nextBtn, { flex: 1 }]}
+            onPress={step === 0 ? submitVehiculo : goToDashboard}
+            disabled={saving}
+          >
+            <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.nextBtnGradient}>
+              {saving
+                ? <ActivityIndicator color="white" />
+                : <>
+                    <Text style={styles.nextBtnText}>
+                      {step === 1 ? '¡Ir al Dashboard!' : 'Continuar'}
+                    </Text>
+                    {step < 1 && <ArrowIcon />}
+                  </>
+              }
+            </LinearGradient>
           </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={[styles.nextBtn, { flex: 1 }]}
-          onPress={step === 0 ? submitVehiculo : goToDashboard}
-          disabled={saving}
-        >
-          <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.nextBtnGradient}>
-            {saving
-              ? <ActivityIndicator color="white" />
-              : <>
-                  <Text style={styles.nextBtnText}>
-                    {step === 1 ? '¡Ir al Dashboard!' : 'Continuar'}
-                  </Text>
-                  {step < 1 && <ArrowIcon />}
-                </>
-            }
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+        </View>
+      )}
     </SafeAreaView>
   )
 }
@@ -308,36 +325,42 @@ async function submitVehiculo() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container:           { flex: 1, backgroundColor: '#FFFFFF' },
-  scroll:              { paddingBottom: 100 },
-  headerGradient:      { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 },
-  headerTitle:         { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },
-  headerSubtitle:      { fontSize: 14, color: '#6B7280', marginBottom: 28 },
-  stepHeader:          { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, marginBottom: 24 },
-  stepIconWrap:        { width: 52, height: 52, borderRadius: 16, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' },
-  stepTitle:           { fontSize: 20, fontWeight: '800', color: '#111827' },
-  stepSubtitle:        { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  form:                { paddingHorizontal: 24 },
-  vehiculoRow:         { flexDirection: 'row', gap: 10 },
-  vehiculoChip:        { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB', alignItems: 'center' },
-  vehiculoChipActive:  { borderColor: '#22c55e', backgroundColor: '#F0FDF4' },
-  vehiculoChipText:    { fontSize: 13, fontWeight: '600', color: '#6B7280' },
+  container:              { flex: 1, backgroundColor: '#FFFFFF' },
+  scroll:                 { paddingBottom: 100 },
+  headerGradient:         { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 },
+  headerTitle:            { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },
+  headerSubtitle:         { fontSize: 14, color: '#6B7280', marginBottom: 28 },
+  stepHeader:             { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, marginBottom: 24 },
+  stepIconWrap:           { width: 52, height: 52, borderRadius: 16, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' },
+  stepTitle:              { fontSize: 20, fontWeight: '800', color: '#111827' },
+  stepSubtitle:           { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  form:                   { paddingHorizontal: 24 },
+  // Auto-submit loader
+  autoSubmitCard:         { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 16 },
+  autoSubmitText:         { fontSize: 15, color: '#6B7280', fontWeight: '500' },
+  // Vehículo
+  vehiculoRow:            { flexDirection: 'row', gap: 10 },
+  vehiculoChip:           { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB', alignItems: 'center' },
+  vehiculoChipActive:     { borderColor: '#22c55e', backgroundColor: '#F0FDF4' },
+  vehiculoChipText:       { fontSize: 13, fontWeight: '600', color: '#6B7280' },
   vehiculoChipTextActive: { color: '#16a34a' },
-  successCard:         { backgroundColor: '#F0FDF4', borderRadius: 20, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: '#BBF7D0' },
-  successEmoji:        { fontSize: 48, marginBottom: 12 },
-  successTitle:        { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 8, textAlign: 'center' },
-  successText:         { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22, marginBottom: 20 },
-  summaryBox:          { width: '100%', backgroundColor: '#fff', borderRadius: 12, padding: 16, gap: 12, marginBottom: 16 },
-  summaryRow:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  summaryKey:          { fontSize: 13, color: '#6B7280', fontWeight: '500' },
-  summaryValue:        { fontSize: 14, color: '#111827', fontWeight: '700' },
-  estadoPill:          { backgroundColor: '#F3F4F6', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
-  estadoPillText:      { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  successHint:         { fontSize: 12, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 },
-  footer:              { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', gap: 12, paddingHorizontal: 24, paddingVertical: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
-  backBtn:             { flex: 0.4, paddingVertical: 16, borderRadius: 30, borderWidth: 1.5, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-  backBtnText:         { fontSize: 15, fontWeight: '600', color: '#374151' },
-  nextBtn:             { flex: 0.6, borderRadius: 30, overflow: 'hidden' },
-  nextBtnGradient:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, gap: 8 },
-  nextBtnText:         { fontSize: 15, fontWeight: '700', color: 'white' },
+  // Confirmación
+  successCard:            { backgroundColor: '#F0FDF4', borderRadius: 20, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: '#BBF7D0' },
+  successEmoji:           { fontSize: 48, marginBottom: 12 },
+  successTitle:           { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 8, textAlign: 'center' },
+  successText:            { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22, marginBottom: 20 },
+  summaryBox:             { width: '100%', backgroundColor: '#fff', borderRadius: 12, padding: 16, gap: 12, marginBottom: 16 },
+  summaryRow:             { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  summaryKey:             { fontSize: 13, color: '#6B7280', fontWeight: '500' },
+  summaryValue:           { fontSize: 14, color: '#111827', fontWeight: '700' },
+  estadoPill:             { backgroundColor: '#F3F4F6', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
+  estadoPillText:         { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  successHint:            { fontSize: 12, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 },
+  // Footer
+  footer:                 { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', gap: 12, paddingHorizontal: 24, paddingVertical: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  backBtn:                { flex: 0.4, paddingVertical: 16, borderRadius: 30, borderWidth: 1.5, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  backBtnText:            { fontSize: 15, fontWeight: '600', color: '#374151' },
+  nextBtn:                { flex: 0.6, borderRadius: 30, overflow: 'hidden' },
+  nextBtnGradient:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, gap: 8 },
+  nextBtnText:            { fontSize: 15, fontWeight: '700', color: 'white' },
 })

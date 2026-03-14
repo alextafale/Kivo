@@ -113,8 +113,11 @@ export default function RegisterDriver({ navigation }: Props) {
       })
       // 2. Después del registro ir al onboarding de repartidor
       //    (ahí se llama POST /repartidores/registro con vehiculo y placa)
-      navigation.replace('DriverOnboarding', { vehiculo, placa: placa.trim() })
-    } catch (e: any) {
+      navigation.replace('DriverOnboarding', {
+        vehiculo,
+        placa: placa.trim(),
+        fromRegister: true,   // ← agregar esto
+      })      } catch (e: any) {
       Alert.alert('Error al registrarse', e.message ?? 'Intenta nuevamente')
     } finally {
       setLoading(false)

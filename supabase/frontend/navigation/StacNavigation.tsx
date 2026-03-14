@@ -85,7 +85,7 @@ export type RootStackParamList = {
   Settings:             undefined;
 
   // Repartidor
-  DriverOnboarding:     { vehiculo: 'moto' | 'bici' | 'auto'; placa?: string };
+  DriverOnboarding:     { vehiculo: string; placa: string; fromRegister?: boolean };
   DriverDashboard:      undefined;
 };
 

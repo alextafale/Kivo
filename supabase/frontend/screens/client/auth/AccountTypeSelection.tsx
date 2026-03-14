@@ -67,11 +67,11 @@ export default function AccountTypeSelection({ navigation }: Props) {
     await AsyncStorage.setItem('accountType', selectedType);
 
     if (selectedType === 'client') {
-      navigation.navigate('Signup', { accountType: 'client' });
+      navigation.navigate('Login');
     } else if (selectedType === 'business') {
-      navigation.navigate('RegisterBusiness');
+      navigation.navigate('LoginBusiness');
     } else if (selectedType === 'delivery') {
-      navigation.navigate('RegisterDriver');
+      navigation.navigate('LoginDriver');
     }
   };
 
@@ -209,7 +209,9 @@ export default function AccountTypeSelection({ navigation }: Props) {
   );
 }
 
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
+
 
 const styles = StyleSheet.create({
   container:           { flex: 1, backgroundColor: '#FFFFFF' },
