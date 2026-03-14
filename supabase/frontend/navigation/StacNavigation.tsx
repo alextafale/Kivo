@@ -54,7 +54,7 @@ export type RootStackParamList = {
 
   // Auth — Cliente
   Login:                undefined;
-  Signup:               { accountType: 'client' };
+  Signup:               { accountType: 'client' } | undefined;
 
   // Auth — Negocio
   LoginBusiness:        undefined;

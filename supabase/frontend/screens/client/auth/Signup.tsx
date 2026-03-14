@@ -43,7 +43,7 @@ const EyeIcon = ({ visible }: { visible: boolean }) => (
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function Signup({ navigation, route }: Props) {
   const { registerCustomer } = useAuth()                        // ← hook real
-  const { accountType } = route.params
+  const accountType = route.params?.accountType ?? 'client'
 
   const [email, setEmail]                           = useState('')
   const [password, setPassword]                     = useState('')

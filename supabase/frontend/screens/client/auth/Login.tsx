@@ -138,7 +138,7 @@ export default function Login({ navigation }: Props) {
 
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>¿No tienes una cuenta? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('AccountTypeSelection')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Signup', { accountType: 'client' })}>
           <Text style={styles.signupLink}>Regístrate</Text>
         </TouchableOpacity>
       </View>

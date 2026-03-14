@@ -52,27 +52,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Restaurar sesión al arrancar la app
   useEffect(() => {
-    const restore = async () => {
-      try {
-        const activeSession = await authRepo.getSession()
-        if (activeSession) {
-          setSession(activeSession)
-          await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(activeSession))
-          await loadAdminAccess(activeSession.role)
-        } else {
-          const stored = await SecureStore.getItemAsync(SESSION_KEY)
-          if (stored) {
-            const parsed: AuthSession = JSON.parse(stored)
-            setSession(parsed)
-            await loadAdminAccess(parsed.role)
-          }
-        }
-      } catch {
-        // Sin sesión válida
-      } finally {
-        setIsLoading(false)
-      }
+const restore = async () => {
+  try {
+    const activeSession = await authRepo.getSession()
+    if (activeSession) {
+      setSession(activeSession)
+      await loadAdminAccess(activeSession.role)
     }
+  } catch {
+    // sin sesión válida
+  } finally {
+    setIsLoading(false)
+  }
+}
     restore()
   }, [loadAdminAccess])
 
