@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, SafeAreaView, StatusBar,
   ScrollView, TextInput, TouchableOpacity,
-  ActivityIndicator, Alert, Switch,
+  ActivityIndicator, Alert, Switch, Modal, FlatList,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle } from 'react-native-svg'
@@ -14,6 +14,7 @@ import { AdminRepositoryImpl } from '../../../infraestructure/repositories/Admin
 import { supabase } from '../../../config/supabaseConfig'
 import { API_URL } from '@env'
 import type { HorarioDia } from '../../../domain/entities/Negocio'
+import { NOMBRES_ESTADOS, getCiudadesByEstado } from '../../../domain/data/mexicoLocations'
 
 const adminRepo = new AdminRepositoryImpl()
 
@@ -131,6 +132,114 @@ const fieldStyles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 },
   input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#111827', backgroundColor: '#F9FAFB' },
   hint:  { fontSize: 12, color: '#9CA3AF', marginTop: 4 },
+})
+
+// ─── SelectField Component ────────────────────────────────────────────────────
+
+function SelectField({
+  label, value, placeholder, options, onChange, disabled = false,
+}: {
+  label: string
+  value: string
+  placeholder: string
+  options: string[]
+  onChange: (v: string) => void
+  disabled?: boolean
+}) {
+  const [visible, setVisible] = useState(false)
+  const [search, setSearch]   = useState('')
+
+  const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()))
+
+  function select(option: string) {
+    onChange(option)
+    setVisible(false)
+    setSearch('')
+  }
+
+  return (
+    <View style={fieldStyles.group}>
+      <Text style={fieldStyles.label}>{label}</Text>
+      <TouchableOpacity
+        style={[selectStyles.trigger, disabled && selectStyles.triggerDisabled]}
+        onPress={() => !disabled && setVisible(true)}
+        activeOpacity={disabled ? 1 : 0.7}
+      >
+        <Text style={[selectStyles.triggerText, !value && selectStyles.triggerPlaceholder]}>
+          {value || placeholder}
+        </Text>
+        <Text style={selectStyles.chevron}>▾</Text>
+      </TouchableOpacity>
+
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={() => setVisible(false)}>
+        <TouchableOpacity style={selectStyles.overlay} activeOpacity={1} onPress={() => setVisible(false)} />
+        <View style={selectStyles.sheet}>
+          {/* Handle */}
+          <View style={selectStyles.handle} />
+          <Text style={selectStyles.sheetTitle}>{label}</Text>
+
+          {/* Búsqueda */}
+          <View style={selectStyles.searchWrap}>
+            <Text style={selectStyles.searchIcon}>🔍</Text>
+            <TextInput
+              style={selectStyles.searchInput}
+              value={search}
+              onChangeText={setSearch}
+              placeholder={`Buscar ${label.toLowerCase()}...`}
+              placeholderTextColor="#9CA3AF"
+              autoFocus
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')}>
+                <Text style={selectStyles.clearBtn}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <FlatList
+            data={filtered}
+            keyExtractor={item => item}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[selectStyles.option, item === value && selectStyles.optionSelected]}
+                onPress={() => select(item)}
+              >
+                <Text style={[selectStyles.optionText, item === value && selectStyles.optionTextSelected]}>
+                  {item}
+                </Text>
+                {item === value && <Text style={selectStyles.optionCheck}>✓</Text>}
+              </TouchableOpacity>
+            )}
+            ItemSeparatorComponent={() => <View style={selectStyles.separator} />}
+            style={{ maxHeight: 350 }}
+          />
+        </View>
+      </Modal>
+    </View>
+  )
+}
+
+const selectStyles = StyleSheet.create({
+  trigger:             { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: '#F9FAFB' },
+  triggerDisabled:     { opacity: 0.45 },
+  triggerText:         { fontSize: 15, color: '#111827', flex: 1 },
+  triggerPlaceholder:  { color: '#9CA3AF' },
+  chevron:             { fontSize: 16, color: '#6B7280', marginLeft: 8 },
+  overlay:             { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
+  sheet:               { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, paddingHorizontal: 20, paddingTop: 12 },
+  handle:              { width: 40, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  sheetTitle:          { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 14, textAlign: 'center' },
+  searchWrap:          { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
+  searchIcon:          { fontSize: 14, marginRight: 6 },
+  searchInput:         { flex: 1, fontSize: 15, color: '#111827' },
+  clearBtn:            { fontSize: 14, color: '#9CA3AF', marginLeft: 8 },
+  option:              { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, paddingHorizontal: 4 },
+  optionSelected:      { backgroundColor: '#F0FDF4', borderRadius: 10, paddingHorizontal: 10 },
+  optionText:          { fontSize: 15, color: '#374151', flex: 1 },
+  optionTextSelected:  { color: '#16a34a', fontWeight: '700' },
+  optionCheck:         { fontSize: 15, color: '#22c55e', fontWeight: '700' },
+  separator:           { height: 1, backgroundColor: '#F3F4F6' },
 })
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -347,8 +456,21 @@ export default function BusinessOnboarding({ navigation }: Props) {
           <View style={styles.form}>
             <Field label="Nombre de la sucursal *" value={sucNombre} onChange={setSucNombre} placeholder="Ej: Sucursal Centro" />
             <Field label="Dirección *" value={direccion} onChange={setDireccion} placeholder="Calle, número, colonia" />
-            <Field label="Ciudad" value={ciudad} onChange={setCiudad} placeholder="Ej: Zamora" />
-            <Field label="Estado" value={estado} onChange={setEstado} placeholder="Ej: Michoacán" />
+            <SelectField
+              label="Estado"
+              value={estado}
+              placeholder="Selecciona un estado"
+              options={NOMBRES_ESTADOS}
+              onChange={v => { setEstado(v); setCiudad('') }}
+            />
+            <SelectField
+              label="Ciudad"
+              value={ciudad}
+              placeholder={estado ? 'Selecciona una ciudad' : 'Primero selecciona un estado'}
+              options={getCiudadesByEstado(estado)}
+              onChange={setCiudad}
+              disabled={!estado}
+            />
             <Field label="Teléfono" value={telefono} onChange={setTelefono} placeholder="10 dígitos" keyboardType="phone-pad" />
           </View>
         )}
