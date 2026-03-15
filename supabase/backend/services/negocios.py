@@ -1,20 +1,34 @@
 from sqlalchemy.orm import Session
 from models.negocios import Negocio
+from models.sucursales import Sucursal
 from schemas.negocios import NegocioOut
 from exceptions.negocios import NegocioNoExistente
 from typing import List,Optional
 
 
-def get_negocios(db: Session,categoria: Optional[str] = None,ciudad: Optional[str] = None) -> List[Negocio]:
-    negocio = db.query(Negocio)
+def get_negocios_sucursales(db: Session, ciudad: str, categoria: str):
 
-    if categoria:
-        negocio = negocio.filter(Negocio.categoria == categoria)
+    query = db.query(Negocio, Sucursal).join(
+        Sucursal, Negocio.id == Sucursal.negocio_id
+    ).filter(
+        Negocio.activo == True,
+        Sucursal.activo == True,
+        Sucursal.ciudad == ciudad
+    )
 
-    if ciudad:
-        negocio = negocio.filter(Negocio.pais == ciudad)
+    if categoria != "All":
+        query = query.filter(Negocio.categoria == categoria)
 
-    return negocio.all()
+    resultados = query.all()
+
+    negocios = []
+
+    for negocio, sucursal in resultados:
+        negocio.calificacion = sucursal.calificacion
+        negocio.sucursal_id = sucursal.id
+        negocios.append(negocio)
+
+    return negocios
 
 
 def get_negocio_por_id(db: Session, negocio_id: str):

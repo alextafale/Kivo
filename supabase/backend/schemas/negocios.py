@@ -16,6 +16,7 @@ class NegocioBase(BaseModel):
     verificado: bool = False
 
 
+
 class NegocioCreate(BaseModel):
     slug: str = Field(..., min_length=3, description="URL amigable del negocio")
     nombre: str = Field(..., min_length=1)
@@ -42,6 +43,8 @@ class NegocioOut(NegocioBase):
     id: UUID
     creado_en: datetime
     actualizado_en: datetime
+    calificacion: Optional[float] = None
+    sucursal_id : Optional[UUID] = None
 
     class ConfigDict:
         from_attributes = True

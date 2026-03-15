@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from db.database import SessionLocal
 
-from db.database import get_db
+
 from core.isBusinessAdmin import require_business_admin, require_business_admin_with_edit
 from schemas.admin import (
     NegocioAdminRead,
@@ -19,6 +20,12 @@ from services.admin import (
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # =============================================================================
 # Negocio

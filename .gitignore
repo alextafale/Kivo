@@ -30,6 +30,12 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # local env files
 .env*.local
 

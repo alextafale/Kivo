@@ -22,6 +22,7 @@ import RegisterDriver       from '../screens/delivery/auth/Registerdriver';
 // ─── Cliente ──────────────────────────────────────────────────────────────────
 import HomeFeed             from '../screens/client/home/homeFeed';
 import BusinessDetailScreen from '../screens/client/home/BusinessDetailScreen';
+
 import Chatbot              from '../screens/client/chatbot/Chatbot';
 import Profile              from '../screens/client/profile/Profile';
 import EditProfile          from '../screens/client/profile/EditProfile';
@@ -73,7 +74,9 @@ export type RootStackParamList = {
 
   // Cliente
   HomeFeed:             undefined;
-  BusinessDetail:       { business: BusinessData };
+
+  BusinessDetail:       { sucursal_id: string };
+
   Chatbot:              undefined;
   Profile:              undefined;
   EdithProfile:         undefined;
@@ -149,6 +152,7 @@ export default function StackNavigation() {
 
         {/* ── Cliente ────────────────────────────────────────────────────── */}
         <Stack.Screen name="HomeFeed"             component={HomeFeed} />
+
         <Stack.Screen name="BusinessDetail"       component={BusinessDetailScreen} />
         <Stack.Screen name="Chatbot"              component={Chatbot} />
         <Stack.Screen name="Profile"              component={Profile} />

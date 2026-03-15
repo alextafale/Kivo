@@ -4,10 +4,16 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from core.dependencies import get_current_user_id
-from db.database import get_db
+from db.database import SessionLocal
 from exceptions.isBusinessAdmin import NoEsAdminDelNegocio
 from exceptions.negocios import NegocioNoExistente
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 def require_business_admin(negocio_id: str, db: Session = Depends(get_db), user_id: str = Depends(get_current_user_id)) -> str:
     """

@@ -1,5 +1,6 @@
 import uuid
 from sqlalchemy import (Column,String,Boolean,TIMESTAMP,func)
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from db.database import Base
 
@@ -29,3 +30,4 @@ class Negocio(Base):
         nullable=False,
         server_default=func.now()
     )
+    sucursales = relationship("Sucursal", back_populates="negocio")
