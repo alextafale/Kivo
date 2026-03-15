@@ -31,7 +31,7 @@ export default function SplashScreen({ navigation }: Props) {
       await new Promise(resolve => setTimeout(resolve, 1500))
 
       if (session) {
-        // ✅ Hay sesión activa — ir a la pantalla correcta según el rol
+        //  Hay sesión activa — ir a la pantalla correcta según el rol
         const destination = ROLE_HOME[session.role] ?? 'HomeFeed'
         navigation.replace(destination as any)
       } else {

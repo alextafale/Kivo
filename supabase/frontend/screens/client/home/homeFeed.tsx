@@ -150,7 +150,7 @@ export default function HomeFeed() {
 
         <View style={styles.header}>
           <View>
-            <Text style={styles.logoText}>Kivu</Text>
+            <Text style={styles.logoText}>Kivo</Text>
             <Text style={styles.tagline}>AI-Powered Food Ordering</Text>
           </View>
 
