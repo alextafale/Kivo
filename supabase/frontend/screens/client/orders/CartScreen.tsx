@@ -153,23 +153,24 @@ export default function CartScreen({ navigation }: Props) {
   const total = subtotal + costoEnvio;
 
   // Construye los params que necesita OrderSummary
-  // Por ahorita solo soporta un restaurante a la vez en el checkout
+  
   const handleCheckout = () => {
-    if (cart.length === 0) return;
-    const restaurant = cart[0];
-    const items = restaurant.items.map(i => ({
+  if (cart.length === 0) return;
+
+  const restaurants = cart.map(restaurant => ({
+    sucursalId: restaurant.sucursal_id,
+    negocioId: restaurant.negocio_id,
+    negocioNombre: restaurant.nombre,
+    costoEnvio: 12,
+    items: restaurant.items.map(i => ({
       name: i.nombre,
       quantity: i.cantidad,
       price: i.precio_unitario,
-    }));
-    navigation.navigate('OrderSummary', {
-      items,
-      negocioId: restaurant.negocio_id,
-      negocioNombre: restaurant.nombre,
-      direccionEntrega: '',  // Se selecciona en OrderSummary
-      costoEnvio,
-    });
-  };
+    })),
+  }));
+
+  navigation.navigate('OrderSummary', { restaurants });
+};
 
   // Carrito vacío
   if (cart.length === 0) {

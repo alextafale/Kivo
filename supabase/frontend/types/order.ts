@@ -22,7 +22,7 @@ export interface Order {
   items: OrderItem[]
   total: number
   status: OrderStatus
-  date: Date
+  date: string
   orderNumber: string
   deliveryAddress: string
 

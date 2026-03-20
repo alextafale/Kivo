@@ -170,15 +170,15 @@ const CloseIcon = () => (
 ];*/
 
 const statusConfig = {
-  pending:    { label: 'Pendiente',   color: '#F59E0B', icon: ClockIcon },
-  confirmed:  { label: 'Confirmado',  color: '#8B5CF6', icon: ClockIcon },
-  preparing:  { label: 'Preparando',  color: '#F97316', icon: ClockIcon },
-  ready:      { label: 'Listo',       color: '#06B6D4', icon: CheckCircleIcon },
-  picked_up:  { label: 'Recogido',    color: '#3B82F6', icon: TruckIcon },
-  on_the_way: { label: 'En Camino',   color: '#3B82F6', icon: TruckIcon },
-  delivered:  { label: 'Entregado',   color: '#22c55e', icon: CheckCircleIcon },
-  cancelled:  { label: 'Cancelado',   color: '#EF4444', icon: XCircleIcon },
-  refunded:   { label: 'Reembolsado', color: '#6B7280', icon: XCircleIcon },
+  pending: { label: 'Pendiente', color: '#F59E0B', icon: ClockIcon },
+  confirmed: { label: 'Confirmado', color: '#8B5CF6', icon: ClockIcon },
+  preparing: { label: 'Preparando', color: '#F97316', icon: ClockIcon },
+  ready: { label: 'Listo', color: '#06B6D4', icon: CheckCircleIcon },
+  picked_up: { label: 'Recogido', color: '#3B82F6', icon: TruckIcon },
+  on_the_way: { label: 'En Camino', color: '#3B82F6', icon: TruckIcon },
+  delivered: { label: 'Entregado', color: '#22c55e', icon: CheckCircleIcon },
+  cancelled: { label: 'Cancelado', color: '#EF4444', icon: XCircleIcon },
+  refunded: { label: 'Reembolsado', color: '#6B7280', icon: XCircleIcon },
 };
 
 const filterTabs = ['Todos', 'En Progreso', 'Completados', 'Cancelados'];
@@ -191,7 +191,7 @@ export default function Orders({ navigation }: Props) {
   const { pedidos, isLoading } = usePedidos();
 
   const filterOrders = () => {
-    let filtered = [...pedidos];
+    let filtered = [...(pedidos ?? [])];
 
     // Filtrar por búsqueda
     if (searchQuery.trim() !== '') {
@@ -216,7 +216,7 @@ export default function Orders({ navigation }: Props) {
     // Filtrar por fecha
     if (selectedDate) {
       filtered = filtered.filter(order => {
-        const orderDate = order.date;
+        const orderDate = new Date(order.date);
         return (
           orderDate.getDate() === selectedDate.getDate() &&
           orderDate.getMonth() === selectedDate.getMonth() &&
@@ -228,22 +228,21 @@ export default function Orders({ navigation }: Props) {
     return filtered;
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string) => {
+    if (!date) return '—'
+    const d = new Date(date);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) {
-      return 'Hoy';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Ayer';
-    } else {
-      return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
-    }
+    if (d.toDateString() === today.toDateString()) return 'Hoy';
+    if (d.toDateString() === yesterday.toDateString()) return 'Ayer';
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  const formatTime = (date: string) => {
+    if (!date) return '—'
+    return new Date(date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
   };
 
   const clearDateFilter = () => {
@@ -276,7 +275,7 @@ export default function Orders({ navigation }: Props) {
         <View style={styles.orderDivider} />
 
         <View style={styles.orderItems}>
-          {order.items.map((item, index) => (
+          {(order.items ?? []).map((item, index) => (
             <Text key={index} style={styles.orderItemText}>
               {item.quantity}x {item.name}
             </Text>
@@ -293,8 +292,8 @@ export default function Orders({ navigation }: Props) {
           <Text style={styles.orderTotal}>${order.total}</Text>
         </View>
 
-       {(order.status === 'on_the_way' || order.status === 'picked_up') && (
-          <TouchableOpacity  onPress={() => navigation.navigate('orderTracking', { order })} style={styles.trackButton}>
+        {(order.status === 'on_the_way' || order.status === 'picked_up') && (
+          <TouchableOpacity onPress={() => navigation.navigate('orderTracking', { order })} style={styles.trackButton}>
             <LinearGradient
               colors={['#22c55e', '#16a34a']}
               style={styles.trackButtonGradient}
@@ -319,8 +318,8 @@ export default function Orders({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Header */}
@@ -439,7 +438,7 @@ export default function Orders({ navigation }: Props) {
 
             <View style={styles.modalBody}>
               <Text style={styles.modalSubtitle}>Selecciona un rango de fechas</Text>
-              
+
               {/* Quick Date Filters */}
               <View style={styles.quickFilters}>
                 <TouchableOpacity
@@ -481,7 +480,7 @@ export default function Orders({ navigation }: Props) {
                   const date = new Date();
                   date.setDate(date.getDate() - index);
                   const isSelected = selectedDate?.toDateString() === date.toDateString();
-                  
+
                   return (
                     <TouchableOpacity
                       key={index}

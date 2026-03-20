@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
   StatusBar, ScrollView, TextInput, ActivityIndicator,
@@ -9,8 +9,9 @@ import Svg, { Path, Circle } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
-import { useCupon } from '../../../application/hooks/useCupon'
-import type { OrderItem } from '../../../types/order'
+import { useDomicilios } from '../../../application/context/DomiciliosContext'
+import { useAuth } from '../../../application/context/AuthContext'
+import type { Domicilio } from '../../../domain/entities/Domicilio'
 
 type OrderSummaryNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderSummary'>
 type OrderSummaryRouteProp = RouteProp<RootStackParamList, 'OrderSummary'>
@@ -20,36 +21,11 @@ type Props = {
   route: OrderSummaryRouteProp
 }
 
-// ─── Iconos SVG ──────────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 const BackIcon = () => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
-  </Svg>
-)
-
-const TagIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-    <Path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-    <Circle cx="7" cy="7" r="1.5" fill="#22c55e" stroke="none" />
-  </Svg>
-)
-
-const CheckIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
-    <Path d="m20 6-11 11-5-5" />
-  </Svg>
-)
-
-const XIcon = () => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5">
-    <Path d="M18 6 6 18M6 6l12 12" />
-  </Svg>
-)
-
-const CloseSmallIcon = () => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
-    <Path d="M18 6 6 18M6 6l12 12" />
   </Svg>
 )
 
@@ -67,65 +43,124 @@ const NoteIcon = () => (
   </Svg>
 )
 
+const CheckIcon = () => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+    <Path d="m20 6-11 11-5-5" />
+  </Svg>
+)
+
+const ChevronIcon = () => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+    <Path d="m9 18 6-6-6-6" />
+  </Svg>
+)
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function OrderSummary({ navigation, route }: Props) {
-  const { items, negocioId, negocioNombre, direccionEntrega, costoEnvio } = route.params
+  const { restaurants } = route.params
 
   const [notas, setNotas] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedDomicilio, setSelectedDomicilio] = useState<Domicilio | null>(null)
+  const [showDomicilios, setShowDomicilios] = useState(false)
 
-  // Calcula subtotal a partir de los items
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0)
+  const { domicilios, fetchDomicilios, defaultDomicilio, isLoading: loadingDomicilios } = useDomicilios()
+  const { session } = useAuth()
 
-  const {
-    codigo,
-    validacion,
-    isValidating,
-    descuentoAplicado,
-    onCodigoChange,
-    aplicarCupon,
-    limpiarCupon,
-  } = useCupon(negocioId, subtotal)
+  useEffect(() => {
+    fetchDomicilios()
+  }, [])
 
-  const total = subtotal - descuentoAplicado + (costoEnvio ?? 0)
+  useEffect(() => {
+    if (defaultDomicilio && !selectedDomicilio) {
+      setSelectedDomicilio(defaultDomicilio)
+    }
+  }, [defaultDomicilio])
 
-  const handleConfirmar = () => {
-    // Navega a confirmación de pago pasando el cupón aplicado si existe
-    navigation.navigate('ConfirmPayment', {
-      items,
-      negocioId,
-      subtotal,
-      descuento: descuentoAplicado,
-      costoEnvio: costoEnvio ?? 0,
-      total,
-      codigoCupon: validacion?.valido ? codigo : undefined,
-      cuponId: validacion?.cupon?.id,
-      notas: notas.trim() || undefined,
-      direccionEntrega,
-    })
+  // Calcula totales globales sumando todos los restaurantes
+  const subtotalGeneral = restaurants.reduce(
+    (acc, r) => acc + r.items.reduce((a, i) => a + i.price * i.quantity, 0), 0
+  )
+  const costoEnvioGeneral = restaurants.reduce((acc, r) => acc + r.costoEnvio, 0)
+  const totalGeneral = subtotalGeneral + costoEnvioGeneral
+
+  const getDireccion = (d: Domicilio) =>
+    `${d.calle} ${d.numeroExt ?? ''}${d.numeroInt ? ' Int. ' + d.numeroInt : ''}, ${d.colonia ?? ''}, ${d.ciudad ?? ''}`
+
+  /**
+   * handleConfirmar — hace un POST /pedidos por cada restaurante en paralelo
+   * usando Promise.all para esperar a que todos terminen antes de navegar.
+   * Si alguno falla, muestra el error y no navega.
+   */
+  const handleConfirmar = async () => {
+    if (!selectedDomicilio) {
+      alert('Selecciona una dirección de entrega')
+      return
+    }
+    if (!session?.accessToken) {
+      alert('Sesión expirada, vuelve a iniciar sesión')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      // Hacer un POST por cada restaurante en paralelo
+      const results = await Promise.all(
+        restaurants.map(async (restaurant) => {
+          const body = {
+            sucursal_id: restaurant.sucursalId,
+            domicilio_id: selectedDomicilio.id,
+            notas: notas.trim() || null,
+            propina: 0,
+            items: restaurant.items.map(item => ({
+              nombre: item.name,
+              precio_unitario: item.price,
+              cantidad: item.quantity,
+            })),
+          }
+
+          const res = await fetch('http://192.168.1.18:8000/api/v1/pedidos', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.accessToken}`,
+            },
+            body: JSON.stringify(body),
+          })
+
+          if (!res.ok) {
+            const error = await res.json()
+            throw new Error(`${restaurant.negocioNombre}: ${error.detail ?? 'Error al crear pedido'}`)
+          }
+
+          const pedido = await res.json()
+          return {
+            orderNumber: pedido.order_number,
+            negocioNombre: restaurant.negocioNombre,
+            total: restaurant.items.reduce((acc, i) => acc + i.price * i.quantity, 0) + restaurant.costoEnvio,
+          }
+        })
+      )
+
+      navigation.navigate('OrderConfirmation', {
+        orders: results,
+        totalGeneral,
+      })
+
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Error al confirmar el pedido')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-
-  // Estado visual del campo de cupón
-  const cuponEstado = (() => {
-    if (isValidating) return 'validating'
-    if (!validacion) return 'idle'
-    return validacion.valido ? 'valid' : 'invalid'
-  })()
-
-  const cuponBorderColor = {
-    idle: '#E5E7EB',
-    validating: '#E5E7EB',
-    valid: '#22c55e',
-    invalid: '#EF4444',
-  }[cuponEstado]
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -137,28 +172,90 @@ export default function OrderSummary({ navigation, route }: Props) {
 
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* Negocio */}
+          {/* Selector de domicilio */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>{negocioNombre}</Text>
-            <View style={styles.row}>
+            <View style={styles.sectionHeader}>
               <LocationIcon />
-              <Text style={styles.cardSubtitle}>{direccionEntrega}</Text>
+              <Text style={styles.sectionTitle}>Dirección de entrega</Text>
             </View>
+
+            {loadingDomicilios ? (
+              <ActivityIndicator size="small" color="#22c55e" />
+            ) : domicilios.length === 0 ? (
+              <TouchableOpacity
+                style={styles.addDomicilioButton}
+                onPress={() => navigation.navigate('AddAddress')}
+              >
+                <Text style={styles.addDomicilioText}>+ Agregar dirección</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.domicilioSelected}
+                  onPress={() => setShowDomicilios(!showDomicilios)}
+                >
+                  <View style={styles.domicilioSelectedInfo}>
+                    <Text style={styles.domicilioEtiqueta}>
+                      {selectedDomicilio?.etiqueta ?? 'Selecciona una dirección'}
+                    </Text>
+                    {selectedDomicilio && (
+                      <Text style={styles.domicilioDireccion} numberOfLines={1}>
+                        {getDireccion(selectedDomicilio)}
+                      </Text>
+                    )}
+                  </View>
+                  <ChevronIcon />
+                </TouchableOpacity>
+
+                {showDomicilios && domicilios.map(d => (
+                  <TouchableOpacity
+                    key={d.id}
+                    style={[
+                      styles.domicilioOption,
+                      selectedDomicilio?.id === d.id && styles.domicilioOptionSelected
+                    ]}
+                    onPress={() => {
+                      setSelectedDomicilio(d)
+                      setShowDomicilios(false)
+                    }}
+                  >
+                    <View style={styles.domicilioOptionInfo}>
+                      <Text style={styles.domicilioEtiqueta}>{d.etiqueta}</Text>
+                      <Text style={styles.domicilioDireccion} numberOfLines={1}>
+                        {getDireccion(d)}
+                      </Text>
+                    </View>
+                    {selectedDomicilio?.id === d.id && <CheckIcon />}
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
           </View>
 
-          {/* Items del pedido */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Tu pedido</Text>
-            {items.map((item, index) => (
-              <View key={index} style={styles.itemRow}>
-                <View style={styles.itemQtyBadge}>
-                  <Text style={styles.itemQtyText}>{item.quantity}</Text>
+          {/* Items agrupados por restaurante */}
+          {restaurants.map((restaurant, rIndex) => {
+            const subtotal = restaurant.items.reduce(
+              (acc, i) => acc + i.price * i.quantity, 0
+            )
+            return (
+              <View key={rIndex} style={styles.card}>
+                <Text style={styles.cardTitle}>{restaurant.negocioNombre}</Text>
+                {restaurant.items.map((item, index) => (
+                  <View key={index} style={styles.itemRow}>
+                    <View style={styles.itemQtyBadge}>
+                      <Text style={styles.itemQtyText}>{item.quantity}</Text>
+                    </View>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
+                  </View>
+                ))}
+                <View style={styles.restaurantSubtotal}>
+                  <Text style={styles.subtotalLabel}>Subtotal</Text>
+                  <Text style={styles.subtotalValue}>${subtotal.toFixed(2)}</Text>
                 </View>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
               </View>
-            ))}
-          </View>
+            )
+          })}
 
           {/* Notas */}
           <View style={styles.card}>
@@ -177,108 +274,36 @@ export default function OrderSummary({ navigation, route }: Props) {
             />
           </View>
 
-          {/* Campo de cupón */}
-          <View style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <TagIcon />
-              <Text style={styles.sectionTitle}>Código de cupón</Text>
-            </View>
-
-            <View style={[styles.cuponInputContainer, { borderColor: cuponBorderColor }]}>
-              <TextInput
-                style={styles.cuponInput}
-                placeholder="Ingresa tu código"
-                placeholderTextColor="#9CA3AF"
-                value={codigo}
-                onChangeText={onCodigoChange}
-                autoCapitalize="characters"
-                autoCorrect={false}
-              />
-
-              {/* Indicador de estado a la derecha del input */}
-              <View style={styles.cuponInputRight}>
-                {isValidating && (
-                  <ActivityIndicator size="small" color="#22c55e" />
-                )}
-                {!isValidating && cuponEstado === 'valid' && <CheckIcon />}
-                {!isValidating && cuponEstado === 'invalid' && <XIcon />}
-                {!isValidating && cuponEstado === 'idle' && codigo.length > 0 && (
-                  <TouchableOpacity onPress={limpiarCupon}>
-                    <CloseSmallIcon />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-
-            {/* Botón Aplicar — solo visible si no está validando ni ya aplicado */}
-            {cuponEstado === 'idle' && codigo.length >= 3 && (
-              <TouchableOpacity style={styles.aplicarButton} onPress={aplicarCupon}>
-                <Text style={styles.aplicarButtonText}>Aplicar cupón</Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Feedback de validación */}
-            {cuponEstado === 'valid' && validacion && (
-              <View style={styles.cuponFeedbackValid}>
-                <CheckIcon />
-                <Text style={styles.cuponFeedbackValidText}>
-                  {validacion.cupon?.descripcion ?? '¡Cupón aplicado!'} — Ahorras ${descuentoAplicado.toFixed(2)}
-                </Text>
-              </View>
-            )}
-            {cuponEstado === 'invalid' && validacion && (
-              <View style={styles.cuponFeedbackInvalid}>
-                <XIcon />
-                <Text style={styles.cuponFeedbackInvalidText}>
-                  {validacion.mensajeError ?? 'Cupón no válido'}
-                </Text>
-              </View>
-            )}
-          </View>
-
           {/* Desglose de totales */}
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Desglose</Text>
-
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Subtotal</Text>
-              <Text style={styles.totalValue}>${subtotal.toFixed(2)}</Text>
+              <Text style={styles.totalValue}>${subtotalGeneral.toFixed(2)}</Text>
             </View>
-
-            {descuentoAplicado > 0 && (
-              <View style={styles.totalRow}>
-                <View style={styles.descuentoLabel}>
-                  <TagIcon />
-                  <Text style={styles.descuentoText}>Descuento ({codigo})</Text>
-                </View>
-                <Text style={styles.descuentoValue}>-${descuentoAplicado.toFixed(2)}</Text>
-              </View>
-            )}
-
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Costo de envío</Text>
               <Text style={styles.totalValue}>
-                {costoEnvio === 0 ? 'Gratis' : `$${(costoEnvio ?? 0).toFixed(2)}`}
+                {costoEnvioGeneral === 0 ? 'Gratis' : `$${costoEnvioGeneral.toFixed(2)}`}
               </Text>
             </View>
-
             <View style={styles.totalDivider} />
-
             <View style={styles.totalRow}>
               <Text style={styles.totalFinalLabel}>Total</Text>
-              <Text style={styles.totalFinalValue}>${total.toFixed(2)}</Text>
+              <Text style={styles.totalFinalValue}>${totalGeneral.toFixed(2)}</Text>
             </View>
           </View>
 
           <View style={{ height: 100 }} />
         </ScrollView>
 
-        {/* Botón confirmar fijo al fondo */}
+        {/* Botón confirmar */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.confirmButton}
             onPress={handleConfirmar}
             activeOpacity={0.85}
+            disabled={isSubmitting}
           >
             <LinearGradient
               colors={['#22c55e', '#16a34a']}
@@ -286,174 +311,60 @@ export default function OrderSummary({ navigation, route }: Props) {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.confirmButtonText}>Confirmar Pedido</Text>
-              <Text style={styles.confirmButtonTotal}>${total.toFixed(2)}</Text>
+              {isSubmitting ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <>
+                  <Text style={styles.confirmButtonText}>Confirmar Pedido</Text>
+                  <Text style={styles.confirmButtonTotal}>${totalGeneral.toFixed(2)}</Text>
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </View>
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
 
-// ─── Estilos ──────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-  },
-  backButton: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
-  scroll: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
-
-  // Cards
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 6 },
-  cardSubtitle: { fontSize: 14, color: '#6B7280', marginLeft: 6, flex: 1 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
-
-  // Items
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  itemQtyBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    backgroundColor: '#F0FDF4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  itemQtyText: { fontSize: 13, fontWeight: '700', color: '#16a34a' },
-  itemName: { flex: 1, fontSize: 14, color: '#374151' },
-  itemPrice: { fontSize: 14, fontWeight: '600', color: '#000' },
-
-  // Notas
-  notasInput: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#374151',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-
-  // Cupón
-  cuponInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    borderWidth: 1.5,
-    marginBottom: 8,
-  },
-  cuponInput: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#000',
-    letterSpacing: 1,
-    paddingVertical: 10,
-  },
-  cuponInputRight: {
-    width: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aplicarButton: {
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#F0FDF4',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-    marginTop: 4,
-  },
-  aplicarButtonText: { fontSize: 14, fontWeight: '700', color: '#16a34a' },
-  cuponFeedbackValid: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#F0FDF4',
-    borderRadius: 10,
-  },
-  cuponFeedbackValidText: { fontSize: 13, color: '#15803d', fontWeight: '500', flex: 1 },
-  cuponFeedbackInvalid: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#FEF2F2',
-    borderRadius: 10,
-  },
-  cuponFeedbackInvalidText: { fontSize: 13, color: '#DC2626', fontWeight: '500', flex: 1 },
-
-  // Totales
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  totalLabel: { fontSize: 14, color: '#6B7280' },
-  totalValue: { fontSize: 14, color: '#374151', fontWeight: '500' },
-  descuentoLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  descuentoText: { fontSize: 14, color: '#16a34a', fontWeight: '500' },
-  descuentoValue: { fontSize: 14, color: '#16a34a', fontWeight: '700' },
-  totalDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 4 },
-  totalFinalLabel: { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  totalFinalValue: { fontSize: 20, fontWeight: 'bold', color: '#000' },
-
-  // Footer
-  footer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  confirmButton: { borderRadius: 16, overflow: 'hidden' },
-  confirmButtonGradient: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-  },
-  confirmButtonText: { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  confirmButtonTotal: { fontSize: 18, fontWeight: 'bold', color: '#000' },
+  container:              { flex: 1, backgroundColor: '#F9FAFB' },
+  header:                 { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFFFFF' },
+  backButton:             { width: 40, height: 40, justifyContent: 'center' },
+  headerTitle:            { fontSize: 18, fontWeight: 'bold', color: '#000' },
+  scroll:                 { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
+  card:                   { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  cardTitle:              { fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 12 },
+  sectionHeader:          { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  sectionTitle:           { fontSize: 15, fontWeight: '700', color: '#111827' },
+  addDomicilioButton:     { paddingVertical: 12, borderRadius: 12, backgroundColor: '#F0FDF4', alignItems: 'center', borderWidth: 1, borderColor: '#BBF7D0' },
+  addDomicilioText:       { fontSize: 14, fontWeight: '700', color: '#16a34a' },
+  domicilioSelected:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
+  domicilioSelectedInfo:  { flex: 1 },
+  domicilioOption:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', marginTop: 8 },
+  domicilioOptionSelected:{ borderColor: '#22c55e', backgroundColor: '#F0FDF4' },
+  domicilioOptionInfo:    { flex: 1 },
+  domicilioEtiqueta:      { fontSize: 14, fontWeight: '700', color: '#000' },
+  domicilioDireccion:     { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  itemRow:                { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  itemQtyBadge:           { width: 26, height: 26, borderRadius: 8, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  itemQtyText:            { fontSize: 13, fontWeight: '700', color: '#16a34a' },
+  itemName:               { flex: 1, fontSize: 14, color: '#374151' },
+  itemPrice:              { fontSize: 14, fontWeight: '600', color: '#000' },
+  restaurantSubtotal:     { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  subtotalLabel:          { fontSize: 14, color: '#6B7280' },
+  subtotalValue:          { fontSize: 14, fontWeight: '600', color: '#000' },
+  notasInput:             { backgroundColor: '#F9FAFB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#374151', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 72, textAlignVertical: 'top' },
+  totalRow:               { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+  totalLabel:             { fontSize: 14, color: '#6B7280' },
+  totalValue:             { fontSize: 14, color: '#374151', fontWeight: '500' },
+  totalDivider:           { height: 1, backgroundColor: '#F3F4F6', marginVertical: 4 },
+  totalFinalLabel:        { fontSize: 16, fontWeight: 'bold', color: '#000' },
+  totalFinalValue:        { fontSize: 20, fontWeight: 'bold', color: '#000' },
+  footer:                 { paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  confirmButton:          { borderRadius: 16, overflow: 'hidden' },
+  confirmButtonGradient:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 24 },
+  confirmButtonText:      { fontSize: 16, fontWeight: 'bold', color: '#000' },
+  confirmButtonTotal:     { fontSize: 18, fontWeight: 'bold', color: '#000' },
 })
