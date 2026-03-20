@@ -7,7 +7,7 @@ import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
-import type { OrderItem } from '../../../types/order';
+import { useCart } from '../../../application/context/CartContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,17 +69,25 @@ const MOCK_BUSINESS: BusinessData = {
 
 export default function BusinessDetailScreen({ navigation, route }: Props) {
   const { sucursal_id } = route.params;
-  const [business, setBusiness] = React.useState<BusinessData | null>(null)
+  const [business, setBusiness] = useState<BusinessData | null>(null)
+  const [activeCategory, setActiveCategory] = useState('All')
+
+  /**
+   * useCart() nos da acceso al carrito global.
+   * addItem → agrega un item al carrito
+   * increaseQuantity / decreaseQuantity → controlan la cantidad
+   * getTotalItems → total de items en TODO el carrito
+   * cart → array de restaurantes con sus items
+   */
+  const { addItem, increaseQuantity, decreaseQuantity, cart, getTotalItems } = useCart()
 
   useEffect(() => {
     const fetchBusiness = async () => {
       try {
         const res = await fetch(
-          `http://192.168.100.7:8000/api/v1/sucursales/${sucursal_id}`
+          `http://192.168.1.18:8000/api/v1/sucursales/${sucursal_id}`
         )
-
         const data = await res.json()
-
         setBusiness({
           id: data.id,
           name: data.nombre,
@@ -104,17 +112,12 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
             category: item.categoria
           }))
         })
-
       } catch (error) {
         console.error(error)
       }
     }
-
     fetchBusiness()
   }, [sucursal_id])
-
-  const [cart, setCart] = React.useState<Record<string, number>>({})
-  const [activeCategory, setActiveCategory] = React.useState('All')
 
   if (!business) {
     return (
@@ -125,59 +128,56 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
   }
 
   const categories = ['All', ...Array.from(new Set(business.menu.map(m => m.category)))]
+  const filteredMenu = activeCategory === 'All'
+    ? business.menu
+    : business.menu.filter(m => m.category === activeCategory)
 
-  const filteredMenu =
-    activeCategory === 'All'
-      ? business.menu
-      : business.menu.filter(m => m.category === activeCategory)
+  /**
+   * Busca los items de ESTE restaurante en el carrito global.
+   * Así sabemos cuántos de cada item tiene el usuario agregado.
+   */
+  const restaurantInCart = cart.find(r => r.sucursal_id === sucursal_id)
+  const getItemQty = (itemId: string) =>
+    restaurantInCart?.items.find(i => i.id === itemId)?.cantidad ?? 0
 
-  const totalItems = Object.values(cart).reduce((a, b) => a + b, 0)
+  const totalItemsThisRestaurant = restaurantInCart?.items.reduce(
+    (acc, i) => acc + i.cantidad, 0
+  ) ?? 0
 
-  const totalPrecio = Object.entries(cart).reduce((acc, [id, qty]) => {
-    const item = business.menu.find(m => m.id === id)
-    return acc + (item?.price ?? 0) * qty
-  }, 0)
+  const totalPrecioThisRestaurant = restaurantInCart?.items.reduce(
+    (acc, i) => acc + i.precio_unitario * i.cantidad, 0
+  ) ?? 0
 
   const handleAdd = (item: MenuItem) => {
-    setCart(prev => ({
-      ...prev,
-      [item.id]: (prev[item.id] ?? 0) + 1
-    }))
+    const qty = getItemQty(item.id)
+    if (qty === 0) {
+      // Item nuevo — lo agrega al carrito con toda la info del restaurante
+      addItem(
+        {
+          sucursal_id,
+          negocio_id: business.id,
+          nombre: business.name,
+          logo: business.logo,
+          tiempo_entrega: business.deliveryTime,
+        },
+        {
+          id: item.id,
+          menu_item_id: item.id,
+          nombre: item.name,
+          precio_unitario: item.price,
+          cantidad: 1,
+          imagen: item.image,
+        }
+      )
+    } else {
+      // Ya existe — solo aumenta la cantidad
+      increaseQuantity(sucursal_id, item.id)
+    }
   }
 
   const handleRemove = (item: MenuItem) => {
-    setCart(prev => {
-      const qty = (prev[item.id] ?? 0) - 1
-      if (qty <= 0) {
-        const next = { ...prev }
-        delete next[item.id]
-        return next
-      }
-      return { ...prev, [item.id]: qty }
-    })
+    decreaseQuantity(sucursal_id, item.id)
   }
-
-  const handleIrAResumen = () => {
-    const items: OrderItem[] = Object.entries(cart)
-      .filter(([, qty]) => qty > 0)
-      .map(([id, qty]) => {
-        const menuItem = business.menu.find(m => m.id === id)!
-        return {
-          name: menuItem.name,
-          quantity: qty,
-          price: menuItem.price
-        }
-      })
-
-    navigation.navigate('OrderSummary', {
-      items,
-      negocioId: business.id,
-      negocioNombre: business.name,
-      direccionEntrega: business.address,
-      costoEnvio: business.deliveryFee,
-    })
-  }
-  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -189,12 +189,10 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
           <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
-
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.iconBtn}>
               <Feather name="share-2" size={20} color="#fff" />
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.iconBtn}>
               <Ionicons name="heart-outline" size={22} color="#fff" />
             </TouchableOpacity>
@@ -208,7 +206,6 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
 
         <View style={styles.identityRow}>
           <Image source={{ uri: business.logo }} style={styles.logo} />
-
           <View style={styles.identityText}>
             <Text style={styles.restaurantName}>{business.name}</Text>
             <Text style={styles.restaurantCategory}>{business.category}</Text>
@@ -216,23 +213,18 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.statsRow}>
-
           <View style={styles.statBadge}>
             <Ionicons name="star" size={16} color="#FF6B00" />
             <Text style={styles.statValue}>{business.rating}</Text>
             <Text style={styles.statLabel}>RATING</Text>
           </View>
-
           <View style={styles.statDivider} />
-
           <View style={styles.statBadge}>
             <Ionicons name="time-outline" size={16} color="#555" />
             <Text style={styles.statValue}>{business.deliveryTime}</Text>
             <Text style={styles.statLabel}>MINS</Text>
           </View>
-
           <View style={styles.statDivider} />
-
           <View style={styles.statBadge}>
             <MaterialIcons name="delivery-dining" size={18} color="#555" />
             <Text style={styles.statValue}>
@@ -240,7 +232,6 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
             </Text>
             <Text style={styles.statLabel}>ENVÍO</Text>
           </View>
-
         </View>
 
         <View style={styles.divider} />
@@ -263,64 +254,39 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
           </ScrollView>
 
           {filteredMenu.map(item => {
-            const qty = cart[item.id] ?? 0
-
+            const qty = getItemQty(item.id)
             return (
               <View key={item.id} style={styles.menuCard}>
-
                 <Image source={{ uri: item.image }} style={styles.menuCardImage} />
-
                 <View style={styles.menuCardInfo}>
-
                   <Text style={styles.menuCardName}>{item.name}</Text>
-
                   {item.description && (
                     <Text style={styles.menuCardDesc} numberOfLines={2}>
                       {item.description}
                     </Text>
                   )}
-
                   <View style={styles.menuCardFooter}>
-
-                    <Text style={styles.menuCardPrice}>
-                      ${item.price.toFixed(2)}
-                    </Text>
-
+                    <Text style={styles.menuCardPrice}>${item.price.toFixed(2)}</Text>
                     {qty === 0 ? (
-                      <TouchableOpacity
-                        style={styles.addButton}
-                        onPress={() => handleAdd(item)}
-                      >
+                      <TouchableOpacity style={styles.addButton} onPress={() => handleAdd(item)}>
                         <Ionicons name="add" size={20} color="#fff" />
                       </TouchableOpacity>
                     ) : (
                       <View style={styles.qtyControl}>
-
-                        <TouchableOpacity
-                          style={styles.qtyBtn}
-                          onPress={() => handleRemove(item)}
-                        >
+                        <TouchableOpacity style={styles.qtyBtn} onPress={() => handleRemove(item)}>
                           <Ionicons name="remove" size={16} color="#FF6B00" />
                         </TouchableOpacity>
-
                         <Text style={styles.qtyText}>{qty}</Text>
-
-                        <TouchableOpacity
-                          style={styles.qtyBtn}
-                          onPress={() => handleAdd(item)}
-                        >
+                        <TouchableOpacity style={styles.qtyBtn} onPress={() => handleAdd(item)}>
                           <Ionicons name="add" size={16} color="#FF6B00" />
                         </TouchableOpacity>
-
                       </View>
                     )}
-
                   </View>
                 </View>
               </View>
             )
           })}
-
         </View>
 
         <View style={styles.divider} />
@@ -333,29 +299,20 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {totalItems > 0 && (
+      {/* Botón de carrito — aparece cuando hay items de este restaurante */}
+      {totalItemsThisRestaurant > 0 && (
         <View style={styles.ctaContainer}>
-
           <TouchableOpacity
             style={styles.ctaButton}
-            onPress={handleIrAResumen}
+            onPress={() => navigation.navigate('Cart')}
             activeOpacity={0.85}
           >
-
             <View style={styles.ctaBadge}>
-              <Text style={styles.ctaBadgeText}>{totalItems}</Text>
+              <Text style={styles.ctaBadgeText}>{getTotalItems()}</Text>
             </View>
-
-            <Text style={styles.ctaButtonText}>
-              Ver resumen del pedido
-            </Text>
-
-            <Text style={styles.ctaTotal}>
-              ${totalPrecio.toFixed(2)}
-            </Text>
-
+            <Text style={styles.ctaButtonText}>Ver carrito</Text>
+            <Text style={styles.ctaTotal}>${totalPrecioThisRestaurant.toFixed(2)}</Text>
           </TouchableOpacity>
-
         </View>
       )}
 

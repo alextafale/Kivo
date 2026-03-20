@@ -34,6 +34,7 @@ import AddCard              from '../screens/client/payments/AddCard';
 import PaymentMethods       from '../screens/client/payments/PaymentsMethod';
 import ConfirmPayment       from '../screens/client/payments/ConfirmPayment';
 import OrderTrackingScreen  from '../screens/client/orders/OrderTracking';
+import CartScreen           from '../screens/client/orders/CartScreen';
 
 // ─── Negocio ──────────────────────────────────────────────────────────────────
 import BusinessOnboarding   from '../screens/business/onboarding/BusinessOnboarding';
@@ -82,6 +83,8 @@ export type RootStackParamList = {
   EdithProfile:         undefined;
   Orders:               undefined;
   OrderDetails:         { orderId: string };
+  Cart: undefined;
+
   OrderSummary: {
     items: OrderItem[];
     negocioId: string;
@@ -116,6 +119,8 @@ export type RootStackParamList = {
 
   // Repartidor
   DriverDashboard:      undefined;
+
+
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -166,6 +171,7 @@ export default function StackNavigation() {
         <Stack.Screen name="PaymentsMethod"       component={PaymentMethods} />
         <Stack.Screen name="ConfirmPayment"       component={ConfirmPayment} />
         <Stack.Screen name="orderTracking"        component={OrderTrackingScreen} />
+        <Stack.Screen name="Cart"                 component={CartScreen} />
 
         {/* ── Negocio ────────────────────────────────────────────────────── */}
         <Stack.Screen name="BusinessDashboard"    component={BusinessDashboard} />
