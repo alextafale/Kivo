@@ -1,5 +1,5 @@
 import { supabase } from '../../config/supabaseConfig'
-import type { ICuponRepository } from '../../domain/ports/repositories/lCuponRepository'
+import type { ICuponRepository } from '../../domain/ports/lNegocioRepository.ts/lCuponRepository'
 import type { Cupon, CuponCreate, CuponPatch, CuponValidacion } from '../../domain/entities/Cupon'
 
 const TABLE = 'cupones'

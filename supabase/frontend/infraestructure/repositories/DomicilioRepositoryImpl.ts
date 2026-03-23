@@ -67,13 +67,10 @@ function toRow(data: DomicilioCreate | DomicilioUpdate): Record<string, any> {
 }
 
 // ─── Helper: obtener user_id desde la sesión local ────────────────────────────
-// getSession() lee de SecureStore sin llamada de red — nunca lanza "No hay sesión"
-// si el usuario ya pasó por el login.
 
 async function getUserId(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession()
   if (session?.user?.id) return session.user.id
-  // Fallback: refrescar sesión si el token local expiró
   const { data: { session: refreshed } } = await supabase.auth.refreshSession()
   if (refreshed?.user?.id) return refreshed.user.id
   throw new Error('Sesión expirada. Por favor vuelve a iniciar sesión.')
@@ -104,6 +101,27 @@ export class DomicilioRepositoryImpl implements IDomicilioRepository {
       .single()
 
     if (error) throw new Error(error.message)
+    return fromRow(data)
+  }
+
+  // Obtiene el domicilio predeterminado del usuario autenticado
+  async getPredeterminado(): Promise<Domicilio | null> {
+    const userId = await getUserId()
+
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('*')
+      .eq('user_id', userId)
+      .eq('es_predeterminado', true)
+      .eq('activo', true)
+      .single()
+
+    if (error) {
+      // PGRST116 = no rows found — no es un error real, el usuario no tiene domicilio aún
+      if (error.code === 'PGRST116') return null
+      throw new Error(error.message)
+    }
+
     return fromRow(data)
   }
 

@@ -1,4 +1,4 @@
-import type { IProfileRepository } from '../../domain/ports/repositories/lProfileRepository'
+import type { IProfileRepository } from '../../domain/ports/lNegocioRepository.ts/lProfileRepository'
 import type { User } from '../../domain/entities/User'
 import { API_URL } from '@env'
 
