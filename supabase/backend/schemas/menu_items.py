@@ -31,31 +31,13 @@ class MenuItemOut(MenuItemBase):
         from_attributes = True
 
 
+class MenuItemFrontendCreate(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = None
+    precio: float
+    imagen_url: Optional[str] = None
+    disponible: Optional[bool] = True
+    categoria: str
 
-
-
-"""
-CREATE TABLE public.menu_items (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  sucursal_id uuid NOT NULL,
-  categoria_id uuid,
-  nombre text NOT NULL,
-  descripcion text,
-  precio numeric NOT NULL,
-  precio_original numeric,
-  imagen_url text,
-  es_popular boolean DEFAULT false,
-  es_nuevo boolean DEFAULT false,
-  disponible boolean DEFAULT true,
-  tiempo_prep_min integer DEFAULT 15,
-  alergenos ARRAY DEFAULT '{}'::text[],
-  etiquetas ARRAY DEFAULT '{}'::text[],
-  personalizaciones jsonb DEFAULT '[]'::jsonb,
-  orden integer DEFAULT 0,
-  creado_en timestamp with time zone DEFAULT now(),
-  actualizado_en timestamp with time zone DEFAULT now(),
-  CONSTRAINT menu_items_pkey PRIMARY KEY (id),
-  CONSTRAINT menu_items_sucursal_id_fkey FOREIGN KEY (sucursal_id) REFERENCES public.sucursales(id),
-  CONSTRAINT menu_items_categoria_id_fkey FOREIGN KEY (categoria_id) REFERENCES public.menu_categorias(id)
-);
-"""
+class MenuItemFrontendUpdate(MenuItemFrontendCreate):
+    pass

@@ -1,14 +1,20 @@
+# routes/pedidos.py
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from pydantic import BaseModel
 from db.database import SessionLocal
 from core.dependencies import get_current_user_id
 from models.pedidos import Pedido
 from models.pedido_items import PedidoItem
 from schemas.pedidos import PedidoIn, PedidoOut
+from schemas.enums import PedidoEstado
+from services.notification_service import send_push_notification
 import uuid
 
 router = APIRouter(tags=["Pedidos"])
+
 
 def get_db():
     db = SessionLocal()
@@ -17,10 +23,44 @@ def get_db():
     finally:
         db.close()
 
+
+# ─── Transiciones válidas de estado ──────────────────────────────────────────
+# Solo se puede avanzar en este orden, nunca retroceder ni saltar pasos
+TRANSICIONES_VALIDAS: dict[str, list[str]] = {
+    "pending":    ["confirmed", "cancelled"],
+    "confirmed":  ["preparing", "cancelled"],
+    "preparing":  ["ready",     "cancelled"],
+    "ready":      ["picked_up"],
+    "picked_up":  ["on_the_way"],
+    "on_the_way": ["delivered"],
+    "delivered":  [],
+    "cancelled":  [],
+    "refunded":   [],
+}
+
+# Campos de timestamp a actualizar según el nuevo estado
+TIMESTAMP_POR_ESTADO: dict[str, str] = {
+    "confirmed":  "aceptado_en",
+    "preparing":  "aceptado_en",
+    "ready":      "preparado_en",
+    "picked_up":  "recogido_en",
+    "on_the_way": "recogido_en",
+    "delivered":  "entregado_en",
+    "cancelled":  "cancelado_en",
+}
+
+
+class EstadoIn(BaseModel):
+    estado: PedidoEstado
+    motivo_cancelacion: str | None = None
+
+
+# ─── GET /pedidos ─────────────────────────────────────────────────────────────
+
 @router.get("/pedidos", summary="Obtener historial de pedidos")
 def get_pedidos(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
 ):
     query = text("""
         SELECT 
@@ -55,11 +95,13 @@ def get_pedidos(
     return [dict(row) for row in rows]
 
 
+# ─── GET /pedidos/{pedido_id} ─────────────────────────────────────────────────
+
 @router.get("/pedidos/{pedido_id}", summary="Obtener pedido por ID")
 def get_pedido(
     pedido_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
 ):
     query = text("""
         SELECT 
@@ -78,18 +120,148 @@ def get_pedido(
     return dict(row)
 
 
+# ─── GET /negocios/{negocio_id}/pedidos (para el negocio) ────────────────────
+
+@router.get("/negocios/{negocio_id}/pedidos", summary="Pedidos del negocio (para ManageOrders)")
+def get_pedidos_negocio(
+    negocio_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Lista los pedidos activos del negocio.
+    Solo el admin del negocio puede verlos.
+    """
+    # Verificar que el usuario es admin de este negocio
+    admin = db.execute(
+        text("SELECT id FROM negocio_admins WHERE negocio_id = :nid AND user_id = :uid"),
+        {"nid": negocio_id, "uid": user_id},
+    ).first()
+
+    if not admin:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver estos pedidos")
+
+    query = text("""
+        SELECT
+            p.id,
+            p.order_number      AS "orderNumber",
+            p.estado            AS status,
+            p.total,
+            p.subtotal,
+            p.costo_envio       AS "costoEnvio",
+            p.notas,
+            p.direccion_entrega AS "deliveryAddress",
+            p.creado_en         AS date,
+            pr.nombre           AS "clienteNombre",
+            pr.telefono         AS "clienteTelefono"
+        FROM pedidos p
+        LEFT JOIN profiles pr ON pr.id = p.user_id
+        WHERE p.negocio_id = :negocio_id
+          AND p.estado NOT IN ('delivered', 'cancelled', 'refunded')
+        ORDER BY p.creado_en DESC
+    """)
+    result = db.execute(query, {"negocio_id": negocio_id})
+    return [dict(row) for row in result.mappings().all()]
+
+
+# ─── PATCH /pedidos/{pedido_id}/estado ───────────────────────────────────────
+
+@router.patch("/pedidos/{pedido_id}/estado", summary="Cambiar estado de un pedido")
+async def cambiar_estado_pedido(
+    pedido_id: str,
+    body: EstadoIn,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Cambia el estado de un pedido.
+    Solo el admin del negocio dueño del pedido puede hacerlo.
+    Valida transiciones, actualiza timestamps y envía push al cliente.
+    """
+    # 1. Obtener el pedido
+    pedido = db.execute(
+        text("SELECT * FROM pedidos WHERE id = :id"),
+        {"id": pedido_id},
+    ).mappings().first()
+
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    # 2. Verificar que el usuario es admin del negocio dueño del pedido
+    admin = db.execute(
+        text("""
+            SELECT id FROM negocio_admins
+            WHERE negocio_id = :nid AND user_id = :uid
+        """),
+        {"nid": str(pedido["negocio_id"]), "uid": user_id},
+    ).first()
+
+    if not admin:
+        raise HTTPException(status_code=403, detail="No tienes permiso para modificar este pedido")
+
+    # 3. Validar transición de estado
+    estado_actual = pedido["estado"]
+    nuevo_estado = body.estado.value
+
+    if nuevo_estado not in TRANSICIONES_VALIDAS.get(estado_actual, []):
+        raise HTTPException(
+            status_code=400,
+            detail=f"No se puede cambiar de '{estado_actual}' a '{nuevo_estado}'",
+        )
+
+    # 4. Construir query de actualización con timestamp correspondiente
+    timestamp_campo = TIMESTAMP_POR_ESTADO.get(nuevo_estado)
+    timestamp_sql = f", {timestamp_campo} = NOW()" if timestamp_campo else ""
+
+    motivo_sql = ""
+    params: dict = {"id": pedido_id, "estado": nuevo_estado}
+
+    if nuevo_estado == "cancelled" and body.motivo_cancelacion:
+        motivo_sql = ", motivo_cancelacion = :motivo"
+        params["motivo"] = body.motivo_cancelacion
+
+    db.execute(
+        text(f"""
+            UPDATE pedidos
+            SET estado         = :estado,
+                actualizado_en = NOW()
+                {timestamp_sql}
+                {motivo_sql}
+            WHERE id = :id
+        """),
+        params,
+    )
+    db.commit()
+
+    # 5. Enviar push notification al cliente (async, no bloquea la respuesta)
+    push_token = db.execute(
+        text("SELECT expo_push_token FROM profiles WHERE id = :uid"),
+        {"uid": str(pedido["user_id"])},
+    ).scalar()
+
+    if push_token:
+        await send_push_notification(
+            expo_push_token=push_token,
+            estado=nuevo_estado,
+            order_number=pedido.get("order_number"),
+            pedido_id=pedido_id,
+        )
+
+    return {"ok": True, "estado": nuevo_estado}
+
+
+# ─── POST /pedidos ────────────────────────────────────────────────────────────
+
 @router.post("/pedidos", response_model=PedidoOut, summary="Crear pedido")
 def create_pedido(
     pedido_in: PedidoIn,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id)
+    user_id: str = Depends(get_current_user_id),
 ):
-   
-
     # 1. Obtener info de la sucursal
     sucursal = db.execute(
         text("SELECT * FROM sucursales WHERE id = :id"),
-        {"id": str(pedido_in.sucursal_id)}
+        {"id": str(pedido_in.sucursal_id)},
     ).mappings().first()
 
     if not sucursal:
@@ -98,15 +270,18 @@ def create_pedido(
     # 2. Obtener dirección del domicilio
     domicilio = db.execute(
         text("SELECT * FROM domicilios WHERE id = :id"),
-        {"id": str(pedido_in.domicilio_id)}
+        {"id": str(pedido_in.domicilio_id)},
     ).mappings().first()
 
     if not domicilio:
         raise HTTPException(status_code=404, detail="Domicilio no encontrado")
 
-    direccion_entrega = f"{domicilio['calle']} {domicilio['numero_ext']}, {domicilio['colonia']}, {domicilio['ciudad']}, {domicilio['estado']}"
+    direccion_entrega = (
+        f"{domicilio['calle']} {domicilio['numero_ext']}, "
+        f"{domicilio['colonia']}, {domicilio['ciudad']}, {domicilio['estado']}"
+    )
 
-    # 3. Calcular totales con snapshot de precios
+    # 3. Calcular totales
     subtotal = sum(item.precio_unitario * item.cantidad for item in pedido_in.items)
     costo_envio = sucursal.get("costo_envio", 0) or 0
     descuento = 0
@@ -155,7 +330,6 @@ def create_pedido(
     db.commit()
     db.refresh(pedido)
 
-    # 7. Cargar los items del pedido
     items = db.query(PedidoItem).filter(PedidoItem.pedido_id == pedido.id).all()
     pedido.items = items
 
