@@ -90,6 +90,7 @@ const categories = ['All', 'Tacos', 'Coffee', 'Healthy', 'Fast Food', 'Asian'];
 export default function HomeFeed() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Obtiene la ciudad del domicilio predeterminado del usuario autenticado
   const { ciudad, isLoading: loadingCiudad } = useCiudadUsuario();
@@ -98,6 +99,14 @@ export default function HomeFeed() {
   const { negocios, isLoading: loadingNegocios, error } = useNegociosPorCiudad(ciudad, selectedCategory);
 
   const isLoading = loadingCiudad || loadingNegocios;
+
+  // Filtro client-side por texto de búsqueda
+  const filteredNegocios = searchQuery.trim() === ''
+    ? negocios
+    : negocios.filter((n) =>
+        n.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (n.descripcion ?? '').toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -132,6 +141,9 @@ export default function HomeFeed() {
                 style={styles.searchInput}
                 placeholder="Ask Pidelo: 'Best tacos near me?'"
                 placeholderTextColor="#9CA3AF"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
               />
               <TouchableOpacity style={styles.micButton}>
                 <MicIcon />
@@ -196,18 +208,20 @@ export default function HomeFeed() {
             </View>
           )}
 
-          {!isLoading && !error && ciudad && negocios.length === 0 && (
+          {!isLoading && !error && ciudad && filteredNegocios.length === 0 && (
             <View style={styles.centerMessage}>
               <Text style={styles.emptyText}>
-                No hay negocios disponibles en {ciudad} para esta categoría.
+                {searchQuery.trim() !== ''
+                  ? `No se encontraron resultados para "${searchQuery}".`
+                  : `No hay negocios disponibles en ${ciudad} para esta categoría.`}
               </Text>
             </View>
           )}
 
           {/* LISTA DE NEGOCIOS */}
-          {!isLoading && negocios.length > 0 && (
+          {!isLoading && filteredNegocios.length > 0 && (
             <View style={styles.cardsContainer}>
-              {negocios.map((negocio) => (
+              {filteredNegocios.map((negocio) => (
                 <View key={negocio.id} style={styles.card}>
                   <TouchableOpacity
                     onPress={() =>
