@@ -96,7 +96,7 @@ const handleGetBusinness = async (ciudad: string, categoria: string) => {
     });
 
     const response = await fetch(
-      `http://192.168.1.18:8000/api/v1/negocios/sucursales?${params}`,
+      `https://kivo-v1.onrender.com/api/v1/negocios/sucursales?${params}`,
       {
         method: "GET",
         headers: { Accept: "application/json" },

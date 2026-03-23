@@ -85,7 +85,7 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
     const fetchBusiness = async () => {
       try {
         const res = await fetch(
-          `http://192.168.1.18:8000/api/v1/sucursales/${sucursal_id}`
+          `https://kivo-v1.onrender.com/api/v1/sucursales/${sucursal_id}`
         )
         const data = await res.json()
         setBusiness({

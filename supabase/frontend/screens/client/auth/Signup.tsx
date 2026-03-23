@@ -89,7 +89,7 @@ export default function Signup({ navigation, route }: Props) {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('AccountTypeSelection')} style={styles.backButton}>
               <BackIcon />
             </TouchableOpacity>
           </View>

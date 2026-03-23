@@ -121,7 +121,7 @@ export default function OrderSummary({ navigation, route }: Props) {
             })),
           }
 
-          const res = await fetch('http://192.168.1.18:8000/api/v1/pedidos', {
+          const res = await fetch('https://kivo-v1.onrender.com/api/v1/pedidos', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
