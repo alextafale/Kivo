@@ -89,15 +89,30 @@ export async function guardarPedido(
     if (error) throw error;
 
     const order: Order = {
-      id:              data.id,
-      restaurantName:  pedido.negocio.nombre,
-      restaurantImage: '',
-      items:           pedido.items,
+      id:                  data.id,
+      restaurantName:      pedido.negocio.nombre,
+      restaurantImage:     '',
+      items:               pedido.items,
       total,
-      status:          'pending',
-      date:            new Date(),
+      status:              'pending',
+      date:                new Date().toISOString(),
       orderNumber,
-      deliveryAddress: pedido.direccionEntrega,
+      deliveryAddress:     pedido.direccionEntrega,
+      userId:              '',
+      sucursalId:          null,
+      negocioId:           pedido.negocio.id,
+      repartidorId:        null,
+      domicilioId:         null,
+      notas:               pedido.notas || null,
+      subtotal:            null,
+      descuento:           null,
+      costoEnvio:          null,
+      propina:             null,
+      tiempoEstimadoMin:   null,
+      canceladoEn:         null,
+      motivoCancelacion:   null,
+      cuponId:             null,
+      codigoCupon:         null,
     };
 
     return { pedidoId: data.id, order };

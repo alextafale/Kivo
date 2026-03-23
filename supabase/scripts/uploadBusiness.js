@@ -41,7 +41,7 @@ const negocios = JSON.parse(fs.readFileSync(negociosPath, 'utf8'));
 
 // ─── Subir a Supabase ─────────────────────────────────────────────────────────
 async function uploadNegocios() {
-  console.log(`\n🚀 Subiendo ${negocios.length} negocio(s) a Supabase...\n`);
+  console.log(`\n Subiendo ${negocios.length} negocio(s) a Supabase...\n`);
 
   let exitosos = 0;
   let fallidos = 0;
@@ -83,7 +83,7 @@ async function uploadNegocios() {
   console.log(`✅ Exitosos : ${exitosos}`);
   if (fallidos > 0) console.log(`❌ Fallidos : ${fallidos}`);
   console.log('─────────────────────────────────');
-  console.log('\n🎉 Verifica en: Supabase → Table Editor → negocios\n');
+  console.log('\n Verifica en: Supabase → Table Editor → negocios\n');
 }
 
 uploadNegocios().catch(err => {

@@ -293,4 +293,4 @@ Semana 4: Tracking de Jesús listo → Tú puede mostrar cupones en el flujo de 
 | Pagos | Stripe SDK |
 | Build | EAS (Expo Application Services) |
 | Testing | Pytest (backend) |
-| Docs | Swagger / Scalar 
+| Docs | Swagger / Scalar
