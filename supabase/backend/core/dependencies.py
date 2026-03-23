@@ -1,13 +1,11 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import jwt
-from jwt.algorithms import ECAlgorithm
+from jose import jwt, JWTError
 import json
 from core.config import settings
 
 bearer_scheme = HTTPBearer()
 
-# Clave pública de Supabase en formato JWK
 SUPABASE_JWK = {
   "x": "KyXeJ4_v8ct824moH9zWV1aOYz_gwb1wCEGQhr8BfX0",
   "y": "-kUGMAphlvf9ilSGiWNT5B4HfM06qDidZpAnPxauWUU",
@@ -19,22 +17,14 @@ SUPABASE_JWK = {
   "key_ops": ["verify"]
 }
 
-# Convertir JWK a clave pública que PyJWT puede usar
-public_key = ECAlgorithm.from_jwk(json.dumps(SUPABASE_JWK))
-
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> str:
-    """
-    Valida el JWT firmado por Supabase y retorna el user_id (sub).
-    El cliente Expo debe enviar el header:
-        Authorization: Bearer <supabase_access_token>
-    """
     token = credentials.credentials
     try:
         payload = jwt.decode(
             token,
-            public_key,
+            SUPABASE_JWK,          # jose acepta el JWK dict directo
             algorithms=["ES256"],
             audience="authenticated",
         )
@@ -45,12 +35,7 @@ def get_current_user_id(
                 detail="Token inválido: falta el campo sub",
             )
         return user_id
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expirado",
-        )
-    except jwt.InvalidTokenError as e:
+    except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Token inválido: {str(e)}",
