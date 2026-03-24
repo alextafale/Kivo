@@ -24,6 +24,8 @@
       "edgeToEdgeEnabled": true,
       "googleServicesFile": "./google-services.json",
       "package": "com.pidelo.app"
+      "edgeToEdgeEnabled": true,
+      "package": "com.NJesusEduardo.Kivu"
     },
     "web": {
       "favicon": "./assets/favicon.png"
