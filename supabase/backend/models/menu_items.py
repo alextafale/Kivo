@@ -7,8 +7,8 @@ from db.database import Base
 class MenuItem(Base):
     __tablename__ = "menu_items"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    sucursal_id = Column(UUID(as_uuid=True),ForeignKey("sucursales.id"), nullable=False)
-    categoria_id = Column(UUID(as_uuid=True),ForeignKey("menu_categorias.id"), nullable=True)
+    sucursal_id = Column(UUID(as_uuid=True),ForeignKey("public.sucursales.id"), nullable=False)
+    categoria_id = Column(UUID(as_uuid=True),ForeignKey("public.menu_categorias.id"), nullable=True)
     nombre = Column(String(50), nullable=False)
     descripcion = Column(String(255), nullable=True)
     precio = Column(Numeric, nullable=False)
@@ -24,3 +24,7 @@ class MenuItem(Base):
     orden = Column(Integer, default=0)
     creado_en = Column(TIMESTAMP, nullable=False, server_default=func.now())
     actualizado_en = Column(TIMESTAMP, nullable=False, onupdate=func.now())
+
+    __table_args__ = (
+        {"schema": "public"},
+    )

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,11 @@ import { RootStackParamList } from '../../../navigation/StacNavigation';
 
 // 👇 Importa el componente de navegación
 import BottomNavBar, { TabName } from '../../../components/business/tabNavigation';
+import { useAuth } from '../../../application/context/AuthContext';
+import { useAdminNegocio } from '../../../application/hooks/useAdminNegocio';
+import { supabase } from '../../../config/supabaseConfig';
+
+const BASE_URL = 'https://kivo-v1.onrender.com/api/v1';
 
 type BusinessDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BusinessDashboard'>;
 
@@ -75,50 +80,15 @@ const PlusIcon = () => (
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-interface Order {
-  id: string;
-  orderNumber: string;
-  items: string;
-  time: string;
-  customer: string;
-  status: 'preparing' | 'outForDelivery' | 'delivered';
-  icon: 'pizza' | 'burger';
-}
-
-const recentOrders: Order[] = [
-  {
-    id: '1',
-    orderNumber: '#PD-9402',
-    items: '3x Truffle Burger Combo',
-    time: '22 mins ago',
-    customer: 'Marcus J.',
-    status: 'preparing',
-    icon: 'burger',
-  },
-  {
-    id: '2',
-    orderNumber: '#PD-9398',
-    items: '1x Vegan Salad Bowl',
-    time: '22 mins ago',
-    customer: 'Sarah L.',
-    status: 'outForDelivery',
-    icon: 'burger',
-  },
-  {
-    id: '3',
-    orderNumber: '#PD-9395',
-    items: '2x Pizza Margherita',
-    time: '40 mins ago',
-    customer: 'James W.',
-    status: 'delivered',
-    icon: 'pizza',
-  },
-];
-
-const statusConfig = {
-  preparing:      { label: 'Preparing',        color: '#22c55e', bg: '#F0FDF4' },
-  outForDelivery: { label: 'Out for Delivery',  color: '#F59E0B', bg: '#FEF3C7' },
-  delivered:      { label: 'Delivered',         color: '#9CA3AF', bg: '#F9FAFB' },
+const ESTADO_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  pending:    { label: 'Pendiente',   color: '#F59E0B', bg: '#FEF3C7' },
+  confirmed:  { label: 'Confirmado',  color: '#8B5CF6', bg: '#EDE9FE' },
+  preparing:  { label: 'Preparando', color: '#F97316', bg: '#FFF7ED' },
+  ready:      { label: 'Listo',       color: '#06B6D4', bg: '#ECFEFF' },
+  picked_up:  { label: 'Recogido',    color: '#3B82F6', bg: '#EFF6FF' },
+  on_the_way: { label: 'En camino',   color: '#3B82F6', bg: '#EFF6FF' },
+  delivered:  { label: 'Entregado',   color: '#22c55e', bg: '#F0FDF4' },
+  cancelled:  { label: 'Cancelado',   color: '#EF4444', bg: '#FEF2F2' },
 };
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -126,6 +96,50 @@ const statusConfig = {
 export default function BusinessDashboard({ navigation }: Props) {
   const [storeOpen, setStoreOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('Dashboard');
+
+  const { adminAccess } = useAuth();
+  const negocioId = adminAccess?.negocioId;
+  const { negocio } = useAdminNegocio(negocioId ?? '');
+  
+  const [pedidos, setPedidos] = useState<any[]>([]);
+
+  const fetchPedidos = useCallback(async () => {
+    if (!negocioId) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    try {
+      const res = await fetch(`${BASE_URL}/negocios/${negocioId}/pedidos`, {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPedidos(data);
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [negocioId]);
+
+  useEffect(() => {
+    fetchPedidos();
+  }, [fetchPedidos]);
+
+  useEffect(() => {
+    if (!negocioId) return;
+    const channel = supabase
+      .channel(`dashboard:${negocioId}:pedidos`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos', filter: `negocio_id=eq.${negocioId}` }, () => fetchPedidos())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [negocioId, fetchPedidos]);
+
+  const activeOrdersCount = pedidos.filter(p => !['delivered', 'cancelled'].includes(p.status)).length;
+  
+  const hoy = new Date().toISOString().split('T')[0];
+  const deliveredToday = pedidos.filter(p => p.status === 'delivered' && p.date?.includes(hoy));
+  const dailySales = deliveredToday.reduce((sum, p) => sum + Number(p.total || 0), 0);
+  const formattedSales = dailySales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const progressPct = Math.min((dailySales / 2000) * 100, 100);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -146,8 +160,8 @@ export default function BusinessDashboard({ navigation }: Props) {
               </LinearGradient>
             </View>
             <View>
-              <Text style={styles.businessName}>Green Table Bistro</Text>
-              <Text style={styles.businessAddress}>Kivu.app/green-table</Text>
+              <Text style={styles.businessName}>{negocio?.nombre || 'Cargando...'}</Text>
+              <Text style={styles.businessAddress}>{negocio?.slug ? `Kivu.app/${negocio.slug}` : 'Kivu.app/...'}</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -168,7 +182,7 @@ export default function BusinessDashboard({ navigation }: Props) {
         <View style={styles.salesSection}>
           <Text style={styles.sectionLabel}>Daily Sales</Text>
           <View style={styles.salesHeader}>
-            <Text style={styles.salesAmount}>$1,240.50</Text>
+            <Text style={styles.salesAmount}>${formattedSales}</Text>
             <Text style={styles.salesCurrency}>USD</Text>
           </View>
           <View style={styles.salesChange}>
@@ -179,7 +193,7 @@ export default function BusinessDashboard({ navigation }: Props) {
             <View style={styles.progressBar}>
               <LinearGradient
                 colors={['#22c55e', '#16a34a']}
-                style={[styles.progressFill, { width: '62%' }]}
+                style={[styles.progressFill, { width: `${progressPct}%` }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               />
@@ -190,7 +204,11 @@ export default function BusinessDashboard({ navigation }: Props) {
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
+          <TouchableOpacity 
+            style={styles.statCard}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('ManageOrders')}
+          >
             <LinearGradient
               colors={['#22c55e', '#16a34a']}
               style={styles.activeOrdersCard}
@@ -200,10 +218,10 @@ export default function BusinessDashboard({ navigation }: Props) {
               <View style={styles.activeOrdersIcon}>
                 <ShoppingBagIcon />
               </View>
-              <Text style={styles.activeOrdersNumber}>14</Text>
+              <Text style={styles.activeOrdersNumber}>{activeOrdersCount}</Text>
               <Text style={styles.activeOrdersLabel}>Active Orders</Text>
             </LinearGradient>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.statCard}>
             <View style={styles.reviewsCard}>
@@ -225,26 +243,26 @@ export default function BusinessDashboard({ navigation }: Props) {
         <View style={styles.ordersSection}>
           <View style={styles.ordersSectionHeader}>
             <Text style={styles.sectionTitle}>Recent Orders</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('ManageOrders')}>
               <Text style={styles.viewAllText}>View All →</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.ordersList}>
-            {recentOrders.map((order) => {
-              const statusInfo = statusConfig[order.status];
-              const OrderIcon = order.icon === 'pizza' ? PizzaIcon : BurgerIcon;
+            {pedidos.slice(0, 5).map((order) => {
+              const statusInfo = ESTADO_CONFIG[order.status] || { label: order.status, color: '#000', bg: '#EEE' };
+              const OrderIcon = order.icon === 'pizza' ? PizzaIcon : BurgerIcon; // or dynamic
 
               return (
-                <TouchableOpacity key={order.id} style={styles.orderItem}>
+                <TouchableOpacity key={order.id} style={styles.orderItem} onPress={() => navigation.navigate('ManageOrders')}>
                   <View style={[styles.orderIconContainer, order.status === 'delivered' && styles.orderIconDelivered]}>
                     {order.status === 'delivered' ? <CheckCircleIcon /> : <OrderIcon />}
                   </View>
                   <View style={styles.orderContent}>
                     <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-                    <Text style={styles.orderItems}>{order.items}</Text>
+                    <Text style={styles.orderItems}>{order.notas ? 'Con notas especiales' : 'Pedido de cliente'}</Text>
                     <Text style={styles.orderMeta}>
-                      Ordered {order.time} • {order.customer}
+                      {new Date(order.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} • {order.clienteNombre || 'Cliente'}
                     </Text>
                   </View>
                   <View style={[styles.orderStatusBadge, { backgroundColor: statusInfo.bg }]}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,18 @@ import {
   Switch,
   TextInput,
   Image,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
-import BottomNavBar, { TabName } from '../../../components/business/tabNavigation'; // ✅
+import BottomNavBar, { TabName } from '../../../components/business/tabNavigation';
+
+import { useAuth } from '../../../application/context/AuthContext';
+import { supabase } from '../../../config/supabaseConfig';
+
+const BASE_URL = 'https://kivo-v1.onrender.com/api/v1';
 
 type MenuEditorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MenuEditor'>;
 type Props = { navigation: MenuEditorNavigationProp };
@@ -22,9 +29,16 @@ type Props = { navigation: MenuEditorNavigationProp };
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const SearchIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round">
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <Circle cx="11" cy="11" r="8" />
-    <Path d="m21 21-4.35-4.35" />
+    <Path d="M21 21l-4.35-4.35" />
+  </Svg>
+);
+
+const PlusIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <Line x1="12" y1="5" x2="12" y2="19" />
+    <Line x1="5" y1="12" x2="19" y2="12" />
   </Svg>
 );
 
@@ -61,25 +75,7 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-const initialSections: MenuSection[] = [
-  {
-    title: 'POPULAR PICKS',
-    count: 4,
-    items: [
-      { id: '1', name: 'Classic Margherita', price: 14.50, enabled: true, category: 'main', imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=200&q=80' },
-      { id: '2', name: 'Signature Burger',   price: 12.00, enabled: true, category: 'main', imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80' },
-      { id: '3', name: 'Garden Fresh Salad', price: 9.50,  enabled: false, soldOut: true, category: 'main' },
-    ],
-  },
-  {
-    title: 'DRINKS & BEVERAGES',
-    count: 2,
-    items: [
-      { id: '4', name: 'Cold Brew Coffee',    price: 4.50, enabled: true, category: 'drinks', imageUrl: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=200&q=80' },
-      { id: '5', name: 'Classic Cola (330ml)', price: 2.50, enabled: true, category: 'drinks', imageUrl: 'https://images.unsplash.com/photo-1624517452488-04869289c4ca?w=200&q=80' },
-    ],
-  },
-];
+// No initial hardcoded sections
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -136,12 +132,61 @@ const MenuItemCard = ({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function MenuEditor({ navigation }: Props) {
-  const [activeTab, setActiveTab]     = useState<TabName>('Menu'); // ✅ TabName
+  const [activeTab, setActiveTab]     = useState<TabName>('Menu');
   const [activeCategory, setCategory] = useState<Category>('All Items');
   const [searchText, setSearchText]   = useState('');
-  const [sections, setSections]       = useState<MenuSection[]>(initialSections);
+  const [sections, setSections]       = useState<MenuSection[]>([]);
+  const [categories, setCategories]   = useState<Category[]>(['All Items']);
+  const [isLoading, setIsLoading]     = useState(true);
 
-  const categories: Category[] = ['All Items', 'Main Course', 'Sides', 'Drinks'];
+  const { adminAccess } = useAuth();
+  const sucursalId = adminAccess?.sucursalId;
+
+  const fetchMenu = useCallback(async () => {
+    if (!sucursalId) return;
+    try {
+      const res = await fetch(`${BASE_URL}/sucursales/${sucursalId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const menuItems = data.menu || [];
+        
+        const cats = new Set<string>();
+        const grouped: Record<string, MenuItem[]> = {};
+        
+        menuItems.forEach((item: any) => {
+          const c = item.categoria || 'Uncategorized';
+          cats.add(c);
+          if (!grouped[c]) grouped[c] = [];
+          
+          grouped[c].push({
+            id: item.id,
+            name: item.nombre,
+            price: item.precio,
+            enabled: item.disponible ?? true,
+            imageUrl: item.imagen_url,
+            category: c as any,
+          });
+        });
+        
+        const newSections = Array.from(cats).map(c => ({
+          title: c.toUpperCase(),
+          count: grouped[c].length,
+          items: grouped[c]
+        }));
+        
+        setSections(newSections);
+        setCategories(['All Items', ...Array.from(cats)] as Category[]);
+      }
+    } catch (e) {
+      console.warn(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sucursalId]);
+
+  useEffect(() => {
+    fetchMenu();
+  }, [fetchMenu]);
 
   const handleToggle = (id: string, val: boolean) => {
     setSections((prev) =>
@@ -173,13 +218,22 @@ export default function MenuEditor({ navigation }: Props) {
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1, paddingRight: 10 }}>
           <Text style={styles.headerTitle}>Menu Editor</Text>
           <Text style={styles.headerSubtitle}>Manage your shop inventory</Text>
         </View>
-        <TouchableOpacity style={styles.filterIconButton}>
-          <FilterIcon />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => navigation.navigate('MenuItemEditor', { itemId: 'new' })}
+          >
+            <PlusIcon />
+            <Text style={styles.addButtonText}>Añadir</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.filterIconButton}>
+            <FilterIcon />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search */}
@@ -218,37 +272,43 @@ export default function MenuEditor({ navigation }: Props) {
       </ScrollView>
 
       {/* Sections */}
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {filteredSections.map((section) => (
-          <View key={section.title} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-              <View style={styles.sectionBadge}>
-                <Text style={styles.sectionBadgeText}>{section.count} ITEMS</Text>
+      {isLoading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 }}>
+          <ActivityIndicator size="large" color="#22c55e" />
+        </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {filteredSections.map((section) => (
+            <View key={section.title} style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+                <View style={styles.sectionBadge}>
+                  <Text style={styles.sectionBadgeText}>{section.count} ITEMS</Text>
+                </View>
+              </View>
+              <View style={styles.itemsContainer}>
+                {section.items.map((item) => (
+                  <MenuItemCard
+                    key={item.id}
+                    item={item}
+                    onToggle={handleToggle}
+                    onEdit={handleEdit}
+                  />
+                ))}
               </View>
             </View>
-            <View style={styles.itemsContainer}>
-              {section.items.map((item) => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  onToggle={handleToggle}
-                  onEdit={handleEdit}
-                />
-              ))}
-            </View>
-          </View>
-        ))}
+          ))}
 
-        {filteredSections.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🍽️</Text>
-            <Text style={styles.emptyTitle}>No dishes found</Text>
-            <Text style={styles.emptySubtitle}>Try a different search term.</Text>
-          </View>
-        )}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+          {filteredSections.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyEmoji}>🍽️</Text>
+              <Text style={styles.emptyTitle}>No dishes found</Text>
+              <Text style={styles.emptySubtitle}>Try a different search term.</Text>
+            </View>
+          )}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
 
       <BottomNavBar
         activeTab={activeTab}
@@ -270,8 +330,34 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 26, fontWeight: '800', color: '#111827', letterSpacing: -0.5 },
   headerSubtitle: { fontSize: 13, color: '#6B7280', marginTop: 2 },
   filterIconButton: {
-    width: 46, height: 46, borderRadius: 23,
-    backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#22c55e',
+    paddingHorizontal: 16,
+    height: 44,
+    borderRadius: 22,
+    gap: 6,
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 14,
   },
   searchContainer: { paddingHorizontal: 20, paddingBottom: 14 },
   searchBox: {

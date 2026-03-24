@@ -30,4 +30,9 @@ class Negocio(Base):
         nullable=False,
         server_default=func.now()
     )
+
+    __table_args__ = (
+        {"schema": "public"},
+    )
+
     sucursales = relationship("Sucursal", back_populates="negocio")

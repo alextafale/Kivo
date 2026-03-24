@@ -18,7 +18,10 @@ import Svg, { Path, Circle, Polyline, Line } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
-import BottomNavBar, { TabName } from '../../../components/business/tabNavigation';
+import { useAuth } from '../../../application/context/AuthContext';
+import { ActivityIndicator } from 'react-native';
+
+const BASE_URL = 'https://kivo-v1.onrender.com/api/v1';
 
 type MenuItemEditorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MenuItemEditor'>;
 type MenuItemEditorRouteProp = RouteProp<RootStackParamList, 'MenuItemEditor'>;
@@ -65,21 +68,7 @@ const DollarIcon = () => (
   </Svg>
 );
 
-// ─── Mock data loader (replace with real fetch by itemId) ─────────────────────
-
-const getMockItem = (itemId: string) => ({
-  id: itemId,
-  name: 'Classic Margherita',
-  description: 'Fresh tomato sauce, mozzarella, and basil on a hand-tossed crust.',
-  price: '14.50',
-  category: 'Main Course',
-  imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&q=80',
-  enabled: true,
-  soldOut: false,
-  preparationTime: '15',
-  calories: '820',
-  tags: ['Vegetarian', 'Bestseller'],
-});
+// No getMockItem
 
 // ─── Tag Pill ─────────────────────────────────────────────────────────────────
 
@@ -119,24 +108,54 @@ const FieldLabel = ({ label, required }: { label: string; required?: boolean }) 
   </View>
 );
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
 export default function MenuItemEditor({ navigation, route }: Props) {
   const { itemId } = route.params;
-  const initial = getMockItem(itemId);
+  const { adminAccess } = useAuth();
+  const sucursalId = adminAccess?.sucursalId;
 
-  const [name, setName]               = useState(initial.name);
-  const [description, setDescription] = useState(initial.description);
-  const [price, setPrice]             = useState(initial.price);
-  const [category, setCategory]       = useState(initial.category);
-  const [prepTime, setPrepTime]       = useState(initial.preparationTime);
-  const [calories, setCalories]       = useState(initial.calories);
-  const [enabled, setEnabled]         = useState(initial.enabled);
-  const [soldOut, setSoldOut]         = useState(initial.soldOut);
-  const [tags, setTags]               = useState<string[]>(initial.tags);
-  const [imageUrl]                    = useState(initial.imageUrl);
+  const [isLoading, setIsLoading]     = useState(true);
+  const [name, setName]               = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice]             = useState('0');
+  const [category, setCategory]       = useState('Main Course');
+  const [prepTime, setPrepTime]       = useState('15');
+  const [calories, setCalories]       = useState('500');
+  const [enabled, setEnabled]         = useState(true);
+  const [soldOut, setSoldOut]         = useState(false);
+  const [tags, setTags]               = useState<string[]>([]);
+  const [imageUrl, setImageUrl]       = useState('');
+  
   const [hasChanges, setHasChanges]   = useState(false);
-  const [activeTab, setActiveTab]     = useState<TabName>('Menu');
+
+  React.useEffect(() => {
+    const fetchItem = async () => {
+      if (!sucursalId) return;
+      if (itemId === 'new') {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch(`${BASE_URL}/sucursales/${sucursalId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const item = data.menu?.find((m: any) => m.id === itemId);
+          if (item) {
+            setName(item.nombre || '');
+            setDescription(item.descripcion || '');
+            setPrice(item.precio?.toString() || '0');
+            setCategory(item.categoria || 'Main Course');
+            setEnabled(item.disponible ?? true);
+            setImageUrl(item.imagen_url || '');
+          }
+        }
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchItem();
+  }, [sucursalId, itemId]);
 
   const mark = () => setHasChanges(true);
 
@@ -147,19 +166,50 @@ export default function MenuItemEditor({ navigation, route }: Props) {
     mark();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Required', 'Please enter a name for this item.');
+      Alert.alert('Requerido', 'Por favor ingresa un nombre para el platillo.');
       return;
     }
     if (!price.trim() || isNaN(parseFloat(price))) {
-      Alert.alert('Required', 'Please enter a valid price.');
+      Alert.alert('Requerido', 'Por favor ingresa un precio válido.');
       return;
     }
-    // TODO: persist changes
-    Alert.alert('Saved!', 'Menu item updated successfully.', [
-      { text: 'OK', onPress: () => navigation.goBack() },
-    ]);
+    
+    try {
+      const isNew = itemId === 'new';
+      const url = isNew
+        ? `${BASE_URL}/sucursales/${sucursalId}/menu`
+        : `${BASE_URL}/sucursales/${sucursalId}/menu/${itemId}`;
+        
+      const res = await fetch(url, {
+        method: isNew ? 'POST' : 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre: name.trim(),
+          descripcion: description.trim() || null,
+          precio: parseFloat(price),
+          imagen_url: imageUrl.trim() || null,
+          disponible: enabled,
+          categoria: category,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Server responded with non-ok status');
+      }
+
+      Alert.alert(
+        '¡Guardado!',
+        isNew ? 'Se ha creado el nuevo producto.' : 'Producto actualizado con éxito.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    } catch (e) {
+      console.warn('Error saving menu item:', e);
+      Alert.alert('Error', 'Hubo un problema al guardar el producto. Intenta más tarde.');
+    }
   };
 
   const handleDelete = () => {
@@ -189,23 +239,32 @@ export default function MenuItemEditor({ navigation, route }: Props) {
           <BackIcon />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Edit Item</Text>
+          <Text style={styles.headerTitle}>{itemId === 'new' ? 'Nuevo Platillo' : 'Editar Platillo'}</Text>
           {hasChanges && <View style={styles.unsavedDot} />}
         </View>
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <TrashIcon />
-        </TouchableOpacity>
+        {itemId !== 'new' ? (
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <TrashIcon />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 42 }} /> // placeholder to balance header
+        )}
       </View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
+        {isLoading ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#22c55e" />
+          </View>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
 
           {/* ── Image Upload ── */}
           <View style={styles.imageSection}>
@@ -379,6 +438,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
           <View style={{ height: 120 }} />
         </ScrollView>
+        )}
       </KeyboardAvoidingView>
 
       {/* ── Save Button ── */}
@@ -394,13 +454,6 @@ export default function MenuItemEditor({ navigation, route }: Props) {
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* ✅ BottomNavBar igual que en BusinessDashboard */}
-      <BottomNavBar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        navigation={navigation}
-      />
     </SafeAreaView>
   );
 }

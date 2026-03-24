@@ -1,154 +1,164 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// navigation/StacNavigation.tsx
 
-// ─── Onboarding & Shared ─────────────────────────────────────────────────────
-import SplashScreen         from '../screens/shared/SplashScreen';
-import Onboarding           from '../onboarding/Onboarding';
+import React, { useEffect, useRef } from 'react'
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import * as Notifications from 'expo-notifications'
+
+// ─── Onboarding & Shared ──────────────────────────────────────────────────────
+import SplashScreen         from '../screens/shared/SplashScreen'
+import Onboarding           from '../onboarding/Onboarding'
 
 // ─── Auth (Cliente) ───────────────────────────────────────────────────────────
-import Signup               from '../screens/client/auth/Signup';
-import Login                from '../screens/client/auth/Login';
-import AccountTypeSelection from '../screens/client/auth/AccountTypeSelection';
+import Signup               from '../screens/client/auth/Signup'
+import Login                from '../screens/client/auth/Login'
+import AccountTypeSelection from '../screens/client/auth/AccountTypeSelection'
 
-// ─── Auth (Negocio) ──────────────────────────────────────────────────────────
-import LoginBusiness        from '../screens/business/auth/LoginBusiness';
-import RegisterBusiness     from '../screens/business/auth/RegisterBusiness';
+// ─── Auth (Negocio) ───────────────────────────────────────────────────────────
+import LoginBusiness        from '../screens/business/auth/LoginBusiness'
+import RegisterBusiness     from '../screens/business/auth/RegisterBusiness'
 
 // ─── Auth (Repartidor) ───────────────────────────────────────────────────────
-import LoginDriver          from '../screens/delivery/auth/LoginDriver';
-import RegisterDriver       from '../screens/delivery/auth/Registerdriver';
+import LoginDriver          from '../screens/delivery/auth/LoginDriver'
+import RegisterDriver       from '../screens/delivery/auth/Registerdriver'
 
 // ─── Cliente ──────────────────────────────────────────────────────────────────
-import HomeFeed             from '../screens/client/home/homeFeed';
-import BusinessDetailScreen from '../screens/client/home/BusinessDetailScreen';
-
-import Chatbot              from '../screens/client/chatbot/Chatbot';
-import Profile              from '../screens/client/profile/Profile';
-import EditProfile          from '../screens/client/profile/EditProfile';
-import Orders               from '../screens/client/orders/Order';
-import OrderSummary         from '../screens/client/orders/OrderSummary';
-import DeliveryAddresses    from '../screens/client/addresses/DeliveryAddresses';
-import AddAddress           from '../screens/client/addresses/AddAddress';
-import AddCard              from '../screens/client/payments/AddCard';
-import PaymentMethods       from '../screens/client/payments/PaymentsMethod';
-import ConfirmPayment       from '../screens/client/payments/ConfirmPayment';
-import OrderTrackingScreen  from '../screens/client/orders/OrderTracking';
-import CartScreen           from '../screens/client/orders/CartScreen';
-import OrderConfirmation from '../screens/client/orders/OrderConfirmation';
+import HomeFeed             from '../screens/client/home/homeFeed'
+import BusinessDetailScreen from '../screens/client/home/BusinessDetailScreen'
+import Chatbot              from '../screens/client/chatbot/Chatbot'
+import Profile              from '../screens/client/profile/Profile'
+import EditProfile          from '../screens/client/profile/EditProfile'
+import Orders               from '../screens/client/orders/Order'
+import OrderSummary         from '../screens/client/orders/OrderSummary'
+import DeliveryAddresses    from '../screens/client/addresses/DeliveryAddresses'
+import AddAddress           from '../screens/client/addresses/AddAddress'
+import AddCard              from '../screens/client/payments/AddCard'
+import PaymentMethods       from '../screens/client/payments/PaymentsMethod'
+import ConfirmPayment       from '../screens/client/payments/ConfirmPayment'
+import OrderTrackingScreen  from '../screens/client/orders/OrderTracking'
+import CartScreen           from '../screens/client/orders/CartScreen'
+import OrderConfirmation    from '../screens/client/orders/OrderConfirmation'
 
 // ─── Negocio ──────────────────────────────────────────────────────────────────
-import BusinessOnboarding   from '../screens/business/onboarding/BusinessOnboarding';
-import BusinessDashboard    from '../screens/business/dashboard/Dashboard';
-import MenuEditor           from '../screens/business/menu/MenuEdit';
-import SettingsScreen       from '../screens/business/settings/SettingsBusiness';
-import MenuItemEditor       from '../screens/business/menu/MenuItemEditor';
-import AdminCupones         from '../screens/business/cupones/AdminCupones';
+import BusinessOnboarding   from '../screens/business/onboarding/BusinessOnboarding'
+import BusinessDashboard    from '../screens/business/dashboard/Dashboard'
+import MenuEditor           from '../screens/business/menu/MenuEdit'
+import SettingsScreen       from '../screens/business/settings/SettingsBusiness'
+import MenuItemEditor       from '../screens/business/menu/MenuItemEditor'
+import AdminCupones         from '../screens/business/cupones/AdminCupones'
+import ManageOrders         from '../screens/business/orders/ManageOrders'   // ← nuevo
 
 // ─── Repartidor ───────────────────────────────────────────────────────────────
-import DriverOnboarding     from '../screens/delivery/home/DriverOnboarding';
-import DriverDashboard      from '../screens/delivery/onboarding/Driverdashboard';
+import DriverOnboarding     from '../screens/delivery/home/DriverOnboarding'
+import DriverDashboard      from '../screens/delivery/onboarding/Driverdashboard'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
-import type { Order, OrderItem }  from '../types/order';
-import type { Domicilio }         from '../domain/entities/Domicilio';
-import type { BusinessData }      from '../screens/client/home/BusinessDetailScreen';
+import type { Order, OrderItem }  from '../types/order'
+import type { Domicilio }         from '../domain/entities/Domicilio'
+import type { BusinessData }      from '../screens/client/home/BusinessDetailScreen'
 
 export type RootStackParamList = {
   // Shared
-  Splash:               undefined;
-  Onboarding:           undefined;
-  AccountTypeSelection: undefined;
+  Splash:               undefined
+  Onboarding:           undefined
+  AccountTypeSelection: undefined
 
   // Auth — Cliente
-  Login:                undefined;
-  Signup:               { accountType: 'client' } | undefined;
+  Login:                undefined
+  Signup:               { accountType: 'client' } | undefined
 
   // Auth — Negocio
-  LoginBusiness:        undefined;
-  RegisterBusiness:     undefined;
-  BusinessOnboarding:   undefined;
+  LoginBusiness:        undefined
+  RegisterBusiness:     undefined
+  BusinessOnboarding:   undefined
 
   // Auth — Repartidor
-  LoginDriver:          undefined;
-  RegisterDriver:       undefined;
-  DriverOnboarding:     { vehiculo: string; placa: string; fromRegister?: boolean };
+  LoginDriver:          undefined
+  RegisterDriver:       undefined
+  DriverOnboarding:     { vehiculo: string; placa: string; fromRegister?: boolean }
 
   // Cliente
-  HomeFeed:             undefined;
-
-  BusinessDetail:       { sucursal_id: string };
-
-  Chatbot:              undefined;
-  Profile:              undefined;
-  EdithProfile:         undefined;
-  Orders:               undefined;
-  OrderDetails:         { orderId: string };
-  Cart: undefined;
-
+  HomeFeed:             undefined
+  BusinessDetail:       { sucursal_id: string }
+  Chatbot:              undefined
+  Profile:              undefined
+  EdithProfile:         undefined
+  Orders:               undefined
+  OrderDetails:         { orderId: string }
+  Cart:                 undefined
   OrderSummary: {
-  restaurants: {
-    sucursalId: string;
-    negocioId: string;
-    negocioNombre: string;
-    costoEnvio: number;
-    items: OrderItem[];
-  }[];
-  };
-  
-  
+    restaurants: {
+      sucursalId: string
+      negocioId: string
+      negocioNombre: string
+      costoEnvio: number
+      items: OrderItem[]
+    }[]
+  }
   OrderConfirmation: {
-  orders: {
-    orderNumber: string;
-    negocioNombre: string;
-    total: number;
-  }[];
-  totalGeneral: number;
-};
-
+    orders: { orderNumber: string; negocioNombre: string; total: number }[]
+    totalGeneral: number
+  }
   ConfirmPayment: {
-    items: OrderItem[];
-    negocioId: string;
-    subtotal: number;
-    descuento: number;
-    costoEnvio: number;
-    total: number;
-    codigoCupon?: string;
-    cuponId?: string;
-    notas?: string;
-    direccionEntrega: string;
-  };
-  DeliveryAddresses:    undefined;
-  AddAddress:           { domicilioId?: Domicilio } | undefined;
-  AddCard:              undefined;
-  PaymentsMethod:       undefined;
-  orderTracking:        { order: Order };
+    items: OrderItem[]
+    negocioId: string
+    subtotal: number
+    descuento: number
+    costoEnvio: number
+    total: number
+    codigoCupon?: string
+    cuponId?: string
+    notas?: string
+    direccionEntrega: string
+  }
+  DeliveryAddresses:    undefined
+  AddAddress:           { domicilioId?: Domicilio } | undefined
+  AddCard:              undefined
+  PaymentsMethod:       undefined
+  orderTracking:        { order: Order }
 
   // Negocio
-  BusinessDashboard:    undefined;
-  MenuEditor:           undefined;
-  MenuItemEditor:       { itemId: string };
-  Settings:             undefined;
-  AdminCupones:         undefined;
+  BusinessDashboard:    undefined
+  MenuEditor:           undefined
+  MenuItemEditor:       { itemId: string }
+  Settings:             undefined
+  AdminCupones:         undefined
+  ManageOrders:         undefined   // ← nuevo
 
   // Repartidor
-  DriverDashboard:      undefined;
+  DriverDashboard:      undefined
+}
 
-
-};
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>()
 
 export default function StackNavigation() {
+  // Ref para navegar desde el listener de notificaciones (fuera de componentes)
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null)
+
+  useEffect(() => {
+    // Listener: usuario toca una notificación push (app en background o killed)
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as {
+        pedido_id?: string
+        screen?: string
+      }
+
+      if (data?.screen === 'orderTracking' && data?.pedido_id && navigationRef.current) {
+        // Navegar a Orders para ver el pedido actualizado
+        // (OrderTracking requiere el objeto Order completo, así que redirigimos a Orders)
+        navigationRef.current.navigate('Orders')
+      }
+    })
+
+    return () => subscription.remove()
+  }, [])
+
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         id="RootStack"
         initialRouteName="Splash"
-        screenOptions={{
-          headerShown: false,
-          animation: 'slide_from_right',
-        }}
+        screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
         {/* ── Shared ─────────────────────────────────────────────────────── */}
         <Stack.Screen name="Splash"               component={SplashScreen} />
@@ -171,7 +181,6 @@ export default function StackNavigation() {
 
         {/* ── Cliente ────────────────────────────────────────────────────── */}
         <Stack.Screen name="HomeFeed"             component={HomeFeed} />
-
         <Stack.Screen name="BusinessDetail"       component={BusinessDetailScreen} />
         <Stack.Screen name="Chatbot"              component={Chatbot} />
         <Stack.Screen name="Profile"              component={Profile} />
@@ -187,18 +196,18 @@ export default function StackNavigation() {
         <Stack.Screen name="orderTracking"        component={OrderTrackingScreen} />
         <Stack.Screen name="Cart"                 component={CartScreen} />
         <Stack.Screen name="OrderConfirmation"    component={OrderConfirmation} />
-        
+
         {/* ── Negocio ────────────────────────────────────────────────────── */}
         <Stack.Screen name="BusinessDashboard"    component={BusinessDashboard} />
         <Stack.Screen name="MenuEditor"           component={MenuEditor} />
         <Stack.Screen name="MenuItemEditor"       component={MenuItemEditor} />
         <Stack.Screen name="Settings"             component={SettingsScreen} />
         <Stack.Screen name="AdminCupones"         component={AdminCupones} />
+        <Stack.Screen name="ManageOrders"         component={ManageOrders} />
 
         {/* ── Repartidor ─────────────────────────────────────────────────── */}
         <Stack.Screen name="DriverDashboard"      component={DriverDashboard} />
-
       </Stack.Navigator>
     </NavigationContainer>
-  );
+  )
 }

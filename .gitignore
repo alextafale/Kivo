@@ -62,6 +62,9 @@ scripts/.expo/
 # local data files
 restaurants.json
 
+#git
+.git
+
 
 # Chatbot
 GUIDEFOROLLAMA.md
