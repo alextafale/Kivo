@@ -1,5 +1,5 @@
 import type { Order } from '../../types/order'
-import { API_URL } from '@env'
+const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 export class PedidosRepositoryImpl {
 

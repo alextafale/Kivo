@@ -12,13 +12,16 @@ export const usePedidos = () => {
   const [error, setError] = useState<string | null>(null)
 
   const fetchPedidos = useCallback(async () => {
+    console.log('Token:', session?.accessToken)
     if (!session?.accessToken) return
     setIsLoading(true)
     setError(null)
     try {
       const data = await pedidosRepo.getPedidos(session.accessToken)
+       console.log('Pedidos recibidos:', data)
       setPedidos(data)
     } catch (e: any) {
+       console.log('Error:', e.message)
       setError(e.message ?? 'Error al cargar pedidos')
     } finally {
       setIsLoading(false)
