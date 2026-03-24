@@ -16,7 +16,7 @@ type Props = {
 }
 
 import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/RepartidorRepositoryImpl'
-import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../domain/ports/repositories/lRepartidorRepository'
+import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../domain/ports/lNegocioRepository.ts/lRepartidorRepository'
 
 const repartidorRepo = new RepartidorRepositoryImpl()
 

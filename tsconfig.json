@@ -5,5 +5,5 @@
     "**/*.ts",
     "**/*.tsx",
     "env.d.ts"
-  ]
+, "supabase/frontend/domain/ports/repositories"  ]
 }

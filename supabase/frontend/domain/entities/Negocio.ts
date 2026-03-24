@@ -42,6 +42,17 @@ export type Sucursal = {
   acepta_tarjeta: boolean
 }
 
+// Proyección que devuelve GET /negocios/sucursales
+// Combina datos del negocio + sucursal en un solo objeto
+export type NegocioResumen = {
+  id: string
+  nombre: string
+  descripcion: string | null
+  banner_url: string | null
+  calificacion: number | null
+  sucursal_id: string
+}
+
 export type SucursalCreate = Omit<Sucursal, 'id' | 'calificacion' | 'total_reviews'>
 export type SucursalPatch = Partial<SucursalCreate>
 export type NegocioPatch = Partial<Pick<Negocio, 'nombre' | 'descripcion' | 'logo_url' | 'banner_url' | 'categoria' | 'tags'>>

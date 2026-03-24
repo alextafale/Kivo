@@ -1,5 +1,5 @@
 import { supabase } from '../../config/supabaseConfig'
-import type { IAuthRepository, BusinessRegisterData, DriverRegisterData } from '../../domain/ports/repositories/lAuthRepository'
+import type { IAuthRepository, BusinessRegisterData, DriverRegisterData } from '../../domain/ports/lNegocioRepository.ts/lAuthRepository'
 import type { AuthSession } from '../../domain/entities/User'
 
 export class AuthRepositoryImpl implements IAuthRepository {

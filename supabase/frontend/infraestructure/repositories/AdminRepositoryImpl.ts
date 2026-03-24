@@ -1,5 +1,5 @@
 import { supabase } from '../../config/supabaseConfig'
-import type { IAdminRepository } from '../../domain/ports/repositories/lAdminRepository'
+import type { IAdminRepository } from '../../domain/ports/lNegocioRepository.ts/lAdminRepository'
 import type { Negocio, NegocioPatch, Sucursal, SucursalCreate, SucursalPatch } from '../../domain/entities/Negocio'
 import { API_URL } from '@env'
 

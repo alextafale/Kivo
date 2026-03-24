@@ -3,8 +3,8 @@ import * as SecureStore from 'expo-secure-store'
 import { AuthRepositoryImpl } from '../../infraestructure/repositories/AuthRepositoryImpl'
 import { AdminProfileRepositoryImpl } from '../../infraestructure/repositories/AdminProfileRepositoryImpl'
 import type { AuthSession } from '../../domain/entities/User'
-import type { AdminProfile } from '../../domain/ports/repositories/lAdminProfileRepository'
-import type { BusinessRegisterData, DriverRegisterData } from '../../domain/ports/repositories/lAuthRepository'
+import type { AdminProfile } from '../../domain/ports/lNegocioRepository.ts/lAdminProfileRepository'
+import type { BusinessRegisterData, DriverRegisterData } from '../../domain/ports/lNegocioRepository.ts/lAuthRepository'
 
 const authRepo         = new AuthRepositoryImpl()
 const adminProfileRepo = new AdminProfileRepositoryImpl()

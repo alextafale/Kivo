@@ -1,5 +1,5 @@
 import { supabase } from '../../config/supabaseConfig'
-import type { IRepartidorRepository, DriverEstado, RepartidorInfo, PedidoDisponible } from '../../domain/ports/repositories/lRepartidorRepository'
+import type { IRepartidorRepository, DriverEstado, RepartidorInfo, PedidoDisponible } from '../../domain/ports/lNegocioRepository.ts/lRepartidorRepository'
 
 export class RepartidorRepositoryImpl implements IRepartidorRepository {
   

@@ -5,6 +5,8 @@ from models.menu_items import MenuItem
 from models.menu_categorias import MenuCategoria
 from exceptions.sucursal import SucursalNoExistente
 from typing import List,Optional
+from schemas.menu_items import MenuItemFrontendCreate, MenuItemFrontendUpdate
+from fastapi import HTTPException
 
 """def get_sucursal_por_id(db: Session, sucursal_id: str):
     sucursal = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
@@ -57,3 +59,68 @@ def get_sucursal_por_id(db: Session, sucursal_id: str):
         },
         "menu": menu
     }
+
+def add_menu_item(db: Session, sucursal_id: str, item_data: MenuItemFrontendCreate):
+    sucursal = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
+    if not sucursal:
+        raise HTTPException(status_code=404, detail="Sucursal no encontrada")
+
+    categoria_nombre = item_data.categoria.strip()
+    categoria = db.query(MenuCategoria).filter(
+        MenuCategoria.nombre == categoria_nombre, 
+        MenuCategoria.sucursal_id == sucursal_id
+    ).first()
+    
+    if not categoria:
+        categoria = MenuCategoria(
+            sucursal_id=sucursal.id,
+            nombre=categoria_nombre,
+            activo=True
+        )
+        db.add(categoria)
+        db.flush()
+
+    nuevo_item = MenuItem(
+        sucursal_id=sucursal.id,
+        categoria_id=categoria.id,
+        nombre=item_data.nombre,
+        descripcion=item_data.descripcion,
+        precio=item_data.precio,
+        imagen_url=item_data.imagen_url,
+        disponible=item_data.disponible
+    )
+    db.add(nuevo_item)
+    db.commit()
+    db.refresh(nuevo_item)
+    return nuevo_item
+
+def update_menu_item(db: Session, sucursal_id: str, item_id: str, item_data: MenuItemFrontendUpdate):
+    item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.sucursal_id == sucursal_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+        
+    categoria_nombre = item_data.categoria.strip()
+    categoria = db.query(MenuCategoria).filter(
+        MenuCategoria.nombre == categoria_nombre, 
+        MenuCategoria.sucursal_id == sucursal_id
+    ).first()
+    
+    if not categoria:
+        categoria = MenuCategoria(
+            sucursal_id=sucursal_id,
+            nombre=categoria_nombre,
+            activo=True
+        )
+        db.add(categoria)
+        db.flush()
+        
+    item.categoria_id = categoria.id
+    item.nombre = item_data.nombre
+    item.descripcion = item_data.descripcion
+    item.precio = item_data.precio
+    item.imagen_url = item_data.imagen_url
+    item.disponible = item_data.disponible
+    
+    db.commit()
+    db.refresh(item)
+    return item
