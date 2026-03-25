@@ -330,7 +330,7 @@ export default function BusinessOnboarding({ navigation }: Props) {
       if (adminError) {
         // Log, pero no bloquea el flujo si la DB no dejó por RLS pero ya se asignó internamente en un trigger (opcional)
         console.warn('Error al asignar admin:', adminError.message)
-        // throw new Error(adminError.message ?? 'Error al asignarte como administrador') 
+         throw new Error(adminError.message ?? 'Error al asignarte como administrador') 
       }
 
       setNegocioId(negocio.id)

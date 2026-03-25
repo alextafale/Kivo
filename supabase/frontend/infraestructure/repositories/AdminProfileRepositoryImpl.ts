@@ -1,5 +1,5 @@
 import { supabase } from '../../config/supabaseConfig'
-import type { IAdminProfileRepository } from '../../domain/ports/lNegocioRepository.ts/lAdminProfileRepository'
+import type { IAdminProfileRepository } from '../../domain/ports/repositories/lAdminProfileRepository'
 import type { AdminProfile } from '../../domain/entities/AdminProfile'
 import { API_URL } from '@env'
 
@@ -29,7 +29,7 @@ export class AdminProfileRepositoryImpl implements IAdminProfileRepository {
         .from('negocio_admins')
         .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
       if (adminError || !adminRecord) {
         console.log('[getMyAdminProfile] Error/Not Found en negocio_admins:', adminError)

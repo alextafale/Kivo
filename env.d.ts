@@ -8,4 +8,5 @@ declare module '@env' {
   export const POSTGRES_PORT: string;
   export const POSTGRES_DB: string;
   export const API_URL: string;
+  export const EXPO_PUBLIC_API_URL: string;
 }

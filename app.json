@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "pidelo",
-    "slug": "pidelo",
+    "name": "Kivo",
+    "slug": "Kivo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/KIVO.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/KIVO.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,30 +18,27 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/KIVO.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "googleServicesFile": "./google-services.json",
       "package": "com.pidelo.app"
-      "edgeToEdgeEnabled": true,
-      "package": "com.NJesusEduardo.Kivu"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/KIVO.png"
     },
     "plugins": [
       "expo-secure-store",
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/KIVO.png",
           "color": "#22c55e",
           "androidMode": "default",
-          "androidCollapsedTitle": "Pidelo",
+          "androidCollapsedTitle": "Kivo",
           "iosDisplayInForeground": true
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

@@ -14,13 +14,12 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 
-// 👇 Importa el componente de navegación
 import BottomNavBar, { TabName } from '../../../components/business/tabNavigation';
 import { useAuth } from '../../../application/context/AuthContext';
 import { useAdminNegocio } from '../../../application/hooks/useAdminNegocio';
 import { supabase } from '../../../config/supabaseConfig';
 
-const BASE_URL = 'https://kivo-v1.onrender.com/api/v1';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 type BusinessDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BusinessDashboard'>;
 
@@ -97,44 +96,50 @@ export default function BusinessDashboard({ navigation }: Props) {
   const [storeOpen, setStoreOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('Dashboard');
 
-  const { adminAccess } = useAuth();
+  // ✅ Tomamos session directamente del contexto — sin getSession() inline
+  const { adminAccess, session } = useAuth();
   const negocioId = adminAccess?.negocioId;
   const { negocio } = useAdminNegocio(negocioId ?? '');
-  
+
   const [pedidos, setPedidos] = useState<any[]>([]);
 
+  // ✅ fetchPedidos usa el token del contexto, sin round-trip a supabase.auth.getSession()
   const fetchPedidos = useCallback(async () => {
-    if (!negocioId) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!negocioId || !session?.accessToken) return;
     try {
       const res = await fetch(`${BASE_URL}/negocios/${negocioId}/pedidos`, {
-        headers: { Authorization: `Bearer ${session.access_token}` }
+        headers: { Authorization: `Bearer ${session.accessToken}` },
       });
       if (res.ok) {
         const data = await res.json();
         setPedidos(data);
       }
     } catch (e) {
-      console.warn(e);
+      console.warn('fetchPedidos error:', e);
     }
-  }, [negocioId]);
+  }, [negocioId, session?.accessToken]); // ✅ depende del token, no llama getSession
 
+  // ✅ Solo corre cuando negocioId Y session están listos
   useEffect(() => {
     fetchPedidos();
   }, [fetchPedidos]);
 
+  // ✅ Realtime channel — también espera a que haya negocioId
   useEffect(() => {
     if (!negocioId) return;
     const channel = supabase
       .channel(`dashboard:${negocioId}:pedidos`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos', filter: `negocio_id=eq.${negocioId}` }, () => fetchPedidos())
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pedidos', filter: `negocio_id=eq.${negocioId}` },
+        () => fetchPedidos(),
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [negocioId, fetchPedidos]);
 
   const activeOrdersCount = pedidos.filter(p => !['delivered', 'cancelled'].includes(p.status)).length;
-  
+
   const hoy = new Date().toISOString().split('T')[0];
   const deliveredToday = pedidos.filter(p => p.status === 'delivered' && p.date?.includes(hoy));
   const dailySales = deliveredToday.reduce((sum, p) => sum + Number(p.total || 0), 0);
@@ -204,7 +209,7 @@ export default function BusinessDashboard({ navigation }: Props) {
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.statCard}
             activeOpacity={0.9}
             onPress={() => navigation.navigate('ManageOrders')}
@@ -251,10 +256,14 @@ export default function BusinessDashboard({ navigation }: Props) {
           <View style={styles.ordersList}>
             {pedidos.slice(0, 5).map((order) => {
               const statusInfo = ESTADO_CONFIG[order.status] || { label: order.status, color: '#000', bg: '#EEE' };
-              const OrderIcon = order.icon === 'pizza' ? PizzaIcon : BurgerIcon; // or dynamic
+              const OrderIcon = order.icon === 'pizza' ? PizzaIcon : BurgerIcon;
 
               return (
-                <TouchableOpacity key={order.id} style={styles.orderItem} onPress={() => navigation.navigate('ManageOrders')}>
+                <TouchableOpacity
+                  key={order.id}
+                  style={styles.orderItem}
+                  onPress={() => navigation.navigate('ManageOrders')}
+                >
                   <View style={[styles.orderIconContainer, order.status === 'delivered' && styles.orderIconDelivered]}>
                     {order.status === 'delivered' ? <CheckCircleIcon /> : <OrderIcon />}
                   </View>
@@ -262,7 +271,7 @@ export default function BusinessDashboard({ navigation }: Props) {
                     <Text style={styles.orderNumber}>{order.orderNumber}</Text>
                     <Text style={styles.orderItems}>{order.notas ? 'Con notas especiales' : 'Pedido de cliente'}</Text>
                     <Text style={styles.orderMeta}>
-                      {new Date(order.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} • {order.clienteNombre || 'Cliente'}
+                      {new Date(order.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {order.clienteNombre || 'Cliente'}
                     </Text>
                   </View>
                   <View style={[styles.orderStatusBadge, { backgroundColor: statusInfo.bg }]}>
@@ -317,7 +326,6 @@ export default function BusinessDashboard({ navigation }: Props) {
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* 👇 Bottom Navigation ahora es un componente reutilizable */}
       <BottomNavBar
         activeTab={activeTab}
         onTabChange={setActiveTab}

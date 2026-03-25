@@ -10,7 +10,7 @@ import {
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
@@ -51,8 +51,15 @@ const BikeIcon = () => (
 );
 
 const ArrowIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3">
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
     <Path d="M5 12h14M12 5l7 7-7 7" />
+  </Svg>
+);
+
+const UserIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+    <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <Circle cx="12" cy="7" r="4" />
   </Svg>
 );
 
@@ -61,23 +68,24 @@ const ArrowIcon = () => (
 export default function AccountTypeSelection({ navigation }: Props) {
   const [selectedType, setSelectedType] = useState<'client' | 'business' | 'delivery' | null>(null);
 
-  // Continuar → registro
-  const handleContinue = async () => {
+  // Navegar a Registro
+  const handleSignup = async () => {
     if (!selectedType) return;
     await AsyncStorage.setItem('accountType', selectedType);
 
     if (selectedType === 'client') {
-      navigation.navigate('Login');
+      navigation.navigate('Signup');
     } else if (selectedType === 'business') {
-      navigation.navigate('LoginBusiness');
+      navigation.navigate('RegisterBusiness');
     } else if (selectedType === 'delivery') {
-      navigation.navigate('LoginDriver');
+      navigation.navigate('RegisterDriver');
     }
   };
 
-  // Iniciar sesión → login según tipo
-  const handleLogin = () => {
+  // Navegar a Login
+  const handleLogin = async () => {
     if (!selectedType) return;
+    await AsyncStorage.setItem('accountType', selectedType);
 
     if (selectedType === 'client') {
       navigation.navigate('Login');
@@ -173,36 +181,43 @@ export default function AccountTypeSelection({ navigation }: Props) {
         </View>
       </View>
 
-      {/* Bottom */}
+      {/* Bottom Section */}
       <View style={styles.bottomSection}>
-        <TouchableOpacity
-          onPress={handleContinue}
-          disabled={!selectedType}
-          style={[styles.button, !selectedType && styles.buttonDisabled]}
-        >
-          <LinearGradient
-            colors={selectedType ? ['#22c55e', '#16a34a'] : ['#E5E7EB', '#D1D5DB']}
-            style={styles.buttonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Text style={[styles.buttonText, !selectedType && styles.buttonTextDisabled]}>
-              Continuar
-            </Text>
-            <ArrowIcon />
-          </LinearGradient>
-        </TouchableOpacity>
+        {!selectedType ? (
+          <View style={styles.noSelectionContainer}>
+            <Text style={styles.loginHint}>Selecciona un perfil para continuar</Text>
+          </View>
+        ) : (
+          <View style={styles.buttonsContainer}>
+            {/* Botón Registrarse (Primario) */}
+            <TouchableOpacity
+              onPress={handleSignup}
+              style={styles.primaryButton}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#22c55e', '#16a34a']}
+                style={styles.buttonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Text style={styles.primaryButtonText}>Registrarse</Text>
+                <ArrowIcon />
+              </LinearGradient>
+            </TouchableOpacity>
 
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
-          <TouchableOpacity onPress={handleLogin} disabled={!selectedType}>
-            <Text style={[styles.loginLink, !selectedType && styles.loginLinkDisabled]}>
-              Inicia sesión
-            </Text>
-          </TouchableOpacity>
-        </View>
-        {!selectedType && (
-          <Text style={styles.loginHint}>Selecciona un perfil primero</Text>
+            {/* Botón Iniciar Sesión (Secundario) */}
+            <TouchableOpacity
+              onPress={handleLogin}
+              style={styles.secondaryButton}
+              activeOpacity={0.7}
+            >
+              <View style={styles.buttonContent}>
+                <UserIcon />
+                <Text style={styles.secondaryButtonText}>Iniciar Sesión</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </SafeAreaView>
@@ -232,15 +247,14 @@ const styles = StyleSheet.create({
   checkmark:           { width: 24, height: 24, borderRadius: 12, backgroundColor: '#22c55e', marginLeft: 12 },
   imageContainer:      { flex: 1, borderRadius: 16, overflow: 'hidden', marginTop: 8 },
   decorativeImage:     { width: '100%', height: '100%', opacity: 0.3 },
-  bottomSection:       { paddingHorizontal: 20, paddingBottom: 30 },
-  button:              { width: '100%', borderRadius: 30, overflow: 'hidden', shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5, marginBottom: 16 },
-  buttonDisabled:      { shadowOpacity: 0, elevation: 0 },
-  buttonGradient:      { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 18, gap: 8 },
-  buttonText:          { fontSize: 18, fontWeight: 'bold', color: '#000' },
-  buttonTextDisabled:  { color: '#9CA3AF' },
-  loginContainer:      { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  loginText:           { fontSize: 14, color: '#6B7280' },
-  loginLink:           { fontSize: 14, color: '#22c55e', fontWeight: 'bold' },
-  loginLinkDisabled:   { color: '#D1D5DB' },
-  loginHint:           { fontSize: 12, color: '#9CA3AF', textAlign: 'center', marginTop: 4 },
+  bottomSection:       { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 10 },
+  noSelectionContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 20 },
+  loginHint:           { fontSize: 14, color: '#9CA3AF', fontWeight: '500' },
+  buttonsContainer:    { gap: 12 },
+  primaryButton:       { borderRadius: 30, overflow: 'hidden', shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+  buttonGradient:      { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 18, gap: 10 },
+  primaryButtonText:   { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
+  secondaryButton:     { borderRadius: 30, backgroundColor: '#F9FAFB', borderWidth: 2, borderColor: '#E5E7EB' },
+  buttonContent:       { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 16, gap: 10 },
+  secondaryButtonText: { fontSize: 17, fontWeight: '600', color: '#111827' },
 });

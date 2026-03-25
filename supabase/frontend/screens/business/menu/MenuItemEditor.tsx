@@ -13,15 +13,13 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import Svg, { Path, Circle, Polyline, Line } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useAuth } from '../../../application/context/AuthContext';
-import { ActivityIndicator } from 'react-native';
-
-const BASE_URL = 'https://kivo-v1.onrender.com/api/v1';
 
 type MenuItemEditorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MenuItemEditor'>;
 type MenuItemEditorRouteProp = RouteProp<RootStackParamList, 'MenuItemEditor'>;
@@ -68,8 +66,6 @@ const DollarIcon = () => (
   </Svg>
 );
 
-// No getMockItem
-
 // ─── Tag Pill ─────────────────────────────────────────────────────────────────
 
 const TAG_OPTIONS = ['Vegetarian', 'Vegan', 'Spicy', 'Gluten-Free', 'Bestseller', 'New', 'Featured'];
@@ -108,9 +104,13 @@ const FieldLabel = ({ label, required }: { label: string; required?: boolean }) 
   </View>
 );
 
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
 export default function MenuItemEditor({ navigation, route }: Props) {
   const { itemId } = route.params;
-  const { adminAccess } = useAuth();
+
+  // ✅ session viene del contexto — sin supabase.auth.getSession() inline
+  const { adminAccess, session } = useAuth();
   const sucursalId = adminAccess?.sucursalId;
 
   const [isLoading, setIsLoading]     = useState(true);
@@ -124,21 +124,27 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   const [soldOut, setSoldOut]         = useState(false);
   const [tags, setTags]               = useState<string[]>([]);
   const [imageUrl, setImageUrl]       = useState('');
-  
   const [hasChanges, setHasChanges]   = useState(false);
 
+  //  Espera a que sucursalId Y session estén disponibles antes de hacer fetch
   React.useEffect(() => {
     const fetchItem = async () => {
-      if (!sucursalId) return;
+      if (!sucursalId || !session?.accessToken) return;
+
       if (itemId === 'new') {
         setIsLoading(false);
         return;
       }
+
       try {
-        const res = await fetch(`${BASE_URL}/sucursales/${sucursalId}`);
+        const res = await fetch(
+          `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}`,
+          { headers: { Authorization: `Bearer ${session.accessToken}` } },
+        );
+
         if (res.ok) {
           const data = await res.json();
-          const item = data.menu?.find((m: any) => m.id === itemId);
+          const item = data.menu?.find((m: { id: string }) => m.id === itemId);
           if (item) {
             setName(item.nombre || '');
             setDescription(item.descripcion || '');
@@ -149,19 +155,20 @@ export default function MenuItemEditor({ navigation, route }: Props) {
           }
         }
       } catch (e) {
-        console.warn(e);
+        console.warn('fetchItem error:', e);
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchItem();
-  }, [sucursalId, itemId]);
+  }, [sucursalId, itemId, session?.accessToken]); // ✅ se re-ejecuta si el token cambia
 
   const mark = () => setHasChanges(true);
 
   const toggleTag = (tag: string) => {
     setTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
     mark();
   };
@@ -175,17 +182,23 @@ export default function MenuItemEditor({ navigation, route }: Props) {
       Alert.alert('Requerido', 'Por favor ingresa un precio válido.');
       return;
     }
-    
+    if (!session?.accessToken) {
+      Alert.alert('Error', 'No hay sesión activa. Intenta de nuevo.');
+      return;
+    }
+
+    const isNew = itemId === 'new';
+    const url = isNew
+      ? `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu`
+      : `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${itemId}`;
+
     try {
-      const isNew = itemId === 'new';
-      const url = isNew
-        ? `${BASE_URL}/sucursales/${sucursalId}/menu`
-        : `${BASE_URL}/sucursales/${sucursalId}/menu/${itemId}`;
-        
+      // ✅ Token del contexto — sin round-trip a getSession
       const res = await fetch(url, {
         method: isNew ? 'POST' : 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.accessToken}`,
         },
         body: JSON.stringify({
           nombre: name.trim(),
@@ -198,17 +211,21 @@ export default function MenuItemEditor({ navigation, route }: Props) {
       });
 
       if (!res.ok) {
-        throw new Error('Server responded with non-ok status');
+        const errorData = await res.json().catch(() => ({}));
+        console.warn('Server Error Detail:', JSON.stringify(errorData, null, 2));
+        throw new Error(errorData.detail || `Error ${res.status}`);
       }
 
       Alert.alert(
         '¡Guardado!',
         isNew ? 'Se ha creado el nuevo producto.' : 'Producto actualizado con éxito.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ text: 'OK', onPress: () => navigation.navigate('MenuEditor') }],
       );
-    } catch (e) {
-      console.warn('Error saving menu item:', e);
-      Alert.alert('Error', 'Hubo un problema al guardar el producto. Intenta más tarde.');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Error desconocido';
+      console.warn('Error saving menu item:', message);
+      console.warn('URL attempted:', url);
+      Alert.alert('Error', `Hubo un problema al guardar el producto: ${message}`);
     }
   };
 
@@ -218,12 +235,8 @@ export default function MenuItemEditor({ navigation, route }: Props) {
       `Are you sure you want to remove "${name}" from your menu?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => navigation.goBack(),
-        },
-      ]
+        { text: 'Delete', style: 'destructive', onPress: () => navigation.goBack() },
+      ],
     );
   };
 
@@ -247,7 +260,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
             <TrashIcon />
           </TouchableOpacity>
         ) : (
-          <View style={{ width: 42 }} /> // placeholder to balance header
+          <View style={{ width: 42 }} />
         )}
       </View>
 
@@ -265,179 +278,176 @@ export default function MenuItemEditor({ navigation, route }: Props) {
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >
-
-          {/* ── Image Upload ── */}
-          <View style={styles.imageSection}>
-            <TouchableOpacity style={styles.imageWrapper} activeOpacity={0.85}>
-              {imageUrl ? (
-                <Image source={{ uri: imageUrl }} style={styles.itemImage} />
-              ) : (
-                <View style={styles.imagePlaceholder}>
+            {/* ── Image Upload ── */}
+            <View style={styles.imageSection}>
+              <TouchableOpacity style={styles.imageWrapper} activeOpacity={0.85}>
+                {imageUrl ? (
+                  <Image source={{ uri: imageUrl }} style={styles.itemImage} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <CameraIcon />
+                    <Text style={styles.imagePlaceholderText}>Add Photo</Text>
+                  </View>
+                )}
+                <View style={styles.imageEditBadge}>
                   <CameraIcon />
-                  <Text style={styles.imagePlaceholderText}>Add Photo</Text>
                 </View>
-              )}
-              <View style={styles.imageEditBadge}>
-                <CameraIcon />
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* ── Availability Toggles ── */}
-          <View style={styles.card}>
-            <View style={styles.toggleRow}>
-              <View>
-                <Text style={styles.toggleLabel}>Item Available</Text>
-                <Text style={styles.toggleSubtext}>Show this item to customers</Text>
-              </View>
-              <Switch
-                value={enabled}
-                onValueChange={(v) => { setEnabled(v); mark(); }}
-                trackColor={{ false: '#E5E7EB', true: '#22c55e' }}
-                thumbColor="#fff"
-                ios_backgroundColor="#E5E7EB"
-              />
+              </TouchableOpacity>
             </View>
-            <View style={styles.cardDivider} />
-            <View style={styles.toggleRow}>
-              <View>
-                <Text style={[styles.toggleLabel, soldOut && styles.toggleLabelWarn]}>Sold Out</Text>
-                <Text style={styles.toggleSubtext}>Temporarily unavailable</Text>
-              </View>
-              <Switch
-                value={soldOut}
-                onValueChange={(v) => { setSoldOut(v); mark(); }}
-                trackColor={{ false: '#E5E7EB', true: '#F59E0B' }}
-                thumbColor="#fff"
-                ios_backgroundColor="#E5E7EB"
-              />
-            </View>
-          </View>
 
-          {/* ── Basic Info ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Basic Info</Text>
-
+            {/* ── Availability Toggles ── */}
             <View style={styles.card}>
-              <FieldLabel label="Item Name" required />
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={(v) => { setName(v); mark(); }}
-                placeholder="e.g. Classic Margherita"
-                placeholderTextColor="#9CA3AF"
-                returnKeyType="next"
-              />
-
-              <View style={styles.fieldGap} />
-              <FieldLabel label="Description" />
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={description}
-                onChangeText={(v) => { setDescription(v); mark(); }}
-                placeholder="Describe the dish, ingredients, flavours..."
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-            </View>
-          </View>
-
-          {/* ── Pricing ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Pricing</Text>
-            <View style={styles.card}>
-              <FieldLabel label="Price" required />
-              <View style={styles.inputWithPrefix}>
-                <View style={styles.inputPrefix}>
-                  <DollarIcon />
+              <View style={styles.toggleRow}>
+                <View>
+                  <Text style={styles.toggleLabel}>Item Available</Text>
+                  <Text style={styles.toggleSubtext}>Show this item to customers</Text>
                 </View>
+                <Switch
+                  value={enabled}
+                  onValueChange={(v) => { setEnabled(v); mark(); }}
+                  trackColor={{ false: '#E5E7EB', true: '#22c55e' }}
+                  thumbColor="#fff"
+                  ios_backgroundColor="#E5E7EB"
+                />
+              </View>
+              <View style={styles.cardDivider} />
+              <View style={styles.toggleRow}>
+                <View>
+                  <Text style={[styles.toggleLabel, soldOut && styles.toggleLabelWarn]}>Sold Out</Text>
+                  <Text style={styles.toggleSubtext}>Temporarily unavailable</Text>
+                </View>
+                <Switch
+                  value={soldOut}
+                  onValueChange={(v) => { setSoldOut(v); mark(); }}
+                  trackColor={{ false: '#E5E7EB', true: '#F59E0B' }}
+                  thumbColor="#fff"
+                  ios_backgroundColor="#E5E7EB"
+                />
+              </View>
+            </View>
+
+            {/* ── Basic Info ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Basic Info</Text>
+              <View style={styles.card}>
+                <FieldLabel label="Item Name" required />
                 <TextInput
-                  style={[styles.input, styles.inputPrefixed]}
-                  value={price}
-                  onChangeText={(v) => { setPrice(v); mark(); }}
-                  placeholder="0.00"
+                  style={styles.input}
+                  value={name}
+                  onChangeText={(v) => { setName(v); mark(); }}
+                  placeholder="e.g. Classic Margherita"
                   placeholderTextColor="#9CA3AF"
-                  keyboardType="decimal-pad"
-                  returnKeyType="done"
+                  returnKeyType="next"
+                />
+                <View style={styles.fieldGap} />
+                <FieldLabel label="Description" />
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={description}
+                  onChangeText={(v) => { setDescription(v); mark(); }}
+                  placeholder="Describe the dish, ingredients, flavours..."
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
                 />
               </View>
             </View>
-          </View>
 
-          {/* ── Category ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Category</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryRow}
-            >
-              {CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat}
-                  style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
-                  onPress={() => { setCategory(cat); mark(); }}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* ── Details ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Details</Text>
-            <View style={styles.card}>
-              <View style={styles.detailsRow}>
-                <View style={styles.detailField}>
-                  <FieldLabel label="Prep Time (min)" />
+            {/* ── Pricing ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Pricing</Text>
+              <View style={styles.card}>
+                <FieldLabel label="Price" required />
+                <View style={styles.inputWithPrefix}>
+                  <View style={styles.inputPrefix}>
+                    <DollarIcon />
+                  </View>
                   <TextInput
-                    style={styles.input}
-                    value={prepTime}
-                    onChangeText={(v) => { setPrepTime(v); mark(); }}
-                    placeholder="15"
+                    style={[styles.input, styles.inputPrefixed]}
+                    value={price}
+                    onChangeText={(v) => { setPrice(v); mark(); }}
+                    placeholder="0.00"
                     placeholderTextColor="#9CA3AF"
-                    keyboardType="number-pad"
-                  />
-                </View>
-                <View style={styles.detailDivider} />
-                <View style={styles.detailField}>
-                  <FieldLabel label="Calories (kcal)" />
-                  <TextInput
-                    style={styles.input}
-                    value={calories}
-                    onChangeText={(v) => { setCalories(v); mark(); }}
-                    placeholder="500"
-                    placeholderTextColor="#9CA3AF"
-                    keyboardType="number-pad"
+                    keyboardType="decimal-pad"
+                    returnKeyType="done"
                   />
                 </View>
               </View>
             </View>
-          </View>
 
-          {/* ── Tags ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Tags</Text>
-            <View style={styles.tagsWrapper}>
-              {TAG_OPTIONS.map((tag) => (
-                <TagPill
-                  key={tag}
-                  label={tag}
-                  selected={tags.includes(tag)}
-                  onPress={() => toggleTag(tag)}
-                />
-              ))}
+            {/* ── Category ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Category</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryRow}
+              >
+                {CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+                    onPress={() => { setCategory(cat); mark(); }}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
-          </View>
 
-          <View style={{ height: 120 }} />
-        </ScrollView>
+            {/* ── Details ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Details</Text>
+              <View style={styles.card}>
+                <View style={styles.detailsRow}>
+                  <View style={styles.detailField}>
+                    <FieldLabel label="Prep Time (min)" />
+                    <TextInput
+                      style={styles.input}
+                      value={prepTime}
+                      onChangeText={(v) => { setPrepTime(v); mark(); }}
+                      placeholder="15"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                  <View style={styles.detailDivider} />
+                  <View style={styles.detailField}>
+                    <FieldLabel label="Calories (kcal)" />
+                    <TextInput
+                      style={styles.input}
+                      value={calories}
+                      onChangeText={(v) => { setCalories(v); mark(); }}
+                      placeholder="500"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* ── Tags ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Tags</Text>
+              <View style={styles.tagsWrapper}>
+                {TAG_OPTIONS.map((tag) => (
+                  <TagPill
+                    key={tag}
+                    label={tag}
+                    selected={tags.includes(tag)}
+                    onPress={() => toggleTag(tag)}
+                  />
+                ))}
+              </View>
+            </View>
+
+            <View style={{ height: 120 }} />
+          </ScrollView>
         )}
       </KeyboardAvoidingView>
 
@@ -468,8 +478,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F2F7F2',
   },
-
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -515,14 +523,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Scroll
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
   },
-
-  // Image
   imageSection: {
     alignItems: 'center',
     marginBottom: 20,
@@ -562,8 +566,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Card
   card: {
     backgroundColor: '#fff',
     borderRadius: 18,
@@ -579,8 +581,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     marginVertical: 12,
   },
-
-  // Toggles
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -599,8 +599,6 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 2,
   },
-
-  // Section block
   sectionBlock: {
     marginBottom: 20,
   },
@@ -612,8 +610,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingLeft: 2,
   },
-
-  // Field
   fieldLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -633,8 +629,6 @@ const styles = StyleSheet.create({
   fieldGap: {
     height: 14,
   },
-
-  // Inputs
   input: {
     backgroundColor: '#F9FAFB',
     borderWidth: 1.5,
@@ -664,8 +658,6 @@ const styles = StyleSheet.create({
   inputPrefixed: {
     paddingLeft: 38,
   },
-
-  // Category chips
   categoryRow: {
     gap: 8,
     paddingVertical: 2,
@@ -690,8 +682,6 @@ const styles = StyleSheet.create({
   categoryChipTextActive: {
     color: '#fff',
   },
-
-  // Details grid
   detailsRow: {
     flexDirection: 'row',
     gap: 12,
@@ -704,8 +694,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     marginVertical: 4,
   },
-
-  // Tags
   tagsWrapper: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -742,8 +730,6 @@ const styles = StyleSheet.create({
   tagPillTextActive: {
     color: '#166534',
   },
-
-  // Save bar
   saveBar: {
     position: 'absolute',
     bottom: 0,

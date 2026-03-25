@@ -1,8 +1,63 @@
 import { supabase } from '../../config/supabaseConfig'
-import type { IAuthRepository, BusinessRegisterData, DriverRegisterData } from '../../domain/ports/lNegocioRepository.ts/lAuthRepository'
+
+import * as WebBrowser from 'expo-web-browser'
+import { makeRedirectUri } from 'expo-auth-session'
+
+import type { IAuthRepository, BusinessRegisterData, DriverRegisterData, OAuthProvider } from '../../domain/ports/repositories/lAuthRepository'
 import type { AuthSession } from '../../domain/entities/User'
 
+WebBrowser.maybeCompleteAuthSession()
+
 export class AuthRepositoryImpl implements IAuthRepository {
+
+
+  async signInWithOAuth(provider: OAuthProvider): Promise<void> {
+    // Construye el redirect URI para Expo Go / builds
+    const redirectTo = makeRedirectUri({
+      // En producción usa tu scheme: 'pidelo'
+      // En Expo Go se genera automáticamente
+    })
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true, // Manejamos el browser manualmente
+      },
+    })
+
+    if (error) throw new Error(error.message)
+    if (!data.url) throw new Error('No se recibió URL de autorización')
+
+    // Abre el browser del sistema
+    const result = await WebBrowser.openAuthSessionAsync(
+      data.url,
+      redirectTo
+    )
+
+    if (result.type === 'success') {
+      // Extraer tokens del callback URL
+      const url = new URL(result.url)
+      
+      // Supabase regresa los tokens en el fragment (#) o como query params
+      const params = new URLSearchParams(
+        url.hash ? url.hash.substring(1) : url.search.substring(1)
+      )
+
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+        if (sessionError) throw new Error(sessionError.message)
+      }
+    } else if (result.type === 'cancel') {
+      throw new Error('Login cancelado por el usuario')
+    }
+  }
 
   // ─── Login ────────────────────────────────────────────────────────────────
 

@@ -15,16 +15,14 @@ export type DriverRegisterData = {
   vehiculo:  'moto' | 'bici' | 'auto'
   placa?:    string
 }
-
-// ─── Contrato ─────────────────────────────────────────────────────────────────
+export type OAuthProvider = 'google' | 'facebook' | 'twitter'
 
 export interface IAuthRepository {
   login(email: string, password: string): Promise<AuthSession>
-
   registerCustomer(email: string, password: string): Promise<AuthSession>
   registerBusiness(email: string, password: string, data: BusinessRegisterData): Promise<AuthSession>
   registerDriver(email: string, password: string, data: DriverRegisterData): Promise<AuthSession>
-
   logout(): Promise<void>
   getSession(): Promise<AuthSession | null>
-}
+  signInWithOAuth(provider: OAuthProvider): Promise<void>
+}

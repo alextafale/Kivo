@@ -3,8 +3,8 @@ import * as SecureStore from 'expo-secure-store'
 import { AuthRepositoryImpl } from '../../infraestructure/repositories/AuthRepositoryImpl'
 import { AdminProfileRepositoryImpl } from '../../infraestructure/repositories/AdminProfileRepositoryImpl'
 import type { AuthSession } from '../../domain/entities/User'
-import type { AdminProfile } from '../../domain/ports/lNegocioRepository.ts/lAdminProfileRepository'
-import type { BusinessRegisterData, DriverRegisterData } from '../../domain/ports/lNegocioRepository.ts/lAuthRepository'
+import type { AdminProfile } from '../../domain/ports/repositories/lAdminProfileRepository'
+import type { BusinessRegisterData, DriverRegisterData, OAuthProvider } from '../../domain/ports/repositories/lAuthRepository'
 
 const authRepo         = new AuthRepositoryImpl()
 const adminProfileRepo = new AdminProfileRepositoryImpl()
@@ -21,6 +21,13 @@ type AuthContextType = {
   registerDriver:     (email: string, password: string, data: DriverRegisterData) => Promise<void>
   logout:             () => Promise<void>
   refreshAdminAccess: () => Promise<void>
+  signInWithOAuth:    (provider: OAuthProvider) => Promise<void>
+}
+
+// Agregar signInWithOAuth al contexto
+const signInWithOAuth = async (provider: OAuthProvider) => {
+  await authRepo.signInWithOAuth(provider)
+  // El listener onAuthStateChange en tu contexto detectará la sesión automáticamente
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -117,6 +124,20 @@ const restore = async () => {
     await SecureStore.deleteItemAsync(SESSION_KEY)
   }
 
+  const signInWithOAuth = async (provider: OAuthProvider) => {
+    await authRepo.signInWithOAuth(provider)
+    // Nota: El manejo de la sesión se hace mediante eventos o manualmente
+    // en AuthRepositoryImpl, por lo que aquí no actualizamos setSession
+    // directamente a menos que el flujo lo requiera.
+    // Sin embargo, para mayor robustez, podemos intentar restaurar sesión post-oauth:
+    const activeSession = await authRepo.getSession()
+    if (activeSession) {
+      setSession(activeSession)
+      await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(activeSession))
+      await loadAdminAccess(activeSession.role)
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       session,
@@ -128,6 +149,7 @@ const restore = async () => {
       registerDriver,
       logout,
       refreshAdminAccess,
+      signInWithOAuth,
     }}>
       {children}
     </AuthContext.Provider>

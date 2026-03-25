@@ -21,7 +21,6 @@ import BottomNavBar, { TabName } from '../../../components/business/tabNavigatio
 import { useAuth } from '../../../application/context/AuthContext';
 import { supabase } from '../../../config/supabaseConfig';
 
-const BASE_URL = 'https://kivo-v1.onrender.com/api/v1';
 
 type MenuEditorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MenuEditor'>;
 type Props = { navigation: MenuEditorNavigationProp };
@@ -145,7 +144,7 @@ export default function MenuEditor({ navigation }: Props) {
   const fetchMenu = useCallback(async () => {
     if (!sucursalId) return;
     try {
-      const res = await fetch(`${BASE_URL}/sucursales/${sucursalId}`);
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}`);
       if (res.ok) {
         const data = await res.json();
         const menuItems = data.menu || [];
