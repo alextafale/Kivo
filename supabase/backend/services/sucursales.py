@@ -6,7 +6,8 @@ from models.menu_categorias import MenuCategoria
 from exceptions.sucursal import SucursalNoExistente
 from typing import List,Optional
 from schemas.menu_items import MenuItemFrontendCreate, MenuItemFrontendUpdate
-from fastapi import HTTPException
+from fastapi import HTTPException,UploadFile
+from core.cloudinary import upload_image
 
 """def get_sucursal_por_id(db: Session, sucursal_id: str):
     sucursal = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
@@ -60,7 +61,7 @@ def get_sucursal_por_id(db: Session, sucursal_id: str):
         "menu": menu
     }
 
-def add_menu_item(db: Session, sucursal_id: str, item_data: MenuItemFrontendCreate):
+def add_menu_item(db: Session, sucursal_id: str, item_data: MenuItemFrontendCreate, imagen:Optional[UploadFile]):
     sucursal = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
     if not sucursal:
         raise HTTPException(status_code=404, detail="Sucursal no encontrada")
@@ -79,6 +80,13 @@ def add_menu_item(db: Session, sucursal_id: str, item_data: MenuItemFrontendCrea
         )
         db.add(categoria)
         db.flush()
+        
+        
+    if(imagen is not None):
+        imagen_url = upload_image(imagen)
+    else:
+        imagen_url = None
+        
 
     nuevo_item = MenuItem(
         sucursal_id=sucursal.id,
@@ -86,13 +94,17 @@ def add_menu_item(db: Session, sucursal_id: str, item_data: MenuItemFrontendCrea
         nombre=item_data.nombre,
         descripcion=item_data.descripcion,
         precio=item_data.precio,
-        imagen_url=item_data.imagen_url,
+        imagen_url=imagen_url,
         disponible=item_data.disponible
     )
-    db.add(nuevo_item)
-    db.commit()
-    db.refresh(nuevo_item)
-    return nuevo_item
+    try:
+        db.add(nuevo_item)
+        db.commit()
+        db.refresh(nuevo_item)
+        return nuevo_item
+    except:
+        db.rollback()
+        raise Exception("Error al crear el item")
 
 def update_menu_item(db: Session, sucursal_id: str, item_id: str, item_data: MenuItemFrontendUpdate):
     item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.sucursal_id == sucursal_id).first()

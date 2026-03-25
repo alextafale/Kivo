@@ -113,8 +113,10 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   const { adminAccess, session } = useAuth();
   const sucursalId = adminAccess?.sucursalId;
 
-  const [isLoading, setIsLoading]     = useState(true);
-  const [name, setName]               = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice]             = useState('0');
   const [category, setCategory]       = useState('Main Course');
@@ -151,7 +153,6 @@ export default function MenuItemEditor({ navigation, route }: Props) {
             setPrice(item.precio?.toString() || '0');
             setCategory(item.categoria || 'Main Course');
             setEnabled(item.disponible ?? true);
-            setImageUrl(item.imagen_url || '');
           }
         }
       } catch (e) {
@@ -457,10 +458,11 @@ export default function MenuItemEditor({ navigation, route }: Props) {
           style={[styles.saveButton, !hasChanges && styles.saveButtonDim]}
           onPress={handleSave}
           activeOpacity={0.85}
+          disabled={isLoading}
         >
           <CheckIcon />
           <Text style={styles.saveButtonText}>
-            {hasChanges ? 'Save Changes' : 'No Changes'}
+            {hasChanges ? (isLoading ? 'Saving...' : 'Save Changes') : 'No Changes'}
           </Text>
         </TouchableOpacity>
       </View>
