@@ -140,11 +140,12 @@ export default function MenuEditor({ navigation }: Props) {
 
   const { adminAccess } = useAuth();
   const sucursalId = adminAccess?.sucursalId;
+  console.log("Aqui es",sucursalId);
 
   const fetchMenu = useCallback(async () => {
     if (!sucursalId) return;
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}`);
+      const res = await fetch(`http://192.168.100.7:8000/api/v1/sucursales/${sucursalId}`);
       if (res.ok) {
         const data = await res.json();
         const menuItems = data.menu || [];

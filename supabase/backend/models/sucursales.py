@@ -7,7 +7,7 @@ from db.database import Base
 class Sucursal(Base):
     __tablename__ = "sucursales"
     id = Column(UUID(as_uuid=True),nullable=False,primary_key=True,default=uuid.uuid4)
-    negocio_id = Column(UUID(as_uuid=True),ForeignKey("negocios.id"),nullable=False)
+    negocio_id = Column(UUID(as_uuid=True),ForeignKey("public.negocios.id"),nullable=False)
     nombre = Column(String, nullable=False)
     telefono = Column(String, nullable=True)
     whatsapp = Column(String, nullable=True)
@@ -39,3 +39,5 @@ class Sucursal(Base):
     __table_args__ = (
         {"schema": "public"},
     )
+
+    negocio = relationship("Negocio", back_populates="sucursales")

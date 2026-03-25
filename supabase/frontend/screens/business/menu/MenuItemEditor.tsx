@@ -20,6 +20,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useAuth } from '../../../application/context/AuthContext';
+import * as ImagePicker from "expo-image-picker";
 
 type MenuItemEditorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MenuItemEditor'>;
 type MenuItemEditorRouteProp = RouteProp<RootStackParamList, 'MenuItemEditor'>;
@@ -113,20 +114,18 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   const { adminAccess, session } = useAuth();
   const sucursalId = adminAccess?.sucursalId;
 
-  const [imageUri, setImageUri] = useState<string | null>(null);
-
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice]             = useState('0');
-  const [category, setCategory]       = useState('Main Course');
-  const [prepTime, setPrepTime]       = useState('15');
-  const [calories, setCalories]       = useState('500');
-  const [enabled, setEnabled]         = useState(true);
-  const [soldOut, setSoldOut]         = useState(false);
-  const [tags, setTags]               = useState<string[]>([]);
-  const [imageUrl, setImageUrl]       = useState('');
-  const [hasChanges, setHasChanges]   = useState(false);
+  const [price, setPrice] = useState('0');
+  const [category, setCategory] = useState('Main Course');
+  const [prepTime, setPrepTime] = useState('15');
+  const [calories, setCalories] = useState('500');
+  const [enabled, setEnabled] = useState(true);
+  const [soldOut, setSoldOut] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
   //  Espera a que sucursalId Y session estén disponibles antes de hacer fetch
   React.useEffect(() => {
@@ -174,59 +173,89 @@ export default function MenuItemEditor({ navigation, route }: Props) {
     mark();
   };
 
-  const handleSave = async () => {
-    if (!name.trim()) {
-      Alert.alert('Requerido', 'Por favor ingresa un nombre para el platillo.');
-      return;
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
     }
-    if (!price.trim() || isNaN(parseFloat(price))) {
-      Alert.alert('Requerido', 'Por favor ingresa un precio válido.');
-      return;
-    }
-    if (!session?.accessToken) {
-      Alert.alert('Error', 'No hay sesión activa. Intenta de nuevo.');
-      return;
+  };
+
+  const buildFormData = () => {
+    const formData = new FormData();
+
+    formData.append("nombre", name);
+    formData.append("descripcion", description);
+    formData.append("precio", price);
+    formData.append("disponible", enabled.toString());
+    formData.append("categoria", category);
+
+    if (imageUri) {
+      formData.append("imagen", {
+        uri: imageUri,
+        name: "producto.jpg",
+        type: "image/jpeg",
+      } as any);
     }
 
-    const isNew = itemId === 'new';
-    const url = isNew
-      ? `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu`
-      : `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${itemId}`;
+    return formData;
+  };
+
+  const createMenuItem = async () => {
+    const formData = buildFormData();
+
+    const res = await fetch(
+      `https://kivo-v1.onrender.com/api/v1/sucursales/${sucursalId}/menu`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!res.ok) throw new Error("Error creando");
+  };
+
+  const updateMenuItem = async () => {
+    const formData = buildFormData();
+
+    const res = await fetch(
+      `https://kivo-v1.onrender.com/api/v1/sucursales/${sucursalId}/menu/${itemId}`,
+      {
+        method: "PUT",
+        body: formData,
+      }
+    );
+
+    if (!res.ok) throw new Error("Error actualizando");
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    if (!name.trim()) {
+      Alert.alert('Requerido', 'Ingresa un nombre.');
+      return;
+    }
 
     try {
-      // ✅ Token del contexto — sin round-trip a getSession
-      const res = await fetch(url, {
-        method: isNew ? 'POST' : 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-        body: JSON.stringify({
-          nombre: name.trim(),
-          descripcion: description.trim() || null,
-          precio: parseFloat(price),
-          imagen_url: imageUrl.trim() || null,
-          disponible: enabled,
-          categoria: category,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.warn('Server Error Detail:', JSON.stringify(errorData, null, 2));
-        throw new Error(errorData.detail || `Error ${res.status}`);
+      if (itemId === "new") {
+        await createMenuItem();
+        Alert.alert("Éxito", "Producto creado");
+      } else {
+        await updateMenuItem();
+        Alert.alert("Éxito", "Producto actualizado");
       }
 
-      Alert.alert(
-        '¡Guardado!',
-        isNew ? 'Se ha creado el nuevo producto.' : 'Producto actualizado con éxito.',
-        [{ text: 'OK', onPress: () => navigation.navigate('MenuEditor') }],
-      );
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Error desconocido';
-      console.warn('Error saving menu item:', message);
-      console.warn('URL attempted:', url);
-      Alert.alert('Error', `Hubo un problema al guardar el producto: ${message}`);
+      navigation.goBack();
+    } catch (e) {
+      console.log(e);
+      Alert.alert("Error", "No se pudo guardar");
+    }
+    finally {
+      setIsLoading(false);
     }
   };
 
@@ -281,15 +310,20 @@ export default function MenuItemEditor({ navigation, route }: Props) {
           >
             {/* ── Image Upload ── */}
             <View style={styles.imageSection}>
-              <TouchableOpacity style={styles.imageWrapper} activeOpacity={0.85}>
-                {imageUrl ? (
-                  <Image source={{ uri: imageUrl }} style={styles.itemImage} />
+              <TouchableOpacity
+                style={styles.imageWrapper}
+                activeOpacity={0.85}
+                onPress={pickImage}
+              >
+                {imageUri ? (
+                  <Image source={{ uri: imageUri }} style={styles.itemImage} />
                 ) : (
                   <View style={styles.imagePlaceholder}>
                     <CameraIcon />
                     <Text style={styles.imagePlaceholderText}>Add Photo</Text>
                   </View>
                 )}
+
                 <View style={styles.imageEditBadge}>
                   <CameraIcon />
                 </View>
