@@ -36,7 +36,24 @@ export class RepartidorRepositoryImpl implements IRepartidorRepository {
     if (error) throw new Error(error.message)
     return data.estado as DriverEstado
   }
+  async tomarPedido(pedidoId: string): Promise<void> {
+    const { data } = await supabase.auth.getSession()
+    const token = data.session?.access_token
+    if (!token) throw new Error('Sin sesión activa')
 
+    const res = await fetch(`${process.env.API_URL}/repartidores/pedidos/${pedidoId}/tomar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.detail ?? `Error ${res.status}`)
+    }
+  }
   async getPedidosDisponibles(): Promise<PedidoDisponible[]> {
     // Equivalent to SQL:
     // SELECT p.id, p.order_number, n.nombre as negocio_nombre, p.direccion_entrega, p.total, p.costo_envio, p.creado_en

@@ -16,6 +16,12 @@ from services.repartidores import (
     actualizar_estado,
     get_pedidos_disponibles,
 )
+from services.repartidores import (
+    registrar_repartidor,
+    actualizar_estado,
+    get_pedidos_disponibles,
+    tomar_pedido,          # ← nuevo
+)
 
 router = APIRouter(prefix="/repartidores", tags=["Repartidores"])
 
@@ -55,6 +61,18 @@ def update_estado(
     summary="Ver pedidos disponibles para tomar",
     description="Retorna pedidos en estado 'ready' sin repartidor asignado. Solo repartidores activos.",
 )
+@router.post(
+    "/pedidos/{pedido_id}/tomar",
+    summary="Tomar un pedido disponible",
+    description="Asigna el pedido al repartidor y lo marca como picked_up. Solo repartidores available.",
+)
+def tomar(
+    pedido_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(require_driver),
+):
+    return tomar_pedido(db, user_id, pedido_id)
+
 def pedidos_disponibles(
     db: Session = Depends(get_db),
     user_id: str = Depends(require_driver),  # middleware isDriver

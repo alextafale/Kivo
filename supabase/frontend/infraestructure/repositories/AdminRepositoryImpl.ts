@@ -1,6 +1,6 @@
 import { supabase } from '../../config/supabaseConfig'
-import type { IAdminRepository } from '../../domain/ports/lNegocioRepository.ts/lAdminRepository'
-import type { Negocio, NegocioPatch, Sucursal, SucursalCreate, SucursalPatch } from '../../domain/entities/Negocio'
+import type { IAdminRepository } from '../../domain/ports/repositories/lAdminRepository'
+import type { Negocio, NegocioPatch, Sucursal, SucursalCreate, SucursalPatch, MetricasNegocio } from '../../domain/entities/Negocio'
 import { API_URL } from '@env'
 
 // Obtiene el JWT activo de Supabase para enviarlo al backend FastAPI
@@ -14,6 +14,7 @@ async function getAuthHeaders(): Promise<HeadersInit> {
   }
 }
 
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = await getAuthHeaders()
   const res = await fetch(`${API_URL}${path}`, { ...options, headers })
@@ -23,6 +24,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   }
   return res.json() as Promise<T>
 }
+
 
 export class AdminRepositoryImpl implements IAdminRepository {
 
@@ -48,7 +50,9 @@ export class AdminRepositoryImpl implements IAdminRepository {
     if (error || !updated) throw new Error(error?.message ?? 'Error al actualizar negocio')
     return updated as Negocio
   }
-
+  async getMetricas(negocioId: string): Promise<MetricasNegocio> {
+    return apiFetch<MetricasNegocio>(`/negocios/${negocioId}/metricas`)
+  }
   // ── Sucursales ─────────────────────────────────────────────────────────────
 
   async createSucursal(negocioId: string, data: SucursalCreate): Promise<Sucursal> {

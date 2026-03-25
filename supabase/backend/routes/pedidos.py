@@ -326,6 +326,53 @@ def create_pedido(
             notas=item.notas,
         )
         db.add(pedido_item)
+# ─── GET /negocios/{negocio_id}/metricas ─────────────────────────────────────
+
+@router.get("/negocios/{negocio_id}/metricas", summary="Métricas de pedidos del negocio")
+def get_metricas_negocio(
+    negocio_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    # Solo el admin del negocio puede verlas
+    admin = db.execute(
+        text("SELECT id FROM negocio_admins WHERE negocio_id = :nid AND user_id = :uid"),
+        {"nid": negocio_id, "uid": user_id},
+    ).first()
+    if not admin:
+        raise HTTPException(status_code=403, detail="Sin permiso")
+
+    result = db.execute(text("""
+        SELECT
+            COUNT(*)                                            AS total,
+            COUNT(*) FILTER (WHERE estado = 'delivered')       AS entregados,
+            COUNT(*) FILTER (WHERE estado = 'cancelled')       AS cancelados,
+            COUNT(*) FILTER (WHERE estado = 'pending')         AS pendientes,
+            ROUND(
+                AVG(
+                    EXTRACT(EPOCH FROM (entregado_en - creado_en)) / 60
+                ) FILTER (WHERE estado = 'delivered' AND entregado_en IS NOT NULL),
+                0
+            )                                                  AS tiempo_promedio_min
+        FROM pedidos
+        WHERE negocio_id = :negocio_id
+    """), {"negocio_id": negocio_id}).mappings().first()
+
+    row = dict(result)
+    total = row["total"] or 0
+    entregados = row["entregados"] or 0
+    cancelados = row["cancelados"] or 0
+
+    tasa_entrega = round((entregados / total) * 100, 1) if total > 0 else 0.0
+
+    return {
+        "total": total,
+        "entregados": entregados,
+        "cancelados": cancelados,
+        "pendientes": row["pendientes"] or 0,
+        "tasa_entrega": tasa_entrega,          # % pedidos entregados exitosamente
+        "tiempo_promedio_min": int(row["tiempo_promedio_min"]) if row["tiempo_promedio_min"] else None,
+    }
 
     db.commit()
     db.refresh(pedido)

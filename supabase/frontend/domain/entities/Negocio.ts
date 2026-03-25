@@ -56,3 +56,12 @@ export type NegocioResumen = {
 export type SucursalCreate = Omit<Sucursal, 'id' | 'calificacion' | 'total_reviews'>
 export type SucursalPatch = Partial<SucursalCreate>
 export type NegocioPatch = Partial<Pick<Negocio, 'nombre' | 'descripcion' | 'logo_url' | 'banner_url' | 'categoria' | 'tags'>>
+
+export type MetricasNegocio = {
+  total: number
+  entregados: number
+  cancelados: number
+  pendientes: number
+  tasa_entrega: number
+  tiempo_promedio_min: number | null
+}

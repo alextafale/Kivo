@@ -22,6 +22,7 @@ import { useAuth } from '../../../application/context/AuthContext';
 import { supabase } from '../../../config/supabaseConfig';
 
 
+
 type MenuEditorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MenuEditor'>;
 type Props = { navigation: MenuEditorNavigationProp };
 
@@ -145,7 +146,8 @@ export default function MenuEditor({ navigation }: Props) {
   const fetchMenu = useCallback(async () => {
     if (!sucursalId) return;
     try {
-      const res = await fetch(`http://192.168.100.7:8000/api/v1/sucursales/${sucursalId}`);
+      const res = await fetch(`https://kivo-v1.onrender.com/api/v1/sucursales/${sucursalId}`);
+      console.log("Respuesta",res); 
       if (res.ok) {
         const data = await res.json();
         const menuItems = data.menu || [];

@@ -199,7 +199,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
         uri: imageUri,
         name: "producto.jpg",
         type: "image/jpeg",
-      } as any);
+      } as any | null);
     }
 
     return formData;

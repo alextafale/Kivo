@@ -1,4 +1,4 @@
-import type { Negocio, NegocioPatch, Sucursal, SucursalCreate, SucursalPatch } from '../../entities/Negocio'
+import type { MetricasNegocio, Negocio, NegocioPatch, Sucursal, SucursalCreate, SucursalPatch } from '../../entities/Negocio'
 
 // Contrato que la infraestructura debe cumplir para el panel admin
 export interface IAdminRepository {
@@ -13,4 +13,5 @@ export interface IAdminRepository {
   // Horarios
   getHorarios(negocioId: string, sucursalId: string): Promise<Sucursal['horarios']>
   patchHorarios(negocioId: string, sucursalId: string, horarios: Sucursal['horarios']): Promise<Sucursal>
+  getMetricas(negocioId: string): Promise<MetricasNegocio>
 }

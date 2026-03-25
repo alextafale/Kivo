@@ -9,6 +9,8 @@ import Svg, { Path, Circle } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { supabase } from '../../../config/supabaseConfig'
+import { useAuth } from '../../../application/context/AuthContext'
+
 
 const BASE_URL = 'https://kivo-v1.onrender.com/api/v1'
 
@@ -82,37 +84,14 @@ const RefreshIcon = () => (
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function ManageOrders({ navigation }: Props) {
+  const { adminAccess } = useAuth()
+  const negocioId = adminAccess?.negocioId ?? null
   const [pedidos, setPedidos] = useState<PedidoNegocio[]>([])
-  const [negocioId, setNegocioId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(!negocioId)
   const [refreshing, setRefreshing] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
-
   // Obtener el negocio del usuario autenticado
-  useEffect(() => {
-    const fetchNegocio = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-          setIsLoading(false)
-          return
-        }
 
-        const response = await fetch(`${BASE_URL}/negocios/mine`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        })
-        if (response.ok) {
-          const data = await response.json()
-          setNegocioId(data.id)
-        } else {
-          setIsLoading(false)
-        }
-      } catch (error) {
-        setIsLoading(false)
-      }
-    }
-    fetchNegocio()
-  }, [])
 
   const fetchPedidos = useCallback(async () => {
     if (!negocioId) {

@@ -16,7 +16,7 @@ type Props = {
 }
 
 import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/RepartidorRepositoryImpl'
-import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../domain/ports/lNegocioRepository.ts/lRepartidorRepository'
+import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../domain/ports/repositories/lRepartidorRepository'
 
 const repartidorRepo = new RepartidorRepositoryImpl()
 
@@ -97,6 +97,7 @@ export default function DriverDashboard({ navigation }: Props) {
     } catch (e: any) {
       console.log('[fetchRepartidor] catch:', e.message)
       setFetchError(e.message)
+      navigation.navigate('LoginDriver')
     }
   }, [session?.userId])
 
@@ -158,6 +159,29 @@ export default function DriverDashboard({ navigation }: Props) {
       },
     ])
   }
+      // Agrega junto a los otros handlers
+    const handleTomarPedido = async (pedidoId: string) => {
+      Alert.alert(
+        'Tomar pedido',
+        '¿Confirmas que vas a recoger este pedido?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Confirmar',
+            onPress: async () => {
+              try {
+                await repartidorRepo.tomarPedido(pedidoId)
+                // Actualizar estado local sin re-fetch
+                setRepartidor(prev => prev ? { ...prev, estado: 'busy' } : prev)
+                setPedidos([])
+              } catch (e: any) {
+                Alert.alert('Error', e.message)
+              }
+            },
+          },
+        ]
+      )
+    }
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
@@ -333,7 +357,7 @@ export default function DriverDashboard({ navigation }: Props) {
                 </View>
                 <View style={styles.pedidoFooter}>
                   <Text style={styles.pedidoEnvio}>Envío: ${pedido.costo_envio.toFixed(2)}</Text>
-                  <TouchableOpacity style={styles.aceptarBtn}>
+                  <TouchableOpacity style={styles.aceptarBtn} onPress={() => handleTomarPedido(pedido.id)}>
                     <LinearGradient
                       colors={['#22c55e', '#16a34a']}
                       style={styles.aceptarGradient}

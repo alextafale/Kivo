@@ -33,7 +33,7 @@ class MenuItemOut(MenuItemBase):
 
 class MenuItemFrontendCreate(BaseModel):
     nombre: str
-    descripcion: Optional[str] = None
+    descripcion: Optional[str]  = None
     precio: float
     disponible: Optional[bool] = True
     categoria: str

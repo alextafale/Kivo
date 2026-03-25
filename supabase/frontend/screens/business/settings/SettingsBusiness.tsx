@@ -13,6 +13,7 @@ import { useAuth } from '../../../application/context/AuthContext';
 import { useAdminNegocio } from '../../../application/hooks/useAdminNegocio';
 import { useAdminSucursal } from '../../../application/hooks/useAdminSucursal';
 import type { HorarioDia } from '../../../domain/entities/Negocio';
+import { useAdminMetricas } from '../../../application/hooks/useAdminMetricas';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 type Props = { navigation: SettingsScreenNavigationProp };
@@ -152,6 +153,8 @@ export default function SettingsScreen({ navigation }: Props) {
   const negocioId   = adminAccess?.negocioId  ?? '';
   const sucursalId  = adminAccess?.sucursalId ?? '';
   const puedeEditar = adminAccess?.puedeEditarNegocio ?? false;
+  // Agrega el hook junto a los otros
+  const { metricas, isLoading: loadingMetricas } = useAdminMetricas(negocioId)
 
   // ── Negocio ──────────────────────────────────────────────────────────────
   const { negocio, isLoading: loadingNegocio, isSaving: savingNegocio, error: errorNegocio, updateNegocio } =
@@ -297,37 +300,57 @@ React.useEffect(() => {
           <Text style={styles.businessMeta}>{negocio?.categoria ?? '—'}</Text>
         </View>
 
-        {/* AI Performance */}
+        {/* Performance */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>AI Performance</Text>
+            <Text style={styles.sectionTitle}>Performance</Text>
             <View style={styles.liveBadge}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveText}>LIVE UPDATES</Text>
+              <Text style={styles.liveText}>DATOS REALES</Text>
             </View>
           </View>
           <View style={styles.aiCard}>
             <View style={styles.aiTopRow}>
               <View>
-                <Text style={styles.aiLabel}>BOT SUCCESS RATE</Text>
-                <Text style={styles.aiRate}>94.2%</Text>
+                <Text style={styles.aiLabel}>TASA DE ENTREGA</Text>
+                {loadingMetricas
+                  ? <ActivityIndicator color="#22c55e" style={{ marginTop: 8 }} />
+                  : <Text style={styles.aiRate}>
+                      {metricas ? `${metricas.tasa_entrega}%` : '—'}
+                    </Text>
+                }
               </View>
               <View style={styles.robotIconContainer}><RobotIcon /></View>
             </View>
+
             <View style={styles.aiStatsRow}>
               <View style={styles.aiStat}>
-                <Text style={styles.aiStatLabel}>Automated Orders</Text>
-                <Text style={styles.aiStatValue}>1,284</Text>
+                <Text style={styles.aiStatLabel}>Entregados</Text>
+                <Text style={styles.aiStatValue}>
+                  {metricas?.entregados ?? '—'}
+                </Text>
               </View>
               <View style={styles.aiStatDivider} />
               <View style={styles.aiStat}>
-                <Text style={styles.aiStatLabel}>Manual Pickups</Text>
-                <Text style={styles.aiStatValue}>42</Text>
+                <Text style={styles.aiStatLabel}>Cancelados</Text>
+                <Text style={styles.aiStatValue}>
+                  {metricas?.cancelados ?? '—'}
+                </Text>
               </View>
             </View>
+
             <View style={styles.aiInfoBar}>
               <BoltIcon />
-              <Text style={styles.aiInfoText}>AI handled 96% of customer queries today</Text>
+              <Text style={styles.aiInfoText}>
+                {metricas
+                  ? `${metricas.total} pedidos en total · ${
+                      metricas.tiempo_promedio_min
+                        ? `${metricas.tiempo_promedio_min} min promedio`
+                        : 'sin datos de tiempo aún'
+                    }`
+                  : 'Cargando estadísticas…'
+                }
+              </Text>
             </View>
           </View>
         </View>
@@ -496,7 +519,7 @@ const styles = StyleSheet.create({
   fieldInput:         { fontSize: 15, color: '#111827', paddingVertical: 0 },
   fieldInputDisabled: { color: '#9CA3AF' },
   fieldDivider:       { height: 1, backgroundColor: '#F3F4F6', marginVertical: 16 },
-  saveContainer:      { position: 'absolute', bottom: 80, left: 20, right: 20, shadowColor: '#22c55e', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10 },
+  saveContainer:      { position: 'absolute', bottom: 120, left: 20, right: 20, shadowColor: '#22c55e', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10 },
   saveWrapper:        { borderRadius: 30, overflow: 'hidden' },
   saveButton:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 18 },
   saveButtonText:     { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },

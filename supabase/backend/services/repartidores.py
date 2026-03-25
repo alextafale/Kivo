@@ -124,5 +124,79 @@ def get_pedidos_disponibles(db: Session) -> list[dict]:
             """
         )
     ).mappings().all()
+# ── Tomar pedido ──────────────────────────────────────────────────────────────
 
+def tomar_pedido(db: Session, user_id: str, pedido_id: str) -> dict:
+    """
+    El repartidor toma un pedido 'ready' sin asignar.
+    - Asigna repartidor_id al pedido
+    - Cambia estado del pedido a 'picked_up'
+    - Cambia estado del repartidor a 'busy'
+    Todo en una transacción — si algo falla, revierte.
+    """
+    # 1. Verificar que el repartidor existe y está available
+    repartidor = db.execute(
+        text("""
+            SELECT id FROM repartidores
+            WHERE user_id = :user_id AND activo = TRUE AND estado = 'available'
+        """),
+        {"user_id": user_id},
+    ).fetchone()
+
+    if not repartidor:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Debes estar disponible para tomar un pedido.",
+        )
+
+    # 2. Verificar que el pedido sigue disponible (ready + sin repartidor)
+    # El SELECT FOR UPDATE bloquea la fila para evitar que dos repartidores
+    # tomen el mismo pedido al mismo tiempo (race condition)
+    pedido = db.execute(
+        text("""
+            SELECT id FROM pedidos
+            WHERE id = :pedido_id
+              AND estado = 'ready'
+              AND repartidor_id IS NULL
+            FOR UPDATE SKIP LOCKED
+        """),
+        {"pedido_id": pedido_id},
+    ).fetchone()
+
+    if not pedido:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este pedido ya fue tomado por otro repartidor.",
+        )
+
+    now = datetime.now(timezone.utc)
+
+    # 3. Asignar repartidor al pedido y avanzar estado
+    db.execute(
+        text("""
+            UPDATE pedidos
+            SET repartidor_id  = :repartidor_id,
+                estado         = 'picked_up',
+                recogido_en    = :now,
+                actualizado_en = :now
+            WHERE id = :pedido_id
+        """),
+        {"repartidor_id": str(repartidor.id), "now": now, "pedido_id": pedido_id},
+    )
+
+    # 4. Poner al repartidor como busy
+    db.execute(
+        text("""
+            UPDATE repartidores
+            SET estado         = 'busy',
+                actualizado_en = :now
+            WHERE user_id = :user_id
+        """),
+        {"now": now, "user_id": user_id},
+    )
+
+    db.commit()
+
+    return {"ok": True, "pedido_id": pedido_id, "estado": "picked_up"}
+    
     return [dict(row) for row in rows]

@@ -23,4 +23,5 @@ export interface IRepartidorRepository {
   updateEstado(userId: string, nuevoEstado: DriverEstado): Promise<DriverEstado>
   getPedidosDisponibles(): Promise<PedidoDisponible[]>
   register(userId: string, tipo: string, vehiculo: string, placa: string | null): Promise<RepartidorInfo>
+  tomarPedido(pedidoId: string): Promise<void>
 }
