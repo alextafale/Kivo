@@ -39,4 +39,3 @@ class Sucursal(Base):
     __table_args__ = (
         {"schema": "public"},
     )
-    negocio = relationship("Negocio", back_populates="sucursales")

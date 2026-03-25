@@ -20,6 +20,7 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useAuth } from '../../../application/context/AuthContext';
 import { ActivityIndicator } from 'react-native';
+import * as ImagePicker from "expo-image-picker";
 
 const BASE_URL = 'https://kivo-v1.onrender.com/api/v1';
 
@@ -113,19 +114,20 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   const { adminAccess } = useAuth();
   const sucursalId = adminAccess?.sucursalId;
 
-  const [isLoading, setIsLoading]     = useState(true);
-  const [name, setName]               = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice]             = useState('0');
-  const [category, setCategory]       = useState('Main Course');
-  const [prepTime, setPrepTime]       = useState('15');
-  const [calories, setCalories]       = useState('500');
-  const [enabled, setEnabled]         = useState(true);
-  const [soldOut, setSoldOut]         = useState(false);
-  const [tags, setTags]               = useState<string[]>([]);
-  const [imageUrl, setImageUrl]       = useState('');
-  
-  const [hasChanges, setHasChanges]   = useState(false);
+  const [price, setPrice] = useState('0');
+  const [category, setCategory] = useState('Main Course');
+  const [prepTime, setPrepTime] = useState('15');
+  const [calories, setCalories] = useState('500');
+  const [enabled, setEnabled] = useState(true);
+  const [soldOut, setSoldOut] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+
+  const [hasChanges, setHasChanges] = useState(false);
 
   React.useEffect(() => {
     const fetchItem = async () => {
@@ -145,7 +147,6 @@ export default function MenuItemEditor({ navigation, route }: Props) {
             setPrice(item.precio?.toString() || '0');
             setCategory(item.categoria || 'Main Course');
             setEnabled(item.disponible ?? true);
-            setImageUrl(item.imagen_url || '');
           }
         }
       } catch (e) {
@@ -166,49 +167,89 @@ export default function MenuItemEditor({ navigation, route }: Props) {
     mark();
   };
 
-  const handleSave = async () => {
-    if (!name.trim()) {
-      Alert.alert('Requerido', 'Por favor ingresa un nombre para el platillo.');
-      return;
-    }
-    if (!price.trim() || isNaN(parseFloat(price))) {
-      Alert.alert('Requerido', 'Por favor ingresa un precio válido.');
-      return;
-    }
-    
-    try {
-      const isNew = itemId === 'new';
-      const url = isNew
-        ? `${BASE_URL}/sucursales/${sucursalId}/menu`
-        : `${BASE_URL}/sucursales/${sucursalId}/menu/${itemId}`;
-        
-      const res = await fetch(url, {
-        method: isNew ? 'POST' : 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nombre: name.trim(),
-          descripcion: description.trim() || null,
-          precio: parseFloat(price),
-          imagen_url: imageUrl.trim() || null,
-          disponible: enabled,
-          categoria: category,
-        }),
-      });
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
 
-      if (!res.ok) {
-        throw new Error('Server responded with non-ok status');
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
+  const buildFormData = () => {
+    const formData = new FormData();
+
+    formData.append("nombre", name);
+    formData.append("descripcion", description);
+    formData.append("precio", price);
+    formData.append("disponible", enabled.toString());
+    formData.append("categoria", category);
+
+    if (imageUri) {
+      formData.append("imagen", {
+        uri: imageUri,
+        name: "producto.jpg",
+        type: "image/jpeg",
+      } as any);
+    }
+
+    return formData;
+  };
+
+  const createMenuItem = async () => {
+    const formData = buildFormData();
+
+    const res = await fetch(
+      `${BASE_URL}/sucursales/${sucursalId}/menu`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!res.ok) throw new Error("Error creando");
+  };
+
+  const updateMenuItem = async () => {
+    const formData = buildFormData();
+
+    const res = await fetch(
+      `${BASE_URL}/sucursales/${sucursalId}/menu/${itemId}`,
+      {
+        method: "PUT",
+        body: formData,
+      }
+    );
+
+    if (!res.ok) throw new Error("Error actualizando");
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    if (!name.trim()) {
+      Alert.alert('Requerido', 'Ingresa un nombre.');
+      return;
+    }
+
+    try {
+      if (itemId === "new") {
+        await createMenuItem();
+        Alert.alert("Éxito", "Producto creado");
+      } else {
+        await updateMenuItem();
+        Alert.alert("Éxito", "Producto actualizado");
       }
 
-      Alert.alert(
-        '¡Guardado!',
-        isNew ? 'Se ha creado el nuevo producto.' : 'Producto actualizado con éxito.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      navigation.goBack();
     } catch (e) {
-      console.warn('Error saving menu item:', e);
-      Alert.alert('Error', 'Hubo un problema al guardar el producto. Intenta más tarde.');
+      console.log(e);
+      Alert.alert("Error", "No se pudo guardar");
+    }
+    finally{
+      setIsLoading(false);
     }
   };
 
@@ -266,178 +307,183 @@ export default function MenuItemEditor({ navigation, route }: Props) {
             keyboardShouldPersistTaps="handled"
           >
 
-          {/* ── Image Upload ── */}
-          <View style={styles.imageSection}>
-            <TouchableOpacity style={styles.imageWrapper} activeOpacity={0.85}>
-              {imageUrl ? (
-                <Image source={{ uri: imageUrl }} style={styles.itemImage} />
-              ) : (
-                <View style={styles.imagePlaceholder}>
+            {/* ── Image Upload ── */}
+            <View style={styles.imageSection}>
+              <TouchableOpacity
+                style={styles.imageWrapper}
+                activeOpacity={0.85}
+                onPress={pickImage}
+              >
+                {imageUri ? (
+                  <Image source={{ uri: imageUri }} style={styles.itemImage} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <CameraIcon />
+                    <Text style={styles.imagePlaceholderText}>Add Photo</Text>
+                  </View>
+                )}
+
+                <View style={styles.imageEditBadge}>
                   <CameraIcon />
-                  <Text style={styles.imagePlaceholderText}>Add Photo</Text>
                 </View>
-              )}
-              <View style={styles.imageEditBadge}>
-                <CameraIcon />
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* ── Availability Toggles ── */}
-          <View style={styles.card}>
-            <View style={styles.toggleRow}>
-              <View>
-                <Text style={styles.toggleLabel}>Item Available</Text>
-                <Text style={styles.toggleSubtext}>Show this item to customers</Text>
-              </View>
-              <Switch
-                value={enabled}
-                onValueChange={(v) => { setEnabled(v); mark(); }}
-                trackColor={{ false: '#E5E7EB', true: '#22c55e' }}
-                thumbColor="#fff"
-                ios_backgroundColor="#E5E7EB"
-              />
+              </TouchableOpacity>
             </View>
-            <View style={styles.cardDivider} />
-            <View style={styles.toggleRow}>
-              <View>
-                <Text style={[styles.toggleLabel, soldOut && styles.toggleLabelWarn]}>Sold Out</Text>
-                <Text style={styles.toggleSubtext}>Temporarily unavailable</Text>
-              </View>
-              <Switch
-                value={soldOut}
-                onValueChange={(v) => { setSoldOut(v); mark(); }}
-                trackColor={{ false: '#E5E7EB', true: '#F59E0B' }}
-                thumbColor="#fff"
-                ios_backgroundColor="#E5E7EB"
-              />
-            </View>
-          </View>
 
-          {/* ── Basic Info ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Basic Info</Text>
-
+            {/* ── Availability Toggles ── */}
             <View style={styles.card}>
-              <FieldLabel label="Item Name" required />
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={(v) => { setName(v); mark(); }}
-                placeholder="e.g. Classic Margherita"
-                placeholderTextColor="#9CA3AF"
-                returnKeyType="next"
-              />
-
-              <View style={styles.fieldGap} />
-              <FieldLabel label="Description" />
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={description}
-                onChangeText={(v) => { setDescription(v); mark(); }}
-                placeholder="Describe the dish, ingredients, flavours..."
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-            </View>
-          </View>
-
-          {/* ── Pricing ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Pricing</Text>
-            <View style={styles.card}>
-              <FieldLabel label="Price" required />
-              <View style={styles.inputWithPrefix}>
-                <View style={styles.inputPrefix}>
-                  <DollarIcon />
+              <View style={styles.toggleRow}>
+                <View>
+                  <Text style={styles.toggleLabel}>Item Available</Text>
+                  <Text style={styles.toggleSubtext}>Show this item to customers</Text>
                 </View>
+                <Switch
+                  value={enabled}
+                  onValueChange={(v) => { setEnabled(v); mark(); }}
+                  trackColor={{ false: '#E5E7EB', true: '#22c55e' }}
+                  thumbColor="#fff"
+                  ios_backgroundColor="#E5E7EB"
+                />
+              </View>
+              <View style={styles.cardDivider} />
+              <View style={styles.toggleRow}>
+                <View>
+                  <Text style={[styles.toggleLabel, soldOut && styles.toggleLabelWarn]}>Sold Out</Text>
+                  <Text style={styles.toggleSubtext}>Temporarily unavailable</Text>
+                </View>
+                <Switch
+                  value={soldOut}
+                  onValueChange={(v) => { setSoldOut(v); mark(); }}
+                  trackColor={{ false: '#E5E7EB', true: '#F59E0B' }}
+                  thumbColor="#fff"
+                  ios_backgroundColor="#E5E7EB"
+                />
+              </View>
+            </View>
+
+            {/* ── Basic Info ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Basic Info</Text>
+
+              <View style={styles.card}>
+                <FieldLabel label="Item Name" required />
                 <TextInput
-                  style={[styles.input, styles.inputPrefixed]}
-                  value={price}
-                  onChangeText={(v) => { setPrice(v); mark(); }}
-                  placeholder="0.00"
+                  style={styles.input}
+                  value={name}
+                  onChangeText={(v) => { setName(v); mark(); }}
+                  placeholder="e.g. Classic Margherita"
                   placeholderTextColor="#9CA3AF"
-                  keyboardType="decimal-pad"
-                  returnKeyType="done"
+                  returnKeyType="next"
+                />
+
+                <View style={styles.fieldGap} />
+                <FieldLabel label="Description" />
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={description}
+                  onChangeText={(v) => { setDescription(v); mark(); }}
+                  placeholder="Describe the dish, ingredients, flavours..."
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
                 />
               </View>
             </View>
-          </View>
 
-          {/* ── Category ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Category</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryRow}
-            >
-              {CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat}
-                  style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
-                  onPress={() => { setCategory(cat); mark(); }}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* ── Details ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Details</Text>
-            <View style={styles.card}>
-              <View style={styles.detailsRow}>
-                <View style={styles.detailField}>
-                  <FieldLabel label="Prep Time (min)" />
+            {/* ── Pricing ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Pricing</Text>
+              <View style={styles.card}>
+                <FieldLabel label="Price" required />
+                <View style={styles.inputWithPrefix}>
+                  <View style={styles.inputPrefix}>
+                    <DollarIcon />
+                  </View>
                   <TextInput
-                    style={styles.input}
-                    value={prepTime}
-                    onChangeText={(v) => { setPrepTime(v); mark(); }}
-                    placeholder="15"
+                    style={[styles.input, styles.inputPrefixed]}
+                    value={price}
+                    onChangeText={(v) => { setPrice(v); mark(); }}
+                    placeholder="0.00"
                     placeholderTextColor="#9CA3AF"
-                    keyboardType="number-pad"
-                  />
-                </View>
-                <View style={styles.detailDivider} />
-                <View style={styles.detailField}>
-                  <FieldLabel label="Calories (kcal)" />
-                  <TextInput
-                    style={styles.input}
-                    value={calories}
-                    onChangeText={(v) => { setCalories(v); mark(); }}
-                    placeholder="500"
-                    placeholderTextColor="#9CA3AF"
-                    keyboardType="number-pad"
+                    keyboardType="decimal-pad"
+                    returnKeyType="done"
                   />
                 </View>
               </View>
             </View>
-          </View>
 
-          {/* ── Tags ── */}
-          <View style={styles.sectionBlock}>
-            <Text style={styles.blockTitle}>Tags</Text>
-            <View style={styles.tagsWrapper}>
-              {TAG_OPTIONS.map((tag) => (
-                <TagPill
-                  key={tag}
-                  label={tag}
-                  selected={tags.includes(tag)}
-                  onPress={() => toggleTag(tag)}
-                />
-              ))}
+            {/* ── Category ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Category</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryRow}
+              >
+                {CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+                    onPress={() => { setCategory(cat); mark(); }}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
-          </View>
 
-          <View style={{ height: 120 }} />
-        </ScrollView>
+            {/* ── Details ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Details</Text>
+              <View style={styles.card}>
+                <View style={styles.detailsRow}>
+                  <View style={styles.detailField}>
+                    <FieldLabel label="Prep Time (min)" />
+                    <TextInput
+                      style={styles.input}
+                      value={prepTime}
+                      onChangeText={(v) => { setPrepTime(v); mark(); }}
+                      placeholder="15"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                  <View style={styles.detailDivider} />
+                  <View style={styles.detailField}>
+                    <FieldLabel label="Calories (kcal)" />
+                    <TextInput
+                      style={styles.input}
+                      value={calories}
+                      onChangeText={(v) => { setCalories(v); mark(); }}
+                      placeholder="500"
+                      placeholderTextColor="#9CA3AF"
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* ── Tags ── */}
+            <View style={styles.sectionBlock}>
+              <Text style={styles.blockTitle}>Tags</Text>
+              <View style={styles.tagsWrapper}>
+                {TAG_OPTIONS.map((tag) => (
+                  <TagPill
+                    key={tag}
+                    label={tag}
+                    selected={tags.includes(tag)}
+                    onPress={() => toggleTag(tag)}
+                  />
+                ))}
+              </View>
+            </View>
+
+            <View style={{ height: 120 }} />
+          </ScrollView>
         )}
       </KeyboardAvoidingView>
 
@@ -447,10 +493,11 @@ export default function MenuItemEditor({ navigation, route }: Props) {
           style={[styles.saveButton, !hasChanges && styles.saveButtonDim]}
           onPress={handleSave}
           activeOpacity={0.85}
+          disabled={isLoading}
         >
           <CheckIcon />
           <Text style={styles.saveButtonText}>
-            {hasChanges ? 'Save Changes' : 'No Changes'}
+            {hasChanges ? (isLoading ? 'Saving...' : 'Save Changes') : 'No Changes'}
           </Text>
         </TouchableOpacity>
       </View>

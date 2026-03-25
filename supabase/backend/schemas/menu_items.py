@@ -35,9 +35,8 @@ class MenuItemFrontendCreate(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
     precio: float
-    imagen_url: Optional[str] = None
     disponible: Optional[bool] = True
     categoria: str
 
 class MenuItemFrontendUpdate(MenuItemFrontendCreate):
-    pass
+    pass
