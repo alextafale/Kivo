@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  SafeAreaView, StatusBar, KeyboardAvoidingView,
+  StatusBar, KeyboardAvoidingView,
   Platform, ScrollView, Alert,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
+import { supabase } from '../../../config/supabaseConfig'
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'LoginBusiness'> }
 
@@ -67,6 +69,33 @@ export default function LoginBusiness({ navigation }: Props) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleLoginwithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    options: {
+      redirectTo: 'http://localhost:8081',    
+    }
+  })
+  }
+
+  const handleLoginwithX = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'twitter',
+    options: {
+      redirectTo: 'http://localhost:8081',    
+    }
+    })
+  }
+
+  const handleLoginwithSpotify = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'spotify',
+    options: {
+      redirectTo: 'http://localhost:8081',    
+    }
+    })
   }
 
   return (
