@@ -1,7 +1,8 @@
 import { supabase } from '../../config/supabaseConfig'
 
 import * as WebBrowser from 'expo-web-browser'
-import { makeRedirectUri } from 'expo-auth-session'
+import * as Linking from 'expo-linking'
+import * as QueryParams from 'expo-auth-session/build/QueryParams'
 
 import type { IAuthRepository, BusinessRegisterData, DriverRegisterData, OAuthProvider } from '../../domain/ports/repositories/lAuthRepository'
 import type { AuthSession } from '../../domain/entities/User'
@@ -12,11 +13,11 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
 
   async signInWithOAuth(provider: OAuthProvider): Promise<void> {
-    // Construye el redirect URI para Expo Go / builds
-    const redirectTo = makeRedirectUri({
-      // En producción usa tu scheme: 'pidelo'
-      // En Expo Go se genera automáticamente
-    })
+    const redirectTo = Linking.createURL('')
+
+    console.log('\n\n--- OAUTH DEBUG URIs ---')
+    console.log('Redirect URI:', redirectTo)
+    console.log('------------------------\n\n')
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -29,30 +30,34 @@ export class AuthRepositoryImpl implements IAuthRepository {
     if (error) throw new Error(error.message)
     if (!data.url) throw new Error('No se recibió URL de autorización')
 
+    console.log('Supabase Login URL Generada:', data.url)
+
     // Abre el browser del sistema
     const result = await WebBrowser.openAuthSessionAsync(
       data.url,
       redirectTo
     )
 
+    console.log('WebBrowser Result:', result)
+
     if (result.type === 'success') {
-      // Extraer tokens del callback URL
-      const url = new URL(result.url)
-      
-      // Supabase regresa los tokens en el fragment (#) o como query params
-      const params = new URLSearchParams(
-        url.hash ? url.hash.substring(1) : url.search.substring(1)
-      )
+      // Usar QueryParams de expo-auth-session para parsear el deep link
+      // porque URL() nativo en RN falla extrayendo fragments de esquemas custom
+      const { params, errorCode } = QueryParams.getQueryParams(result.url)
 
-      const accessToken = params.get('access_token')
-      const refreshToken = params.get('refresh_token')
+      if (errorCode) throw new Error(errorCode)
 
-      if (accessToken && refreshToken) {
+      const access_token = params?.access_token
+      const refresh_token = params?.refresh_token
+
+      if (access_token && refresh_token) {
         const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
+          access_token: access_token,
+          refresh_token: refresh_token,
         })
         if (sessionError) throw new Error(sessionError.message)
+      } else {
+         console.warn("OAuth success but no access_token parsed from:", result.url);
       }
     } else if (result.type === 'cancel') {
       throw new Error('Login cancelado por el usuario')
@@ -66,11 +71,15 @@ export class AuthRepositoryImpl implements IAuthRepository {
     if (error) throw new Error(error.message)
     if (!data.session) throw new Error('No se obtuvo sesión')
 
+    const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (aalError) throw new Error(aalError.message)
+    
     return {
       accessToken: data.session.access_token,
       userId:      data.session.user.id,
       email:       data.session.user.email ?? '',
       role:        data.session.user.user_metadata?.role ?? '',
+      requiresMfa: aalData.nextLevel === 'aal2' && aalData.currentLevel === 'aal1',
     }
   }
 
@@ -171,11 +180,50 @@ private async signUp(
     const { data } = await supabase.auth.getSession()
     if (!data.session) return null
 
+    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+
     return {
       accessToken: data.session.access_token,
       userId:      data.session.user.id,
       email:       data.session.user.email ?? '',
       role:        data.session.user.user_metadata?.role ?? '',
+      requiresMfa: aalData?.nextLevel === 'aal2' && aalData?.currentLevel === 'aal1',
     }
+  }
+  
+  // ─── MFA ──────────────────────────────────────────────────────────────────
+
+  async enrollMFA(): Promise<{ factorId: string; qrCode: string; secret: string }> {
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
+    if (error) throw new Error(error.message)
+    return {
+      factorId: data.id,
+      qrCode: data.totp.qr_code,
+      secret: data.totp.secret,
+    }
+  }
+
+  async verifyMFAEnrollment(factorId: string, code: string): Promise<void> {
+    const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId })
+    if (challengeError) throw new Error(challengeError.message)
+
+    const { error: verifyError } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.id,
+      code,
+    })
+    if (verifyError) throw new Error(verifyError.message)
+  }
+
+  async challengeAndVerifyMFA(factorId: string, code: string): Promise<void> {
+    const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId })
+    if (challengeError) throw new Error(challengeError.message)
+
+    const { error: verifyError } = await supabase.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.id,
+      code,
+    })
+    if (verifyError) throw new Error(verifyError.message)
   }
 }

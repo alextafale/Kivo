@@ -10,6 +10,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'   // ← real
+import TermsAndConditionsModal from '../../../components/ui/TermsAndConditionsModal'
+import OAuthButtons from '../../../components/ui/OAuthButtons'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Signup'>
@@ -51,6 +53,7 @@ export default function Signup({ navigation, route }: Props) {
   const [showPassword, setShowPassword]             = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [acceptTerms, setAcceptTerms]               = useState(false)
+  const [showTermsModal, setShowTermsModal]         = useState(false)
   const [loading, setLoading]                       = useState(false)
 
   const handleSignup = async () => {
@@ -167,7 +170,10 @@ export default function Signup({ navigation, route }: Props) {
                 )}
               </View>
               <Text style={styles.checkboxText}>
-                Acepto los <Text style={styles.linkText}>términos y condiciones</Text>
+                Acepto los{' '}
+                <Text style={styles.linkText} onPress={() => setShowTermsModal(true)}>
+                  términos y condiciones
+                </Text>
               </Text>
             </TouchableOpacity>
 
@@ -182,6 +188,13 @@ export default function Signup({ navigation, route }: Props) {
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+
+            <TermsAndConditionsModal
+              visible={showTermsModal}
+              onClose={() => setShowTermsModal(false)}
+            />
+
+            <OAuthButtons />
           </View>
           <View style={{ height: 100 }} />
         </ScrollView>

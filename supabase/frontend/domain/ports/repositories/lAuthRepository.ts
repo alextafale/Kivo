@@ -15,7 +15,7 @@ export type DriverRegisterData = {
   vehiculo:  'moto' | 'bici' | 'auto'
   placa?:    string
 }
-export type OAuthProvider = 'google' | 'facebook' | 'twitter'
+export type OAuthProvider = 'google' | 'twitter' | 'spotify'
 
 export interface IAuthRepository {
   login(email: string, password: string): Promise<AuthSession>
@@ -25,4 +25,9 @@ export interface IAuthRepository {
   logout(): Promise<void>
   getSession(): Promise<AuthSession | null>
   signInWithOAuth(provider: OAuthProvider): Promise<void>
+  
+  // MFA Methods
+  enrollMFA(): Promise<{ factorId: string; qrCode: string; secret: string }>
+  verifyMFAEnrollment(factorId: string, code: string): Promise<void>
+  challengeAndVerifyMFA(factorId: string, code: string): Promise<void>
 }

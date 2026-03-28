@@ -9,6 +9,7 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'   // ← real
+import OAuthButtons from '../../../components/ui/OAuthButtons'
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Login'> }
 
@@ -132,6 +133,8 @@ export default function Login({ navigation }: Props) {
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+
+            <OAuthButtons />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

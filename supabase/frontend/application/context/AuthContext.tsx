@@ -22,6 +22,7 @@ type AuthContextType = {
   logout:             () => Promise<void>
   refreshAdminAccess: () => Promise<void>
   signInWithOAuth:    (provider: OAuthProvider) => Promise<void>
+  verifyMfaSuccess:   () => void
 }
 
 // Agregar signInWithOAuth al contexto
@@ -31,9 +32,12 @@ const signInWithOAuth = async (provider: OAuthProvider) => {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
+import VerifyMfaModal from '../../components/ui/VerifyMfaModal'
+import { globalNavigationRef } from '../../navigation/StacNavigation'
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session,     setSession]     = useState<AuthSession | null>(null)
+  const [mfaPendingSession, setMfaPendingSession] = useState<AuthSession | null>(null)
   const [adminAccess, setAdminAccess] = useState<AdminProfile | null>(null)
   const [isLoading,   setIsLoading]   = useState(true)
 
@@ -63,8 +67,12 @@ const restore = async () => {
   try {
     const activeSession = await authRepo.getSession()
     if (activeSession) {
-      setSession(activeSession)
-      await loadAdminAccess(activeSession.role)
+      if (activeSession.requiresMfa) {
+        setMfaPendingSession(activeSession)
+      } else {
+        setSession(activeSession)
+        await loadAdminAccess(activeSession.role)
+      }
     }
   } catch {
     // sin sesión válida
@@ -79,6 +87,10 @@ const restore = async () => {
 
   const login = async (email: string, password: string) => {
     const newSession = await authRepo.login(email, password)
+    if (newSession.requiresMfa) {
+      setMfaPendingSession(newSession)
+      return
+    }
     setSession(newSession)
     await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
     await loadAdminAccess(newSession.role)
@@ -120,6 +132,7 @@ const restore = async () => {
   const logout = async () => {
     await authRepo.logout()
     setSession(null)
+    setMfaPendingSession(null)
     setAdminAccess(null)
     await SecureStore.deleteItemAsync(SESSION_KEY)
   }
@@ -132,9 +145,40 @@ const restore = async () => {
     // Sin embargo, para mayor robustez, podemos intentar restaurar sesión post-oauth:
     const activeSession = await authRepo.getSession()
     if (activeSession) {
-      setSession(activeSession)
-      await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(activeSession))
-      await loadAdminAccess(activeSession.role)
+      if (activeSession.requiresMfa) {
+        setMfaPendingSession(activeSession)
+      } else {
+        setSession(activeSession)
+        await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(activeSession))
+        await loadAdminAccess(activeSession.role)
+
+        const dest = activeSession.role === 'business_admin' ? 'BusinessDashboard' 
+                   : activeSession.role === 'driver' ? 'DriverDashboard' 
+                   : 'HomeFeed'
+
+        if (globalNavigationRef.isReady()) {
+          globalNavigationRef.reset({ index: 0, routes: [{ name: dest } as any] })
+        }
+      }
+    }
+  }
+
+  const verifyMfaSuccess = async () => {
+    if (mfaPendingSession) {
+      // Upon successful verification, AAL is elevated to aal2
+      const fullSession = { ...mfaPendingSession, requiresMfa: false }
+      setSession(fullSession)
+      await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(fullSession))
+      await loadAdminAccess(fullSession.role)
+      setMfaPendingSession(null)
+
+      const dest = fullSession.role === 'business_admin' ? 'BusinessDashboard' 
+                 : fullSession.role === 'driver' ? 'DriverDashboard' 
+                 : 'HomeFeed'
+
+      if (globalNavigationRef.isReady()) {
+        globalNavigationRef.reset({ index: 0, routes: [{ name: dest } as any] })
+      }
     }
   }
 
@@ -150,8 +194,14 @@ const restore = async () => {
       logout,
       refreshAdminAccess,
       signInWithOAuth,
+      verifyMfaSuccess,
     }}>
       {children}
+      <VerifyMfaModal 
+        visible={mfaPendingSession !== null} 
+        onVerifySuccess={verifyMfaSuccess}
+        onCancel={logout}
+      />
     </AuthContext.Provider>
   )
 }
