@@ -1,13 +1,13 @@
 // navigation/StacNavigation.tsx
 
 import React, { useEffect, useRef } from 'react'
-import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native'
+import { NavigationContainer, NavigationContainerRef, createNavigationContainerRef } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as Notifications from 'expo-notifications'
 
-// ─── Onboarding & Shared ──────────────────────────────────────────────────────
 import SplashScreen         from '../screens/shared/SplashScreen'
 import Onboarding           from '../onboarding/Onboarding'
+import MfaSetupScreen       from '../screens/shared/MfaSetupScreen'
 
 // ─── Auth (Cliente) ───────────────────────────────────────────────────────────
 import Signup               from '../screens/client/auth/Signup'
@@ -51,17 +51,20 @@ import ManageOrders         from '../screens/business/orders/ManageOrders'   // 
 // ─── Repartidor ───────────────────────────────────────────────────────────────
 import DriverOnboarding     from '../screens/delivery/home/DriverOnboarding'
 import DriverDashboard      from '../screens/delivery/onboarding/Driverdashboard'
+import DriverProfile        from '../screens/delivery/profile/DriverProfile'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 import type { Order, OrderItem }  from '../types/order'
 import type { Domicilio }         from '../domain/entities/Domicilio'
 import type { BusinessData }      from '../screens/client/home/BusinessDetailScreen'
+import type { RepartidorInfo } from '../domain/ports/repositories/lRepartidorRepository'
 
 export type RootStackParamList = {
   // Shared
   Splash:               undefined
   Onboarding:           undefined
   AccountTypeSelection: undefined
+  MfaSetup:             undefined
 
   // Auth — Cliente
   Login:                undefined
@@ -127,13 +130,14 @@ export type RootStackParamList = {
 
   // Repartidor
   DriverDashboard:      undefined
+  DriverProfile:        { repartidor: RepartidorInfo }
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
+export const globalNavigationRef = createNavigationContainerRef<RootStackParamList>()
+
 export default function StackNavigation() {
-  // Ref para navegar desde el listener de notificaciones (fuera de componentes)
-  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null)
 
   useEffect(() => {
     // Listener: usuario toca una notificación push (app en background o killed)
@@ -143,10 +147,10 @@ export default function StackNavigation() {
         screen?: string
       }
 
-      if (data?.screen === 'orderTracking' && data?.pedido_id && navigationRef.current) {
+      if (data?.screen === 'orderTracking' && data?.pedido_id && globalNavigationRef.isReady()) {
         // Navegar a Orders para ver el pedido actualizado
         // (OrderTracking requiere el objeto Order completo, así que redirigimos a Orders)
-        navigationRef.current.navigate('Orders')
+        globalNavigationRef.navigate('Orders')
       }
     })
 
@@ -154,7 +158,7 @@ export default function StackNavigation() {
   }, [])
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={globalNavigationRef}>
       <Stack.Navigator
         id="RootStack"
         initialRouteName="Splash"
@@ -164,6 +168,7 @@ export default function StackNavigation() {
         <Stack.Screen name="Splash"               component={SplashScreen} />
         <Stack.Screen name="Onboarding"           component={Onboarding} />
         <Stack.Screen name="AccountTypeSelection" component={AccountTypeSelection} options={{ animation: 'fade' }} />
+        <Stack.Screen name="MfaSetup"             component={MfaSetupScreen} />
 
         {/* ── Auth — Cliente ─────────────────────────────────────────────── */}
         <Stack.Screen name="Login"                component={Login} />
@@ -207,6 +212,7 @@ export default function StackNavigation() {
 
         {/* ── Repartidor ─────────────────────────────────────────────────── */}
         <Stack.Screen name="DriverDashboard"      component={DriverDashboard} />
+        <Stack.Screen name="DriverProfile"        component={DriverProfile} />
       </Stack.Navigator>
     </NavigationContainer>
   )

@@ -9,6 +9,8 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
+import TermsAndConditionsModal from '../../../components/ui/TermsAndConditionsModal'
+import OAuthButtons from '../../../components/ui/OAuthButtons'
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'RegisterDriver'> }
 
@@ -86,11 +88,17 @@ export default function RegisterDriver({ navigation }: Props) {
   const [placa, setPlaca]                     = useState('')
   const [showPassword, setShowPassword]       = useState(false)
   const [showConfirm, setShowConfirm]         = useState(false)
+  const [acceptTerms, setAcceptTerms]         = useState(false)
+  const [showTermsModal, setShowTermsModal]   = useState(false)
   const [loading, setLoading]                 = useState(false)
 
   const handleRegister = async () => {
     if (!nombre.trim() || !apellido.trim() || !email.trim() || !password.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos obligatorios')
+      return
+    }
+    if (!acceptTerms) {
+      Alert.alert('Error', 'Debes aceptar los términos y condiciones')
       return
     }
     if (password !== confirmPassword) {
@@ -291,6 +299,23 @@ export default function RegisterDriver({ navigation }: Props) {
               </View>
             </View>
 
+            {/* Terms */}
+            <TouchableOpacity style={styles.checkboxContainer} onPress={() => setAcceptTerms(!acceptTerms)}>
+              <View style={[styles.checkbox, acceptTerms && styles.checkboxChecked]}>
+                {acceptTerms && (
+                  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                    <Path d="M20 6L9 17l-5-5" />
+                  </Svg>
+                )}
+              </View>
+              <Text style={styles.checkboxText}>
+                Acepto los{' '}
+                <Text style={styles.linkText} onPress={() => setShowTermsModal(true)}>
+                  términos y condiciones
+                </Text>
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={handleRegister} disabled={loading} style={styles.registerButton}>
               <LinearGradient
                 colors={['#22c55e', '#16a34a']}
@@ -302,6 +327,13 @@ export default function RegisterDriver({ navigation }: Props) {
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+
+            <TermsAndConditionsModal
+              visible={showTermsModal}
+              onClose={() => setShowTermsModal(false)}
+            />
+
+            <OAuthButtons />
 
           </View>
         </ScrollView>
@@ -357,6 +389,14 @@ const styles = StyleSheet.create({
   },
   vehiculoChipText:       { fontSize: 13, fontWeight: '600', color: '#6B7280' },
   vehiculoChipTextActive: { color: '#16a34a' },
+  checkboxContainer: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, marginTop: 8 },
+  checkbox: {
+    width: 24, height: 24, borderRadius: 6, borderWidth: 2,
+    borderColor: '#D1D5DB', marginRight: 12, alignItems: 'center', justifyContent: 'center',
+  },
+  checkboxChecked: { backgroundColor: '#22c55e', borderColor: '#22c55e' },
+  checkboxText: { flex: 1, fontSize: 14, color: '#6B7280', lineHeight: 20 },
+  linkText: { color: '#22c55e', fontWeight: '600' },
   registerButton:         {
     borderRadius: 30, overflow: 'hidden', marginTop: 8,
     shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 },

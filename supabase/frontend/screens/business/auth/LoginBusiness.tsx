@@ -11,6 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
 import { supabase } from '../../../config/supabaseConfig'
+import OAuthButtons from '../../../components/ui/OAuthButtons'
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'LoginBusiness'> }
 
@@ -69,33 +70,6 @@ export default function LoginBusiness({ navigation }: Props) {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleLoginwithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-    options: {
-      redirectTo: 'http://localhost:8081',    
-    }
-  })
-  }
-
-  const handleLoginwithX = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'twitter',
-    options: {
-      redirectTo: 'http://localhost:8081',    
-    }
-    })
-  }
-
-  const handleLoginwithSpotify = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'spotify',
-    options: {
-      redirectTo: 'http://localhost:8081',    
-    }
-    })
   }
 
   return (
@@ -178,6 +152,8 @@ export default function LoginBusiness({ navigation }: Props) {
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+
+            <OAuthButtons />
           </View>
 
         </ScrollView>

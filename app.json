@@ -7,6 +7,7 @@
     "icon": "./assets/KIVO.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "public",
     "splash": {
       "image": "./assets/KIVO.png",
       "resizeMode": "contain",
@@ -38,6 +39,9 @@
           "iosDisplayInForeground": true
         }
       ],
+      ["expo-image-picker", {
+        "photosPermission": "Necesitamos acceso a tu galería para tu foto de perfil."
+      }], 
       "expo-web-browser"
     ],
     "extra": {
