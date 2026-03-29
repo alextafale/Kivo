@@ -12,13 +12,13 @@ import { useAuth } from '../../../application/context/AuthContext'
 
 import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/RepartidorRepositoryImpl'
 import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../domain/ports/repositories/lRepartidorRepository'
+import { useDriverLocation } from '../../../application/hooks/useDriverLocation'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'DriverDashboard'>
 }
 
 const repartidorRepo = new RepartidorRepositoryImpl()
-
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const BikeIcon = ({ color = '#22c55e', size = 20 }: { color?: string; size?: number }) => (
@@ -68,9 +68,9 @@ const MoneyIcon = () => (
 // ─── Estado config ────────────────────────────────────────────────────────────
 
 const ESTADO_CONFIG: Record<DriverEstado, { label: string; color: string; bg: string; dot: string; desc: string }> = {
-  offline:   { label: 'Offline',    color: '#6B7280', bg: '#F3F4F6', dot: '#9CA3AF', desc: 'No recibirás pedidos' },
+  offline: { label: 'Offline', color: '#6B7280', bg: '#F3F4F6', dot: '#9CA3AF', desc: 'No recibirás pedidos' },
   available: { label: 'Disponible', color: '#16a34a', bg: '#DCFCE7', dot: '#22c55e', desc: 'Listo para recibir pedidos' },
-  busy:      { label: 'Ocupado',    color: '#B45309', bg: '#FEF3C7', dot: '#F59E0B', desc: 'Entrega en curso' },
+  busy: { label: 'Ocupado', color: '#B45309', bg: '#FEF3C7', dot: '#F59E0B', desc: 'Entrega en curso' },
 }
 
 const ESTADOS: DriverEstado[] = ['offline', 'available', 'busy']
@@ -80,15 +80,15 @@ const ESTADOS: DriverEstado[] = ['offline', 'available', 'busy']
 export default function DriverDashboard({ navigation }: Props) {
   const { session, logout } = useAuth()
 
-  const [repartidor,     setRepartidor]     = useState<RepartidorInfo | null>(null)
-  const [fotoUri,        setFotoUri]        = useState<string | null>(null)
-  const [pedidos,        setPedidos]        = useState<PedidoDisponible[]>([])
-  const [loading,        setLoading]        = useState(true)
-  const [refreshing,     setRefreshing]     = useState(false)
+  const [repartidor, setRepartidor] = useState<RepartidorInfo | null>(null)
+  const [fotoUri, setFotoUri] = useState<string | null>(null)
+  const [pedidos, setPedidos] = useState<PedidoDisponible[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [updatingEstado, setUpdatingEstado] = useState(false)
-  const [fetchError,     setFetchError]     = useState<string | null>(null)
-
-  const fadeAnim  = React.useRef(new Animated.Value(0)).current
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const [pedidoActivoId, setPedidoActivoId] = useState<string | null>(null)
+  const fadeAnim = React.useRef(new Animated.Value(0)).current
   const slideAnim = React.useRef(new Animated.Value(16)).current
 
   const fetchRepartidor = useCallback(async () => {
@@ -108,7 +108,7 @@ export default function DriverDashboard({ navigation }: Props) {
     try {
       const data = await repartidorRepo.getPedidosDisponibles()
       setPedidos(data)
-    } catch {}
+    } catch { }
   }, [])
 
   const loadAll = useCallback(async () => {
@@ -119,7 +119,7 @@ export default function DriverDashboard({ navigation }: Props) {
     loadAll().finally(() => {
       setLoading(false)
       Animated.parallel([
-        Animated.timing(fadeAnim,  { toValue: 1, duration: 420, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 420, useNativeDriver: true }),
         Animated.timing(slideAnim, { toValue: 0, duration: 380, useNativeDriver: true }),
       ]).start()
     })
@@ -153,25 +153,36 @@ export default function DriverDashboard({ navigation }: Props) {
   const handleLogout = () => {
     Alert.alert('Cerrar sesión', '¿Estás seguro?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Salir', style: 'destructive', onPress: async () => {
-        await logout(); navigation.replace('LoginDriver')
-      }},
+      {
+        text: 'Salir', style: 'destructive', onPress: async () => {
+          await logout(); navigation.replace('LoginDriver')
+        }
+      },
     ])
   }
 
   const handleTomarPedido = (pedidoId: string) => {
     Alert.alert('Tomar pedido', '¿Confirmas que vas a recoger este pedido?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Confirmar', onPress: async () => {
-        try {
-          await repartidorRepo.tomarPedido(pedidoId)
-          setRepartidor(prev => prev ? { ...prev, estado: 'busy' } : prev)
-          setPedidos([])
-        } catch (e: any) { Alert.alert('Error', e.message) }
-      }},
+      {
+        text: 'Confirmar', onPress: async () => {
+          try {
+            await repartidorRepo.tomarPedido(pedidoId)
+            setRepartidor(prev => prev ? { ...prev, estado: 'busy' } : prev)
+            setPedidoActivoId(pedidoId) // ← guardar el pedido activo
+            setPedidos([])
+          } catch (e: any) { Alert.alert('Error', e.message) }
+        }
+      },
     ])
   }
 
+  // Activa el GPS solo cuando el repartidor está en estado busy
+  useDriverLocation({
+    isActive: repartidor?.estado === 'busy',
+    accessToken: session?.accessToken ?? null,
+    pedidoId: pedidoActivoId,
+  })
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -197,7 +208,7 @@ export default function DriverDashboard({ navigation }: Props) {
     )
   }
 
-  const estado     = repartidor?.estado ?? 'offline'
+  const estado = repartidor?.estado ?? 'offline'
   const estadoConf = ESTADO_CONFIG[estado]
 
   return (
@@ -299,7 +310,7 @@ export default function DriverDashboard({ navigation }: Props) {
             <Text style={styles.sectionSubtitle}>{estadoConf.desc}</Text>
             <View style={styles.estadoSelector}>
               {ESTADOS.map((e) => {
-                const conf   = ESTADO_CONFIG[e]
+                const conf = ESTADO_CONFIG[e]
                 const activo = estado === e
                 return (
                   <TouchableOpacity
@@ -315,11 +326,11 @@ export default function DriverDashboard({ navigation }: Props) {
                     {updatingEstado && activo
                       ? <ActivityIndicator size="small" color={conf.color} />
                       : <>
-                          <View style={[styles.estadoBtnDot, { backgroundColor: activo ? conf.dot : '#D1D5DB' }]} />
-                          <Text style={[styles.estadoBtnText, activo && { color: conf.color, fontWeight: '700' }]}>
-                            {conf.label}
-                          </Text>
-                        </>
+                        <View style={[styles.estadoBtnDot, { backgroundColor: activo ? conf.dot : '#D1D5DB' }]} />
+                        <Text style={[styles.estadoBtnText, activo && { color: conf.color, fontWeight: '700' }]}>
+                          {conf.label}
+                        </Text>
+                      </>
                     }
                   </TouchableOpacity>
                 )
@@ -429,93 +440,93 @@ export default function DriverDashboard({ navigation }: Props) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container:         { flex: 1, backgroundColor: '#F9FAFB' },
-  loadingContainer:  { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-  loadingText:       { marginTop: 12, fontSize: 14, color: '#6B7280' },
-  errorEmoji:        { fontSize: 36, marginBottom: 12 },
-  errorText:         { fontSize: 14, color: '#EF4444', fontWeight: '700', textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn:          { marginTop: 20, paddingHorizontal: 28, paddingVertical: 12, backgroundColor: '#22c55e', borderRadius: 20 },
-  retryBtnText:      { color: '#fff', fontWeight: '700' },
-  scroll:            { paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  loadingText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
+  errorEmoji: { fontSize: 36, marginBottom: 12 },
+  errorText: { fontSize: 14, color: '#EF4444', fontWeight: '700', textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 20, paddingHorizontal: 28, paddingVertical: 12, backgroundColor: '#22c55e', borderRadius: 20 },
+  retryBtnText: { color: '#fff', fontWeight: '700' },
+  scroll: { paddingBottom: 40 },
 
   // ── Header ────────────────────────────────────────────────────────────────
-  header:            { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12 },
-  headerTop:         { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
-  headerCenter:      { flex: 1 },
-  headerGreeting:    { fontSize: 12, color: '#6B7280', fontWeight: '500' },
-  headerTitle:       { fontSize: 20, fontWeight: '800', color: '#111827', letterSpacing: -0.3 },
+  header: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12 },
+  headerTop: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  headerCenter: { flex: 1 },
+  headerGreeting: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#111827', letterSpacing: -0.3 },
 
   // Avatar
-  avatarBtn:         { width: 50, height: 50, borderRadius: 16, overflow: 'hidden', borderWidth: 2.5, borderColor: '#22c55e', position: 'relative' },
-  avatarImg:         { width: '100%', height: '100%' },
+  avatarBtn: { width: 50, height: 50, borderRadius: 16, overflow: 'hidden', borderWidth: 2.5, borderColor: '#22c55e', position: 'relative' },
+  avatarImg: { width: '100%', height: '100%' },
   avatarPlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
-  avatarInitial:     { fontSize: 20, fontWeight: '800', color: '#fff' },
-  avatarStatusDot:   { position: 'absolute', bottom: 2, right: 2, width: 11, height: 11, borderRadius: 6, borderWidth: 2, borderColor: '#F0FDF4' },
+  avatarInitial: { fontSize: 20, fontWeight: '800', color: '#fff' },
+  avatarStatusDot: { position: 'absolute', bottom: 2, right: 2, width: 11, height: 11, borderRadius: 6, borderWidth: 2, borderColor: '#F0FDF4' },
 
   // Estado pill
-  estadoPill:        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  estadoDot:         { width: 7, height: 7, borderRadius: 4 },
-  estadoPillText:    { fontSize: 12, fontWeight: '700' },
+  estadoPill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  estadoDot: { width: 7, height: 7, borderRadius: 4 },
+  estadoPillText: { fontSize: 12, fontWeight: '700' },
 
   // Profile banner
-  profileBanner:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  profileBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   profileBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   profileBannerIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' },
-  profileBannerTitle:{ fontSize: 14, fontWeight: '700', color: '#111827' },
-  profileBannerSub:  { fontSize: 11, color: '#9CA3AF', marginTop: 1 },
+  profileBannerTitle: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  profileBannerSub: { fontSize: 11, color: '#9CA3AF', marginTop: 1 },
 
   // Stats
-  statsRow:          { flexDirection: 'row', marginHorizontal: 16, marginTop: 16, gap: 10 },
-  statCard:          { flex: 1, backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 10, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
-  statCardMiddle:    { borderColor: '#BBF7D0', backgroundColor: '#F0FDF4' },
-  statValue:         { fontSize: 20, fontWeight: '800', color: '#111827' },
-  statLabel:         { fontSize: 10, color: '#9CA3AF', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statsRow: { flexDirection: 'row', marginHorizontal: 16, marginTop: 16, gap: 10 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 10, alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
+  statCardMiddle: { borderColor: '#BBF7D0', backgroundColor: '#F0FDF4' },
+  statValue: { fontSize: 20, fontWeight: '800', color: '#111827' },
+  statLabel: { fontSize: 10, color: '#9CA3AF', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
 
   // Sections
-  section:           { marginHorizontal: 16, marginTop: 20 },
-  sectionHeader:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  sectionTitle:      { fontSize: 15, fontWeight: '800', color: '#111827', letterSpacing: -0.2 },
-  sectionSubtitle:   { fontSize: 12, color: '#9CA3AF', marginBottom: 12, marginTop: 2 },
-  countBadge:        { backgroundColor: '#22c55e', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
-  countBadgeText:    { fontSize: 11, fontWeight: '700', color: '#fff' },
+  section: { marginHorizontal: 16, marginTop: 20 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#111827', letterSpacing: -0.2 },
+  sectionSubtitle: { fontSize: 12, color: '#9CA3AF', marginBottom: 12, marginTop: 2 },
+  countBadge: { backgroundColor: '#22c55e', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  countBadgeText: { fontSize: 11, fontWeight: '700', color: '#fff' },
 
   // Estado selector
-  estadoSelector:    { flexDirection: 'row', gap: 8 },
-  estadoBtn:         { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#fff' },
-  estadoBtnDot:      { width: 8, height: 8, borderRadius: 4 },
-  estadoBtnText:     { fontSize: 12, fontWeight: '500', color: '#6B7280' },
+  estadoSelector: { flexDirection: 'row', gap: 8 },
+  estadoBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E7EB', backgroundColor: '#fff' },
+  estadoBtnDot: { width: 8, height: 8, borderRadius: 4 },
+  estadoBtnText: { fontSize: 12, fontWeight: '500', color: '#6B7280' },
 
   // Pedido activo
-  activoCard:        { borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18 },
-  activoIconWrap:    { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
-  activoTitle:       { fontSize: 15, fontWeight: '700', color: '#fff' },
-  activoSubtitle:    { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  activoCard: { borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18 },
+  activoIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
+  activoTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  activoSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
 
   // Empty
-  emptyCard:         { backgroundColor: '#fff', borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: '#F3F4F6' },
-  emptyEmoji:        { fontSize: 34, marginBottom: 10 },
-  emptyTitle:        { fontSize: 15, fontWeight: '700', color: '#374151', marginBottom: 6 },
-  emptyText:         { fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 },
+  emptyCard: { backgroundColor: '#fff', borderRadius: 16, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: '#F3F4F6' },
+  emptyEmoji: { fontSize: 34, marginBottom: 10 },
+  emptyTitle: { fontSize: 15, fontWeight: '700', color: '#374151', marginBottom: 6 },
+  emptyText: { fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 },
 
   // Pedido card
-  pedidoCard:        { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
-  pedidoHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  pedidoNumeroWrap:  { backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  pedidoNumero:      { fontSize: 12, fontWeight: '700', color: '#16a34a' },
-  pedidoTotal:       { fontSize: 18, fontWeight: '800', color: '#111827' },
-  pedidoNegocio:     { fontSize: 15, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  pedidoDireccionRow:{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 12 },
-  pedidoDireccion:   { fontSize: 13, color: '#9CA3AF', flex: 1 },
-  pedidoFooter:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  pedidoEnvioWrap:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  pedidoEnvio:       { fontSize: 13, color: '#22c55e', fontWeight: '600' },
-  aceptarBtn:        { borderRadius: 20, overflow: 'hidden' },
-  aceptarGradient:   { paddingHorizontal: 22, paddingVertical: 10 },
-  aceptarText:       { fontSize: 14, fontWeight: '700', color: '#fff' },
+  pedidoCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#F3F4F6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
+  pedidoHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  pedidoNumeroWrap: { backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  pedidoNumero: { fontSize: 12, fontWeight: '700', color: '#16a34a' },
+  pedidoTotal: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  pedidoNegocio: { fontSize: 15, fontWeight: '600', color: '#374151', marginBottom: 6 },
+  pedidoDireccionRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 12 },
+  pedidoDireccion: { fontSize: 13, color: '#9CA3AF', flex: 1 },
+  pedidoFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pedidoEnvioWrap: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  pedidoEnvio: { fontSize: 13, color: '#22c55e', fontWeight: '600' },
+  aceptarBtn: { borderRadius: 20, overflow: 'hidden' },
+  aceptarGradient: { paddingHorizontal: 22, paddingVertical: 10 },
+  aceptarText: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
   // Logout
-  logoutBtn:         { paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: '#FFF5F5', borderWidth: 1, borderColor: '#FEE2E2' },
-  logoutText:        { fontSize: 14, fontWeight: '700', color: '#EF4444' },
+  logoutBtn: { paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: '#FFF5F5', borderWidth: 1, borderColor: '#FEE2E2' },
+  logoutText: { fontSize: 14, fontWeight: '700', color: '#EF4444' },
 
-  versionText:       { textAlign: 'center', marginTop: 20, fontSize: 11, color: '#D1D5DB', letterSpacing: 0.4 },
+  versionText: { textAlign: 'center', marginTop: 20, fontSize: 11, color: '#D1D5DB', letterSpacing: 0.4 },
 })

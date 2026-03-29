@@ -39,10 +39,20 @@
           "iosDisplayInForeground": true
         }
       ],
-      ["expo-image-picker", {
-        "photosPermission": "Necesitamos acceso a tu galería para tu foto de perfil."
-      }], 
-      "expo-web-browser"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Necesitamos acceso a tu galería para tu foto de perfil."
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Kivo necesita acceso a tu ubicación para rastrear tus entregas.",
+          "locationWhenInUsePermission": "Kivo necesita acceso a tu ubicación para rastrear tus entregas."
+        }
+      ]
     ],
     "extra": {
       "eas": {
