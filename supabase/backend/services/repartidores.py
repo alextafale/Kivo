@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 
 from exceptions.isDriver import RepartidorYaExiste, RepartidorNoEncontrado
 from schemas.repartidores import RepartidorRegistro, RepartidorEstadoUpdate
+from schemas.repartidores import UbicacionUpdate,PedidoEstadoUpdate
 
+ESTADOS_VALIDOS = {
+    'picked_up': 'on_the_way',
+    'on_the_way': 'delivered',
+}
 
 # ── Registro ──────────────────────────────────────────────────────────────────
 
@@ -200,3 +205,111 @@ def tomar_pedido(db: Session, user_id: str, pedido_id: str) -> dict:
     return {"ok": True, "pedido_id": pedido_id, "estado": "picked_up"}
     
     return [dict(row) for row in rows]
+
+# ──Actualizar ubicacion──────────────────
+def actualizar_ubicacion(db: Session, user_id: str, data: UbicacionUpdate) -> dict:
+    """
+    Hace upsert de la ubicación GPS del repartidor.
+    Usa ST_SetSRID y ST_MakePoint de PostGIS para guardar la geografía.
+    """
+    repartidor = db.execute(
+        text("SELECT id FROM repartidores WHERE user_id = :user_id AND activo = TRUE LIMIT 1"),
+        {"user_id": user_id}
+    ).fetchone()
+
+    if not repartidor:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+
+    now = datetime.now(timezone.utc)
+
+    db.execute(
+        text("""
+            INSERT INTO repartidor_ubicacion (repartidor_id, pedido_id, ubicacion, rumbo, velocidad_kmh, registrado_en)
+            VALUES (
+                :repartidor_id,
+                :pedido_id,
+                ST_SetSRID(ST_MakePoint(:lng, :lat), 4326),
+                :rumbo,
+                :velocidad_kmh,
+                :now
+            )
+            ON CONFLICT (repartidor_id)
+            DO UPDATE SET
+                pedido_id     = EXCLUDED.pedido_id,
+                ubicacion     = EXCLUDED.ubicacion,
+                rumbo         = EXCLUDED.rumbo,
+                velocidad_kmh = EXCLUDED.velocidad_kmh,
+                registrado_en = EXCLUDED.registrado_en
+        """),
+        {
+            "repartidor_id": str(repartidor.id),
+            "pedido_id": str(data.pedido_id) if data.pedido_id else None,
+            "lat": data.lat,
+            "lng": data.lng,
+            "rumbo": data.rumbo,
+            "velocidad_kmh": data.velocidad_kmh,
+            "now": now,
+        }
+    )
+    db.commit()
+    return {"ok": True, "registrado_en": now.isoformat()}
+
+# ─────Avanzar estado del pedido──────────────────
+def avanzar_estado_pedido(db: Session, user_id: str, pedido_id: str, data: PedidoEstadoUpdate) -> dict:
+    """
+    Avanza el estado del pedido solo si el repartidor es el asignado
+    y el estado es válido en el flujo.
+    """
+    repartidor = db.execute(
+        text("SELECT id FROM repartidores WHERE user_id = :user_id AND activo = TRUE LIMIT 1"),
+        {"user_id": user_id}
+    ).fetchone()
+
+    if not repartidor:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+
+    # Verificar que el pedido pertenece a este repartidor
+    pedido = db.execute(
+        text("""
+            SELECT id, estado FROM pedidos
+            WHERE id = :pedido_id AND repartidor_id = :repartidor_id
+        """),
+        {"pedido_id": pedido_id, "repartidor_id": str(repartidor.id)}
+    ).mappings().first()
+
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado o no asignado a ti")
+
+    # Validar que el estado solicitado es el siguiente correcto
+    estado_siguiente = ESTADOS_VALIDOS.get(pedido['estado'])
+    if data.estado != estado_siguiente:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No puedes cambiar de '{pedido['estado']}' a '{data.estado}'"
+        )
+
+    now = datetime.now(timezone.utc)
+    campos = {"actualizado_en": now, "estado": data.estado}
+
+    if data.estado == 'delivered':
+        campos["entregado_en"] = now
+        # Poner al repartidor como available de nuevo
+        db.execute(
+            text("""
+                UPDATE repartidores SET estado = 'available', actualizado_en = :now
+                WHERE id = :repartidor_id
+            """),
+            {"now": now, "repartidor_id": str(repartidor.id)}
+        )
+
+    db.execute(
+        text("""
+            UPDATE pedidos
+            SET estado = :estado, actualizado_en = :actualizado_en
+            WHERE id = :pedido_id
+        """),
+        {"estado": data.estado, "actualizado_en": now, "pedido_id": pedido_id}
+    )
+
+    db.commit()
+    return {"ok": True, "pedido_id": pedido_id, "estado": data.estado}

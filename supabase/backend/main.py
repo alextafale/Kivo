@@ -12,7 +12,7 @@ from routes.profiles     import router as profiles_router
 from routes.pedidos      import router as pedidos_router
 from routes.admin        import router as admin_router
 from routes.push_tokens  import router as push_tokens_router   # ← nuevo
-
+from routes.repartidores import router as repartidores_router
 app = FastAPI()
 register_exception_handlers(app)
 
@@ -30,7 +30,7 @@ app.include_router(profiles_router,    prefix="/api/v1")
 app.include_router(pedidos_router,     prefix="/api/v1")
 app.include_router(admin_router,       prefix="/api/v1")
 app.include_router(push_tokens_router, prefix="/api/v1")   # → /api/v1/users/push-token
-
+app.include_router(repartidores_router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():

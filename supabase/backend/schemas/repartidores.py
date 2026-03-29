@@ -68,3 +68,13 @@ class PedidoDisponibleOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UbicacionUpdate(BaseModel):
+     lat: float
+     lng: float
+     pedido_id: Optional[UUID] = None
+     rumbo: Optional[float] = None
+     velocidad_kmh: Optional[float] = None
+
+class PedidoEstadoUpdate(BaseModel):
+    estado: str  # on_the_way | delivered
