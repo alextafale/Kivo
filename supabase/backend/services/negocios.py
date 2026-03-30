@@ -3,7 +3,7 @@ from models.negocios import Negocio
 from models.sucursales import Sucursal
 from schemas.negocios import NegocioOut
 from exceptions.negocios import NegocioNoExistente
-from typing import List,Optional
+from typing import List, Optional
 
 
 def get_negocios_sucursales(db: Session, ciudad: str, categoria: str):
@@ -16,13 +16,14 @@ def get_negocios_sucursales(db: Session, ciudad: str, categoria: str):
         Sucursal.ciudad == ciudad
     )
 
-    if categoria != "All":
-        query = query.filter(Negocio.categoria == categoria)
+    # ✅ Fix: antes comparaba con "All", el frontend manda "Todos"
+    # ilike para tolerar espacios y mayúsculas inconsistentes en la DB
+    if categoria not in ("Todos", "All", ""):
+        query = query.filter(Negocio.categoria.ilike(f"%{categoria}%"))
 
     resultados = query.all()
 
     negocios = []
-
     for negocio, sucursal in resultados:
         negocio.calificacion = sucursal.calificacion
         negocio.sucursal_id = sucursal.id

@@ -46,13 +46,43 @@ interface QwenMessage {
 export async function cargarNegocios(): Promise<Negocio[]> {
   try {
     const { data, error } = await supabase
-      .from('negocios')
-      .select('*')
+      .from('sucursales')
+      .select(`
+        id,
+        negocio_id,
+        nombre:negocios(nombre),
+        descripcion:negocios(descripcion),
+        direccion,
+        horarios,
+        telefono,
+        whatsapp,
+        calificacion,
+        activo,
+        negocios!inner(
+          id,
+          nombre,
+          descripcion,
+          categoria,
+          activo
+        )
+      `)
       .eq('activo', true)
       .order('calificacion', { ascending: false });
 
     if (error) throw error;
-    return (data ?? []) as Negocio[];
+    return (data ?? []).map((row: any) => ({
+      id:           row.negocio_id,
+      sucursalId:   row.id,
+      nombre:       row.negocios.nombre,
+      descripcion:  row.negocios.descripcion,
+      categoria:    row.negocios.categoria,
+      calificacion: row.calificacion ?? 0,
+      direccion:    row.direccion,
+      horario:      row.horarios ? JSON.stringify(row.horarios) : '',
+      telefono:     row.telefono ?? '',
+      whatsapp:     row.whatsapp ?? '',
+      menu:         [],
+    })) as Negocio[];
   } catch (error) {
     console.error('Error cargando negocios:', error);
     return [];
