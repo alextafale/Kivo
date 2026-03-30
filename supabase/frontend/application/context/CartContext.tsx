@@ -1,5 +1,19 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+// ─── Chatbot order type (evita dependencia circular con geminiService) ────────
+export interface ChatbotOrder {
+  negocio: {
+    id: string;
+    nombre: string;
+    whatsapp: string;
+    telefono?: string;
+    direccion?: string;
+  } | null;
+  items: { name: string; price: number; quantity: number }[];
+  direccionEntrega: string;
+  notas: string;
+}
+
 export interface CartItem {
   id: string;
   menu_item_id: string;
@@ -30,12 +44,17 @@ interface CartContextType {
   clearRestaurant: (sucursal_id: string) => void;
   getTotalItems: () => number;
   getSubtotal: () => number;
+  // Chatbot order
+  chatbotOrder: ChatbotOrder | null;
+  setChatbotOrder: (order: ChatbotOrder) => void;
+  clearChatbotOrder: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartRestaurant[]>([]);
+  const [chatbotOrder, setChatbotOrderState] = useState<ChatbotOrder | null>(null);
 
   const addItem = (restaurant: Omit<CartRestaurant, 'items'>, item: CartItem) => {
     setCart(prev => {
@@ -124,6 +143,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  // ─── Chatbot order ────────────────────────────────────────────────────────
+
+  const setChatbotOrder = (order: ChatbotOrder) => {
+    setChatbotOrderState(order);
+    // Populate cart from chatbot order so CartScreen can display items
+    const chatbotCart: CartRestaurant = {
+      sucursal_id: order.negocio?.id ?? 'chatbot',
+      negocio_id: order.negocio?.id ?? 'chatbot',
+      nombre: order.negocio?.nombre ?? 'Restaurante',
+      logo: '',
+      tiempo_entrega: '30-45',
+      items: order.items.map((item, idx) => ({
+        id: `chatbot-${idx}-${item.name.replace(/\s/g, '_')}`,
+        menu_item_id: item.name,
+        nombre: item.name,
+        precio_unitario: item.price,
+        cantidad: item.quantity,
+        imagen: '',
+        notas: order.notas || undefined,
+      })),
+    };
+    setCart([chatbotCart]);
+  };
+
+  const clearChatbotOrder = () => {
+    setChatbotOrderState(null);
+  };
+
   return (
     <CartContext.Provider value={{
       cart,
@@ -135,6 +182,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clearRestaurant,
       getTotalItems,
       getSubtotal,
+      chatbotOrder,
+      setChatbotOrder,
+      clearChatbotOrder,
     }}>
       {children}
     </CartContext.Provider>

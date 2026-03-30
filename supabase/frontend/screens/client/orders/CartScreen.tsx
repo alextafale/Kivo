@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,24 +8,23 @@ import {
   ScrollView,
   Image,
   StatusBar,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useCart, CartRestaurant, CartItem } from '../../../application/context/CartContext';
-
-/**
- * CartScreen — Pantalla del carrito
- *
- * ¿Qué hace?
- * Muestra todos los items que el usuario agregó, agrupados por restaurante.
- * Permite aumentar/disminuir cantidades y navegar al resumen del pedido.
- *
- * ¿Cómo funciona?
- * Lee el estado global del carrito desde CartContext con useCart().
- * Cada cambio de cantidad actualiza el context y React re-renderiza automáticamente.
- */
+import { useAuth } from '../../../application/context/AuthContext';
+import { useProfile } from '../../../application/hooks/useProfile';
+import { guardarPedido } from '../../../../services/geminiService';
+import {
+  generarTicketPDF,
+  compartirTicketPDF,
+  enviarResumenWhatsApp,
+  TicketData,
+} from '../../../../services/ticketService';
 
 type CartNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 type Props = { navigation: CartNavigationProp };
@@ -52,8 +51,7 @@ const TrashIcon = () => (
 );
 
 // ─── CartItemRow ──────────────────────────────────────────────────────────────
-// Componente para cada item individual del carrito
-// Muestra imagen, nombre, precio y controles de cantidad (- / +)
+
 const CartItemRow = ({ item, sucursal_id }: { item: CartItem; sucursal_id: string }) => {
   const { increaseQuantity, decreaseQuantity } = useCart();
 
@@ -70,7 +68,6 @@ const CartItemRow = ({ item, sucursal_id }: { item: CartItem; sucursal_id: strin
         <Text style={styles.itemName}>{item.nombre}</Text>
         {item.notas && <Text style={styles.itemNotes}>{item.notas}</Text>}
         <View style={styles.itemFooter}>
-          {/* Los botones - y + llaman a las funciones del CartContext */}
           <View style={styles.quantityControls}>
             <TouchableOpacity
               style={styles.quantityBtn}
@@ -96,8 +93,7 @@ const CartItemRow = ({ item, sucursal_id }: { item: CartItem; sucursal_id: strin
 };
 
 // ─── RestaurantCard ───────────────────────────────────────────────────────────
-// Agrupa los items de un restaurante en una tarjeta
-// Muestra el logo, nombre, tiempo de entrega y subtotal del restaurante
+
 const RestaurantCard = ({ restaurant }: { restaurant: CartRestaurant }) => {
   const { clearRestaurant } = useCart();
 
@@ -108,7 +104,6 @@ const RestaurantCard = ({ restaurant }: { restaurant: CartRestaurant }) => {
 
   return (
     <View style={styles.restaurantCard}>
-      {/* Header con info del restaurante y botón de eliminar */}
       <View style={styles.restaurantHeader}>
         {restaurant.logo ? (
           <Image source={{ uri: restaurant.logo }} style={styles.restaurantLogo} />
@@ -124,18 +119,15 @@ const RestaurantCard = ({ restaurant }: { restaurant: CartRestaurant }) => {
             <Text style={styles.restaurantTime}>{restaurant.tiempo_entrega} min</Text>
           </View>
         </View>
-        {/* Eliminar todos los items de este restaurante */}
         <TouchableOpacity onPress={() => clearRestaurant(restaurant.sucursal_id)}>
           <TrashIcon />
         </TouchableOpacity>
       </View>
 
-      {/* Items del restaurante */}
       {restaurant.items.map(item => (
         <CartItemRow key={item.id} item={item} sucursal_id={restaurant.sucursal_id} />
       ))}
 
-      {/* Subtotal por restaurante */}
       <View style={styles.restaurantSubtotal}>
         <Text style={styles.subtotalLabel}>Subtotal</Text>
         <Text style={styles.subtotalValue}>${subtotal.toFixed(2)}</Text>
@@ -145,34 +137,119 @@ const RestaurantCard = ({ restaurant }: { restaurant: CartRestaurant }) => {
 };
 
 // ─── CartScreen ───────────────────────────────────────────────────────────────
+
 export default function CartScreen({ navigation }: Props) {
-  const { cart, clearCart, getSubtotal, getTotalItems } = useCart();
+  const { cart, clearCart, clearChatbotOrder, getSubtotal, getTotalItems, chatbotOrder } = useCart();
+  const { session } = useAuth();
+  const { profile } = useProfile();
+  const [confirming, setConfirming] = useState(false);
 
   const subtotal = getSubtotal();
-  const costoEnvio = cart.length * 12; // $12 por restaurante — provisional hasta semana 5
+  const costoEnvio = cart.length * 12;
   const total = subtotal + costoEnvio;
 
-  // Construye los params que necesita OrderSummary
-  
+  // ─── Confirmar pedido del chatbot (genera ticket PDF + WhatsApp) ─────────
+
+  const handleConfirmarChatbot = async () => {
+    if (!chatbotOrder?.negocio) {
+      Alert.alert('Error', 'No hay un pedido del chatbot para confirmar.');
+      return;
+    }
+
+    setConfirming(true);
+    try {
+      // 1. Guardar pedido en Supabase
+      const pedidoEnCurso = {
+        negocio: chatbotOrder.negocio as any,
+        items: chatbotOrder.items,
+        direccionEntrega: chatbotOrder.direccionEntrega,
+        notas: chatbotOrder.notas,
+      };
+      const result = await guardarPedido(pedidoEnCurso);
+      if (!result) throw new Error('No se pudo registrar el pedido.');
+
+      // 2. Construir datos del ticket
+      const ticketData: TicketData = {
+        ordenId: result.pedidoId,
+        orderNumber: result.order.orderNumber,
+        negocioNombre: chatbotOrder.negocio.nombre,
+        negocioDireccion: chatbotOrder.negocio.direccion,
+        usuarioNombre: profile
+          ? `${profile.nombre ?? ''} ${profile.apellido ?? ''}`.trim() || 'Cliente'
+          : 'Cliente',
+        usuarioEmail: session?.email ?? '',
+        usuarioTelefono: profile?.telefono,
+        direccionEntrega: chatbotOrder.direccionEntrega,
+        notas: chatbotOrder.notas,
+        items: chatbotOrder.items,
+        subtotal: result.order.total - 12,
+        costoEnvio: 12,
+        total: result.order.total,
+        fecha: new Date().toLocaleString('es-MX', {
+          dateStyle: 'medium', timeStyle: 'short',
+        }),
+      };
+
+      // 3. Generar PDF del ticket
+      const pdfUri = await generarTicketPDF(ticketData);
+
+      // 4. Compartir PDF (sheet nativo — el usuario puede elegir WhatsApp)
+      if (pdfUri) {
+        await compartirTicketPDF(pdfUri);
+      }
+
+      // 5. Enviar resumen de texto por WhatsApp al teléfono registrado
+      if (profile?.telefono) {
+        await enviarResumenWhatsApp(ticketData);
+      }
+
+      // 6. Limpiar carrito
+      clearChatbotOrder();
+      clearCart();
+
+      // 7. Navegar a confirmación
+      navigation.navigate('OrderConfirmation', {
+        orders: [{
+          orderNumber: result.order.orderNumber,
+          negocioNombre: chatbotOrder.negocio.nombre,
+          total: result.order.total,
+        }],
+        totalGeneral: result.order.total,
+      });
+    } catch (e: any) {
+      Alert.alert('Error al confirmar', e.message ?? 'Inténtalo de nuevo.');
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  // ─── Checkout normal (sin chatbot) ────────────────────────────────────────
+
   const handleCheckout = () => {
-  if (cart.length === 0) return;
+    if (cart.length === 0) return;
 
-  const restaurants = cart.map(restaurant => ({
-    sucursalId: restaurant.sucursal_id,
-    negocioId: restaurant.negocio_id,
-    negocioNombre: restaurant.nombre,
-    costoEnvio: 12,
-    items: restaurant.items.map(i => ({
-      name: i.nombre,
-      quantity: i.cantidad,
-      price: i.precio_unitario,
-    })),
-  }));
+    if (chatbotOrder) {
+      handleConfirmarChatbot();
+      return;
+    }
 
-  navigation.navigate('OrderSummary', { restaurants });
-};
+    const restaurants = cart.map(restaurant => ({
+      sucursalId: restaurant.sucursal_id,
+      negocioId: restaurant.negocio_id,
+      negocioNombre: restaurant.nombre,
+      costoEnvio: 12,
+      items: restaurant.items.map(i => ({
+        name: i.nombre,
+        quantity: i.cantidad,
+        price: i.precio_unitario,
+      })),
+    }));
 
-  // Carrito vacío
+    navigation.navigate('OrderSummary', { restaurants });
+  };
+
+  // ─── Carrito vacío ────────────────────────────────────────────────────────
+
   if (cart.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
@@ -186,7 +263,7 @@ export default function CartScreen({ navigation }: Props) {
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateIcon}>🛒</Text>
           <Text style={styles.emptyStateTitle}>Tu carrito está vacío</Text>
-          <Text style={styles.emptyStateText}>Agrega items desde un restaurante</Text>
+          <Text style={styles.emptyStateText}>Agrega items desde un restaurante o usa el chatbot</Text>
           <TouchableOpacity
             style={styles.emptyStateButton}
             onPress={() => navigation.navigate('HomeFeed')}
@@ -205,6 +282,12 @@ export default function CartScreen({ navigation }: Props) {
     );
   }
 
+  // ─── Label del botón de confirmación ─────────────────────────────────────
+
+  const checkoutLabel = chatbotOrder
+    ? `Confirmar Pedido · $${total.toFixed(2)}`
+    : `Checkout · $${total.toFixed(2)}`;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -220,13 +303,21 @@ export default function CartScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
+      {/* Banner chatbot */}
+      {chatbotOrder && (
+        <View style={styles.chatbotBanner}>
+          <Text style={styles.chatbotBannerText}>
+            🤖 Pedido del chatbot — confirma para generar tu ticket PDF
+          </Text>
+        </View>
+      )}
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Una tarjeta por restaurante */}
         {cart.map(restaurant => (
           <RestaurantCard key={restaurant.sucursal_id} restaurant={restaurant} />
         ))}
 
-        {/* Resumen de totales globales */}
+        {/* Resumen de totales */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Resumen</Text>
           <View style={styles.summaryRow}>
@@ -244,19 +335,38 @@ export default function CartScreen({ navigation }: Props) {
           </View>
         </View>
 
+        {chatbotOrder && (
+          <View style={styles.ticketNote}>
+            <Text style={styles.ticketNoteText}>
+              📄 Al confirmar se generará un PDF y se enviará un resumen por WhatsApp a tu número registrado.
+            </Text>
+          </View>
+        )}
+
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Botón de checkout fijo al fondo */}
+      {/* Botón de confirmación */}
       <View style={styles.checkoutContainer}>
-        <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
+        <TouchableOpacity
+          style={[styles.checkoutButton, confirming && styles.checkoutButtonDisabled]}
+          onPress={handleCheckout}
+          disabled={confirming}
+        >
           <LinearGradient
             colors={['#22c55e', '#16a34a']}
             style={styles.checkoutGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
           >
-            <Text style={styles.checkoutButtonText}>Checkout · ${total.toFixed(2)}</Text>
+            {confirming ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <ActivityIndicator color="#FFF" size="small" />
+                <Text style={styles.checkoutButtonText}>Generando ticket...</Text>
+              </View>
+            ) : (
+              <Text style={styles.checkoutButtonText}>{checkoutLabel}</Text>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -271,6 +381,8 @@ const styles = StyleSheet.create({
   headerTitle:                { fontSize: 18, fontWeight: 'bold', color: '#000' },
   clearButton:                { paddingHorizontal: 8 },
   clearButtonText:            { fontSize: 14, color: '#EF4444', fontWeight: '600' },
+  chatbotBanner:              { backgroundColor: '#F0FDF4', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#BBF7D0' },
+  chatbotBannerText:          { fontSize: 13, color: '#15803d', fontWeight: '500' },
   content:                    { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   restaurantCard:             { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   restaurantHeader:           { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
@@ -295,7 +407,7 @@ const styles = StyleSheet.create({
   quantityBtn:                { width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
   quantityBtnText:            { fontSize: 18, color: '#22c55e', fontWeight: 'bold' },
   quantityText:               { fontSize: 15, fontWeight: 'bold', color: '#000', minWidth: 20, textAlign: 'center' },
-  summaryCard:                { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  summaryCard:                { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   summaryTitle:               { fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 12 },
   summaryRow:                 { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   summaryLabel:               { fontSize: 14, color: '#6B7280' },
@@ -303,15 +415,18 @@ const styles = StyleSheet.create({
   summaryDivider:             { height: 1, backgroundColor: '#F3F4F6', marginVertical: 8 },
   summaryTotalLabel:          { fontSize: 16, fontWeight: 'bold', color: '#000' },
   summaryTotalValue:          { fontSize: 16, fontWeight: 'bold', color: '#22c55e' },
+  ticketNote:                 { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#BFDBFE' },
+  ticketNoteText:             { fontSize: 12, color: '#1D4ED8', lineHeight: 18 },
   checkoutContainer:          { padding: 16, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
   checkoutButton:             { borderRadius: 16, overflow: 'hidden' },
+  checkoutButtonDisabled:     { opacity: 0.7 },
   checkoutGradient:           { paddingVertical: 16, alignItems: 'center' },
-  checkoutButtonText:         { fontSize: 16, fontWeight: 'bold', color: '#000' },
+  checkoutButtonText:         { fontSize: 16, fontWeight: 'bold', color: '#FFF' },
   emptyState:                 { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
   emptyStateIcon:             { fontSize: 64, marginBottom: 16 },
   emptyStateTitle:            { fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 8 },
   emptyStateText:             { fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
   emptyStateButton:           { borderRadius: 30, overflow: 'hidden' },
   emptyStateButtonGradient:   { paddingHorizontal: 32, paddingVertical: 14 },
-  emptyStateButtonText:       { fontSize: 16, fontWeight: 'bold', color: '#000' },
+  emptyStateButtonText:       { fontSize: 16, fontWeight: 'bold', color: '#FFF' },
 });

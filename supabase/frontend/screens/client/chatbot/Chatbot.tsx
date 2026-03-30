@@ -12,26 +12,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  Alert,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
-import { useNavigation } from '@react-navigation/native';
 import {
   askGemini,
   cargarNegocios,
-  guardarPedido,
-  enviarPedidoWhatsApp,
   Negocio,
-  PedidoEnCurso,
   GeminiMessage,
   parsePedidoFromResponse,
 } from '../../../../services/geminiService';
-import { Order } from '../../../types/order';
+import { useCart, ChatbotOrder } from '../../../application/context/CartContext';
 
 type ChatbotNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chatbot'>;
 type Props = { navigation: ChatbotNavigationProp };
@@ -68,18 +62,15 @@ const BotIcon = () => (
   </Svg>
 );
 
-const WAIcon = () => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2">
-    <Path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+const CartIcon = () => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2">
+    <Path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+    <Path d="M3 6h18" />
+    <Path d="M16 10a4 4 0 0 1-8 0" />
   </Svg>
 );
 
 // ─── Tipos locales ────────────────────────────────────────────────────────────
-
-interface PedidoConId extends PedidoEnCurso {
-  pedidoId: string;
-  order: Order;
-}
 
 interface Message {
   id: string;
@@ -87,7 +78,7 @@ interface Message {
   sender: 'user' | 'bot';
   timestamp: Date;
   suggestions?: string[];
-  pedidoCard?: PedidoConId;
+  pedidoCard?: ChatbotOrder;
 }
 
 // ─── Typing Indicator ─────────────────────────────────────────────────────────
@@ -123,18 +114,16 @@ const TypingIndicator = () => {
 // ─── Pedido Card ──────────────────────────────────────────────────────────────
 
 interface PedidoCardProps {
-  pedido: PedidoConId;
-  onWhatsApp: () => void;
-  onTracking: () => void;
+  pedido: ChatbotOrder;
+  onVerCarrito: () => void;
 }
 
-const PedidoCard = ({ pedido, onWhatsApp, onTracking }: PedidoCardProps) => {
+const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
   const total = pedido.items.reduce((s, i) => s + i.price * i.quantity, 0);
   return (
     <View style={styles.pedidoCard}>
       <View style={styles.pedidoHeader}>
-        <Text style={styles.pedidoTitle}>🧾 Pedido Confirmado</Text>
-        <Text style={styles.pedidoId}>#{pedido.pedidoId.slice(-6).toUpperCase()}</Text>
+        <Text style={styles.pedidoTitle}>🧾 Resumen del Pedido</Text>
       </View>
 
       <Text style={styles.pedidoNegocio}>🏪 {pedido.negocio?.nombre}</Text>
@@ -142,27 +131,29 @@ const PedidoCard = ({ pedido, onWhatsApp, onTracking }: PedidoCardProps) => {
       {pedido.items.map((item, i) => (
         <View key={i} style={styles.pedidoRow}>
           <Text style={styles.pedidoItemText}>{item.quantity}x {item.name}</Text>
-          <Text style={styles.pedidoItemPrice}>${item.price * item.quantity}</Text>
+          <Text style={styles.pedidoItemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
         </View>
       ))}
 
       <View style={styles.pedidoTotalRow}>
-        <Text style={styles.pedidoTotalLabel}>Total</Text>
-        <Text style={styles.pedidoTotalValue}>${total}</Text>
+        <Text style={styles.pedidoTotalLabel}>Total estimado</Text>
+        <Text style={styles.pedidoTotalValue}>${total.toFixed(2)}</Text>
       </View>
 
       <Text style={styles.pedidoDireccion}>📍 {pedido.direccionEntrega}</Text>
       {!!pedido.notas && <Text style={styles.pedidoNotas}>📝 {pedido.notas}</Text>}
 
-      <View style={styles.pedidoActions}>
-        <TouchableOpacity style={styles.waBtn} onPress={onWhatsApp} activeOpacity={0.85}>
-          <WAIcon />
-          <Text style={styles.waBtnText}>Enviar al negocio</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.trackBtn} onPress={onTracking} activeOpacity={0.85}>
-          <Text style={styles.trackBtnText}>Ver seguimiento →</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity onPress={onVerCarrito} activeOpacity={0.88} style={styles.carritoBtn}>
+        <LinearGradient
+          colors={['#22c55e', '#15803d']}
+          style={styles.carritoBtnGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <CartIcon />
+          <Text style={styles.carritoBtnText}>Ver mi carrito</Text>
+        </LinearGradient>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -170,6 +161,8 @@ const PedidoCard = ({ pedido, onWhatsApp, onTracking }: PedidoCardProps) => {
 // ─── Chatbot Screen ───────────────────────────────────────────────────────────
 
 export default function Chatbot({ navigation }: Props) {
+  const { setChatbotOrder } = useCart();
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -186,7 +179,6 @@ export default function Chatbot({ navigation }: Props) {
   const [geminiHistory, setGeminiHistory] = useState<GeminiMessage[]>([]);
   const flatListRef = useRef<FlatList>(null);
 
-  // Cargar negocios al montar
   useEffect(() => {
     cargarNegocios().then(data => {
       setNegocios(data);
@@ -197,47 +189,40 @@ export default function Chatbot({ navigation }: Props) {
   const scrollToBottom = () =>
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
 
-  // ─── Procesar respuesta de Gemini ─────────────────────────────────────────
+  // ─── Procesar respuesta ────────────────────────────────────────────────────
 
-// Reemplaza la función procesarRespuesta en Chatbot.tsx por esta:
+  const procesarRespuesta = async (
+    responseText: string
+  ): Promise<{ displayText: string; pedidoCard?: ChatbotOrder }> => {
+    const { displayText, pedidoJson } = parsePedidoFromResponse(responseText);
+    if (!pedidoJson) return { displayText };
 
-const procesarRespuesta = async (
-  responseText: string
-): Promise<{ displayText: string; pedidoCard?: PedidoConId }> => {
-
-  const { displayText, pedidoJson } = parsePedidoFromResponse(responseText);
-
-  if (!pedidoJson) return { displayText };
-
-  try {
-    // Buscar negocio en la lista local
     const negocio = negocios.find(n => n.id === pedidoJson.negocioId) ?? null;
-
     if (!negocio) {
       console.warn('Negocio no encontrado para ID:', pedidoJson.negocioId);
       return { displayText };
     }
 
-    const pedido: PedidoEnCurso = {
-      negocio,
+    const chatbotOrder: ChatbotOrder = {
+      negocio: {
+        id: negocio.id,
+        nombre: negocio.nombre,
+        whatsapp: negocio.whatsapp,
+        telefono: negocio.telefono,
+        direccion: negocio.direccion,
+      },
       items: pedidoJson.items,
       direccionEntrega: pedidoJson.direccionEntrega ?? '',
       notas: pedidoJson.notas ?? '',
     };
 
-    const result = await guardarPedido(pedido);
-    if (!result) return { displayText: '⚠️ Error al guardar el pedido. Inténtalo de nuevo.' };
+    // Guardar en CartContext para que CartScreen pueda mostrar los items
+    setChatbotOrder(chatbotOrder);
 
-    return {
-      displayText,
-      pedidoCard: { ...pedido, pedidoId: result.pedidoId, order: result.order },
-    };
-  } catch (e) {
-    console.error('Error en procesarRespuesta:', e);
-    return { displayText };
-  }
-};
-  // ─── Enviar mensaje ───────────────────────────────────────────────────────
+    return { displayText, pedidoCard: chatbotOrder };
+  };
+
+  // ─── Enviar mensaje ────────────────────────────────────────────────────────
 
   const handleSend = async (overrideText?: string) => {
     const text = (overrideText ?? inputText).trim();
@@ -265,14 +250,17 @@ const procesarRespuesta = async (
         { role: 'model', parts: [{ text: responseText }] },
       ]);
 
+      // Si hay pedido confirmado, mostrar mensaje de agradecimiento personalizado
+      const botText = pedidoCard
+        ? `¡Gracias por tu pedido en ${pedidoCard.negocio?.nombre}! 🎉\n\nRevisa el resumen y ve a tu carrito para confirmar. Cuando estés listo, presiona el botón de tu carrito para finalizar. 🛒`
+        : displayText;
+
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
-        text: displayText,
+        text: botText,
         sender: 'bot',
         timestamp: new Date(),
-        suggestions: pedidoCard
-          ? undefined
-          : ['Ver menú completo', 'Otro restaurante', 'Mis pedidos'],
+        suggestions: pedidoCard ? undefined : ['Ver menú completo', 'Otro restaurante', 'Mis pedidos'],
         pedidoCard,
       };
 
@@ -293,33 +281,10 @@ const procesarRespuesta = async (
     }
   };
 
-  // ─── WhatsApp ─────────────────────────────────────────────────────────────
-
-  const handleWhatsApp = (pedido: PedidoConId) => {
-    Alert.alert(
-      'Enviar pedido',
-      `¿Enviar tu pedido a ${pedido.negocio?.nombre} por WhatsApp?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Enviar ✓',
-          onPress: () => enviarPedidoWhatsApp(pedido, pedido.pedidoId),
-        },
-      ]
-    );
-  };
-
-  // ─── Navegar a orderTracking con el objeto Order ──────────────────────────
-  // Usa el nombre exacto de la ruta en StacNavigation.tsx: 'orderTracking'
-
-  const handleTracking = (order: Order) => {
-    navigation.navigate('orderTracking', { order });
-  };
-
   const formatTime = (d: Date) =>
     d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
 
-  // ─── Render message ───────────────────────────────────────────────────────
+  // ─── Render message ────────────────────────────────────────────────────────
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.sender === 'user';
@@ -342,12 +307,11 @@ const procesarRespuesta = async (
             </Text>
           </View>
 
-          {/* Pedido card */}
+          {/* Pedido card con botón Ver mi carrito */}
           {item.pedidoCard && (
             <PedidoCard
               pedido={item.pedidoCard}
-              onWhatsApp={() => handleWhatsApp(item.pedidoCard!)}
-              onTracking={() => handleTracking(item.pedidoCard!.order)}
+              onVerCarrito={() => navigation.navigate('Cart')}
             />
           )}
 
@@ -451,7 +415,7 @@ const procesarRespuesta = async (
               <MicIcon />
             </TouchableOpacity>
           )}
-        </View>     
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -530,7 +494,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginBottom: 10,
   },
   pedidoTitle: { fontSize: 15, fontWeight: '800', color: '#1A1A1A' },
-  pedidoId: { fontSize: 11, color: '#6B7280', fontWeight: '600' },
   pedidoNegocio: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 10 },
   pedidoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
   pedidoItemText: { fontSize: 13, color: '#374151' },
@@ -544,19 +507,13 @@ const styles = StyleSheet.create({
   pedidoTotalValue: { fontSize: 16, fontWeight: '800', color: '#16a34a' },
   pedidoDireccion: { fontSize: 12, color: '#6B7280', marginBottom: 4 },
   pedidoNotas: { fontSize: 12, color: '#6B7280', marginBottom: 10 },
-  pedidoActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  waBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', gap: 6,
-    backgroundColor: '#25D366', borderRadius: 12, paddingVertical: 10,
+
+  carritoBtn: { marginTop: 12, borderRadius: 12, overflow: 'hidden' },
+  carritoBtnGradient: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 12,
   },
-  waBtnText: { fontSize: 12, fontWeight: '700', color: '#FFF' },
-  trackBtn: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#F0FDF4', borderRadius: 12,
-    paddingVertical: 10, borderWidth: 1, borderColor: '#BBF7D0',
-  },
-  trackBtnText: { fontSize: 12, fontWeight: '700', color: '#16a34a' },
+  carritoBtnText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
 
   // Typing
   typingContainer: {

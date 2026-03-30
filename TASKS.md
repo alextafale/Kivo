@@ -19,7 +19,7 @@
 **Auth avanzado**
 - [ ] Sign In con Google (OAuth completo conectado a Supabase Auth)
 - [ ] Sign In con X / Twitter (OAuth completo conectado a Supabase Auth)
-- [ ] Autenticación de 2 pasos (2FA) para login por correo electrónico
+- [x] Autenticación de 2 pasos (2FA) para login por correo electrónico ✅ (TOTP vía VerifyMfaModal + AuthContext)
 - [ ] Páginas de Términos y Condiciones (deploy en Vercel)
 
 **Perfiles**
@@ -27,10 +27,10 @@
 - [ ] Subida de foto de perfil desde galería — repartidor
 
 **Chatbot (frontend)**
-- [ ] Ventana del chatbot con diseño integrado al resto de la app
-- [ ] Al confirmar el pedido, el chatbot muestra mensaje de agradecimiento personalizado
-- [ ] Botón "Ver mi carrito" dentro del chat para que el usuario verifique antes de enviar
-- [ ] El usuario confirma el pedido manualmente con un botón final (no automático)
+- [x] Ventana del chatbot con diseño integrado al resto de la app ✅
+- [x] Al confirmar el pedido, el chatbot muestra mensaje de agradecimiento personalizado ✅
+- [x] Botón "Ver mi carrito" dentro del chat para que el usuario verifique antes de enviar ✅
+- [x] El usuario confirma el pedido manualmente con un botón final (no automático) ✅
 
 ---
 
@@ -130,8 +130,8 @@
 - [ ] Notificaciones funcionales: nuevo pedido, cambio de estado, pedido entregado
 
 **Tickets**
-- [ ] Generación de ticket al usuario al confirmar su pedido (número de orden, items y total)
-- [ ] Pantalla o PDF de ticket accesible desde el historial de pedidos
+- [x] Generación de ticket al usuario al confirmar su pedido (número de orden, items y total) ✅ PDF con expo-print
+- [x] PDF de ticket generado automáticamente, compartido via Share Sheet + WhatsApp al número registrado ✅
 
 **Chatbot (backend)**
 - [ ] Endpoint para que el chatbot reciba y procese el pedido del usuario

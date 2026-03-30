@@ -198,7 +198,7 @@ export default function DeliveryAddresses({ navigation }: Props) {
         opacity: headerAnim,
         transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
       }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => navigation.navigate('HomeFeed')} style={styles.backBtn}>
           <BackIcon />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
