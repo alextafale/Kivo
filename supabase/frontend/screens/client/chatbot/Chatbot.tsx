@@ -26,7 +26,8 @@ import {
   parsePedidoFromResponse,
 } from '../../../../services/geminiService';
 import { useCart, ChatbotOrder } from '../../../application/context/CartContext';
-
+import { supabase } from '../../../config/supabaseConfig'; // ajusta path
+import { useAuth } from '../../../application/context/AuthContext';
 type ChatbotNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chatbot'>;
 type Props = { navigation: ChatbotNavigationProp };
 
@@ -162,7 +163,27 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
 
 export default function Chatbot({ navigation }: Props) {
   const { setChatbotOrder } = useCart();
-
+  const { session } = useAuth();
+const [direccionPredeterminada, setDireccionPredeterminada] = useState('');
+const [domicilioId, setDomicilioId] = useState<string>('');
+useEffect(() => {
+  if (!session?.userId) return;
+  supabase
+    .from('domicilios')
+    .select('id, calle, numero_ext, colonia, ciudad')
+    .eq('user_id', session.userId)
+    .eq('es_predeterminado', true)
+    .eq('activo', true)
+    .maybeSingle()
+    .then(({ data }) => {
+      if (data) {
+        setDomicilioId(data.id);
+        setDireccionPredeterminada(
+          `${data.calle} ${data.numero_ext ?? ''}, ${data.colonia}, ${data.ciudad}`.trim()
+        );
+      }
+    });
+}, [session?.userId]);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -212,8 +233,12 @@ export default function Chatbot({ navigation }: Props) {
         direccion: negocio.direccion,
       },
       items: pedidoJson.items,
-      direccionEntrega: pedidoJson.direccionEntrega ?? '',
+      // Usa dirección del bot si la capturó, si no usa la predeterminada
+      direccionEntrega: pedidoJson.direccionEntrega || direccionPredeterminada,
       notas: pedidoJson.notas ?? '',
+      // Pasa los IDs necesarios para guardar el pedido correctamente
+      sucursalId: (negocio as any).sucursalId ?? '',
+      domicilioId,
     };
 
     // Guardar en CartContext para que CartScreen pueda mostrar los items
@@ -225,7 +250,7 @@ export default function Chatbot({ navigation }: Props) {
   // ─── Enviar mensaje ────────────────────────────────────────────────────────
 
   const handleSend = async (overrideText?: string) => {
-    const text = (overrideText ?? inputText).trim();
+    const text = (overrideText || inputText).trim();
     if (!text || isTyping) return;
 
     const userMsg: Message = {
@@ -241,7 +266,7 @@ export default function Chatbot({ navigation }: Props) {
     scrollToBottom();
 
     try {
-      const responseText = await askGemini(text, geminiHistory, negocios);
+      const responseText = await askGemini(text, geminiHistory, negocios, direccionPredeterminada);
       const { displayText, pedidoCard } = await procesarRespuesta(responseText);
 
       setGeminiHistory(prev => [

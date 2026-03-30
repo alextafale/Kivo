@@ -92,57 +92,77 @@ export async function cargarNegocios(): Promise<Negocio[]> {
 // ─── Supabase: Guardar pedido ─────────────────────────────────────────────────
 
 export async function guardarPedido(
-  pedido: PedidoEnCurso
+  pedido: PedidoEnCurso,
+  sucursalId: string,
+  domicilioId: string,
+  userId: string,
 ): Promise<{ pedidoId: string; order: Order } | null> {
   if (!pedido.negocio || pedido.items.length === 0) return null;
 
-  const total = pedido.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const orderNumber = `PID-${Date.now().toString().slice(-6)}`;
+  const subtotal  = pedido.items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const costoEnvio = 12;
+  const total     = subtotal + costoEnvio;
+  const orderNumber = `KIV-${Date.now().toString().slice(-6)}`;
 
   try {
     const { data, error } = await supabase
       .from('pedidos')
       .insert({
+        user_id:           userId,
+        sucursal_id:       sucursalId,
         negocio_id:        pedido.negocio.id,
-        negocio_nombre:    pedido.negocio.nombre,
-        negocio_whatsapp:  pedido.negocio.whatsapp,
-        items:             pedido.items,
-        total,
+        domicilio_id:      domicilioId,
         direccion_entrega: pedido.direccionEntrega,
-        notas:             pedido.notas,
+        notas:             pedido.notas || null,
         estado:            'pending',
         order_number:      orderNumber,
+        subtotal,
+        costo_envio:       costoEnvio,
+        total,
+        propina:           0,
+        descuento:         0,
       })
       .select('id')
       .single();
 
     if (error) throw error;
 
+    // Insertar items en pedido_items
+    const pedidoItems = pedido.items.map(item => ({
+      pedido_id:       data.id,
+      nombre:          item.name,
+      precio_unitario: item.price,
+      cantidad:        item.quantity,
+      subtotal:        item.price * item.quantity,
+    }));
+
+    await supabase.from('pedido_items').insert(pedidoItems);
+
     const order: Order = {
-      id:                  data.id,
-      restaurantName:      pedido.negocio.nombre,
-      restaurantImage:     '',
-      items:               pedido.items,
+      id:                data.id,
+      restaurantName:    pedido.negocio.nombre,
+      restaurantImage:   '',
+      items:             pedido.items,
       total,
-      status:              'pending',
-      date:                new Date().toISOString(),
+      status:            'pending',
+      date:              new Date().toISOString(),
       orderNumber,
-      deliveryAddress:     pedido.direccionEntrega,
-      userId:              '',
-      sucursalId:          null,
-      negocioId:           pedido.negocio.id,
-      repartidorId:        null,
-      domicilioId:         null,
-      notas:               pedido.notas || null,
-      subtotal:            null,
-      descuento:           null,
-      costoEnvio:          null,
-      propina:             null,
-      tiempoEstimadoMin:   null,
-      canceladoEn:         null,
-      motivoCancelacion:   null,
-      cuponId:             null,
-      codigoCupon:         null,
+      deliveryAddress:   pedido.direccionEntrega,
+      userId,
+      sucursalId,
+      negocioId:         pedido.negocio.id,
+      repartidorId:      null,
+      domicilioId,
+      notas:             pedido.notas || null,
+      subtotal,
+      descuento:         0,
+      costoEnvio,
+      propina:           0,
+      tiempoEstimadoMin: null,
+      canceladoEn:       null,
+      motivoCancelacion: null,
+      cuponId:           null,
+      codigoCupon:       null,
     };
 
     return { pedidoId: data.id, order };
@@ -259,7 +279,12 @@ function formatNegocio(n: Negocio): string {
     Horario: ${n.horario}
     Menú:\n${menu}`;
 }
-function buildSystemPrompt(relevantes: Negocio[], todos: Negocio[]): string { 
+function buildSystemPrompt(
+  relevantes: Negocio[],
+  todos: Negocio[],
+  direccionEntrega: string,
+): string {
+
   const lista = todos
     .sort((a, b) => b.calificacion - a.calificacion)
     .map(n => `${n.nombre} (${n.categoria})`)
@@ -282,6 +307,9 @@ ${lista}
 
 DETALLE DE NEGOCIOS RELEVANTES:
 ${detalle}
+
+═══════ DATOS DE ENTREGA ═══════
+DIRECCIÓN ACTUAL DEL USUARIO: ${direccionEntrega || 'No especificada'}
 
 ═══════ REGLAS CRÍTICAS ═══════
 
@@ -455,9 +483,11 @@ export function parsePedidoFromResponse(
 }
 
 // ─── Qwen ───────────────────────────────────────────────────────────────────
-
-const QWEN_URL = `http://${process.env.QWEN_HOST ?? '192.168.1.100'}:11434/api/chat`;
-const QWEN_MODEL = 'qwen2.5:14b';
+const QWEN_HOST = process.env.QWEN_HOST ?? '192.168.1.93';
+const QWEN_URL = QWEN_HOST.includes('ngrok-free.app')
+  ? `https://${QWEN_HOST}/api/chat`
+  : `http://${QWEN_HOST}:11434/api/chat`;
+const QWEN_MODEL = 'qwen2.5:7b';
 
 function toQwenHistory(history: GeminiMessage[]): QwenMessage[] {
   return history.map(m => ({
@@ -469,19 +499,25 @@ function toQwenHistory(history: GeminiMessage[]): QwenMessage[] {
 export async function askGemini(
   userMessage: string,
   history: GeminiMessage[],
-  todosLosNegocios: Negocio[]
+  todosLosNegocios: Negocio[],
+  direccionEntrega: string,   // ← nuevo
 ): Promise<string> {
   const relevantes = filtrarNegociosRelevantes(userMessage, history, todosLosNegocios);
 
   const messages: QwenMessage[] = [
-    { role: 'system', content: buildSystemPrompt(relevantes, todosLosNegocios) },
+    { role: 'system', content: buildSystemPrompt(relevantes, todosLosNegocios, direccionEntrega) },
     ...toQwenHistory(history),
     { role: 'user', content: userMessage },
   ];
 
+  console.log('🔌 Conectando a Qwen en:', QWEN_URL); // ← log temporal
+
   const response = await fetch(QWEN_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
     body: JSON.stringify({
       model: QWEN_MODEL,
       messages,
@@ -491,7 +527,9 @@ export async function askGemini(
   });
 
   if (!response.ok) {
-    console.error('Qwen error:', await response.text());
+    const errText = await response.text();
+    console.error('Qwen error status:', response.status); // ← log temporal
+    console.error('Qwen error body:', errText);
     throw new Error('Error al conectar con Qwen');
   }
 

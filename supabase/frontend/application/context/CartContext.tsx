@@ -12,6 +12,8 @@ export interface ChatbotOrder {
   items: { name: string; price: number; quantity: number }[];
   direccionEntrega: string;
   notas: string;
+  sucursalId: string;
+  domicilioId: string;
 }
 
 export interface CartItem {
