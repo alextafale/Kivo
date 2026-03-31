@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import Optional
 from models.negocio_comentarios import NegocioComentario
 from models.negocio_reacciones import NegocioReaccion, TipoReaccion
-from models.negocio_admins import NegocioAdmin
+from models.negocio_admin import NegocioAdmin
 from schemas.comentarios import ComentarioIn, ReaccionIn
 from exceptions.comentarios import (
     ComentarioNoExistente, SinPermiso, ReaccionYaExiste, ReaccionNoExiste,
