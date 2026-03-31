@@ -12,6 +12,7 @@ from schemas.pedidos import PedidoIn, PedidoOut
 from schemas.enums import PedidoEstado
 from services.notification_service import send_push_notification
 import uuid
+import traceback
 
 router = APIRouter(tags=["Pedidos"])
 
@@ -258,82 +259,89 @@ def create_pedido(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    # 1. Obtener info de la sucursal
-    sucursal = db.execute(
-        text("SELECT * FROM sucursales WHERE id = :id"),
-        {"id": str(pedido_in.sucursal_id)},
-    ).mappings().first()
+    try:
+        # 1. Obtener info de la sucursal
+        sucursal = db.execute(
+            text("SELECT * FROM sucursales WHERE id = :id"),
+            {"id": str(pedido_in.sucursal_id)},
+        ).mappings().first()
 
-    if not sucursal:
-        raise HTTPException(status_code=404, detail="Sucursal no encontrada")
+        if not sucursal:
+            raise HTTPException(status_code=404, detail="Sucursal no encontrada")
 
-    # 2. Obtener dirección del domicilio
-    domicilio = db.execute(
-        text("SELECT * FROM domicilios WHERE id = :id"),
-        {"id": str(pedido_in.domicilio_id)},
-    ).mappings().first()
+        # 2. Obtener dirección del domicilio
+        domicilio = db.execute(
+            text("SELECT * FROM domicilios WHERE id = :id"),
+            {"id": str(pedido_in.domicilio_id)},
+        ).mappings().first()
 
-    if not domicilio:
-        raise HTTPException(status_code=404, detail="Domicilio no encontrado")
+        if not domicilio:
+            raise HTTPException(status_code=404, detail="Domicilio no encontrado")
 
-    direccion_entrega = (
-        f"{domicilio['calle']} {domicilio['numero_ext']}, "
-        f"{domicilio['colonia']}, {domicilio['ciudad']}, {domicilio['estado']}"
-    )
-
-    # 3. Calcular totales
-    subtotal = sum(item.precio_unitario * item.cantidad for item in pedido_in.items)
-    costo_envio = sucursal.get("costo_envio", 0) or 0
-    descuento = 0
-    propina = pedido_in.propina or 0
-    total = subtotal + costo_envio - descuento + propina
-
-    # 4. Generar order_number
-    order_number = f"PID-{uuid.uuid4().hex[:6].upper()}"
-
-    # 5. Crear el pedido
-    pedido = Pedido(
-        id=uuid.uuid4(),
-        user_id=user_id,
-        sucursal_id=pedido_in.sucursal_id,
-        negocio_id=sucursal["negocio_id"],
-        domicilio_id=pedido_in.domicilio_id,
-        direccion_entrega=direccion_entrega,
-        order_number=order_number,
-        estado="pending",
-        notas=pedido_in.notas,
-        cupon_id=pedido_in.cupon_id,
-        subtotal=subtotal,
-        costo_envio=costo_envio,
-        descuento=descuento,
-        propina=propina,
-        total=total,
-    )
-    db.add(pedido)
-    db.flush()
-
-    # 6. Crear los items con snapshot de precios
-    for item in pedido_in.items:
-        pedido_item = PedidoItem(
-            id=uuid.uuid4(),
-            pedido_id=pedido.id,
-            menu_item_id=item.menu_item_id,
-            nombre=item.nombre,
-            precio_unitario=item.precio_unitario,
-            cantidad=item.cantidad,
-            personalizaciones=item.personalizaciones,
-            subtotal=item.precio_unitario * item.cantidad,
-            notas=item.notas,
+        direccion_entrega = (
+            f"{domicilio['calle']} {domicilio['numero_ext']}, "
+            f"{domicilio['colonia']}, {domicilio['ciudad']}, {domicilio['estado']}"
         )
-        db.add(pedido_item)
 
-    db.commit()
-    db.refresh(pedido)
+        # 3. Calcular totales
+        subtotal = sum(item.precio_unitario * item.cantidad for item in pedido_in.items)
+        costo_envio = sucursal.get("costo_envio", 0) or 0
+        descuento = 0
+        propina = pedido_in.propina or 0
+        total = subtotal + costo_envio - descuento + propina
 
-    items = db.query(PedidoItem).filter(PedidoItem.pedido_id == pedido.id).all()
-    pedido.items = items
+        # 4. Generar order_number
+        order_number = f"PID-{uuid.uuid4().hex[:6].upper()}"
 
-    return pedido
+        # 5. Crear el pedido
+        pedido = Pedido(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            sucursal_id=pedido_in.sucursal_id,
+            negocio_id=sucursal["negocio_id"],
+            domicilio_id=pedido_in.domicilio_id,
+            direccion_entrega=direccion_entrega,
+            order_number=order_number,
+            estado="pending",
+            notas=pedido_in.notas,
+            cupon_id=pedido_in.cupon_id,
+            subtotal=subtotal,
+            costo_envio=costo_envio,
+            descuento=descuento,
+            propina=propina,
+            total=total,
+        )
+        db.add(pedido)
+        db.flush()
+
+        # 6. Crear los items con snapshot de precios
+        for item in pedido_in.items:
+            pedido_item = PedidoItem(
+                id=uuid.uuid4(),
+                pedido_id=pedido.id,
+                menu_item_id=item.menu_item_id,
+                nombre=item.nombre,
+                precio_unitario=item.precio_unitario,
+                cantidad=item.cantidad,
+                personalizaciones=item.personalizaciones,
+                subtotal=item.precio_unitario * item.cantidad,
+                notas=item.notas,
+            )
+            db.add(pedido_item)
+
+        db.commit()
+        db.refresh(pedido)
+
+        items = db.query(PedidoItem).filter(PedidoItem.pedido_id == pedido.id).all()
+        pedido.items = items
+
+        return pedido
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"ERROR: {str(e)} | {traceback.format_exc()}")
 
 
 # ─── GET /negocios/{negocio_id}/metricas ─────────────────────────────────────

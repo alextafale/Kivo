@@ -132,12 +132,26 @@ export default function OrderSummary({ navigation, route }: Props) {
             body: JSON.stringify(body),
           })
 
+          const rawText = await res.text()
+
           if (!res.ok) {
-            const error = await res.json()
-            throw new Error(`${restaurant.negocioNombre}: ${error.detail ?? 'Error al crear pedido'}`)
+            let detail = 'Error al crear pedido'
+            try {
+              const error = JSON.parse(rawText)
+              detail = error.detail ?? detail
+            } catch {
+              detail = rawText || `HTTP ${res.status}`
+            }
+            throw new Error(`${restaurant.negocioNombre}: ${detail}`)
           }
 
-          const pedido = await res.json()
+          let pedido: any
+          try {
+            pedido = JSON.parse(rawText)
+          } catch {
+            throw new Error(`${restaurant.negocioNombre}: Respuesta inválida del servidor: "${rawText.slice(0, 100)}"`)
+          }
+
           return {
             orderNumber: pedido.order_number,
             negocioNombre: restaurant.negocioNombre,
