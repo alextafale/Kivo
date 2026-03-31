@@ -9,6 +9,8 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useOrderRealtime } from '../../../application/hooks/useOrderRealTime'
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'
+import { useRepartidorUbicacion } from '../../../application/hooks/useRepartidorUbicacion'
 
 const { width } = Dimensions.get('window')
 
@@ -24,23 +26,23 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { key: 'confirmed',  label: 'Pedido confirmado',  sublabel: 'El restaurante aceptó tu orden',  emoji: '✅' },
-  { key: 'preparing',  label: 'Preparando',         sublabel: 'El restaurante está cocinando',   emoji: '👨‍🍳' },
-  { key: 'ready',      label: 'Listo para recoger', sublabel: 'Esperando al repartidor',         emoji: '📦' },
-  { key: 'on_the_way', label: 'En camino',           sublabel: 'Tu repartidor va en camino',      emoji: '🛵' },
-  { key: 'delivered',  label: '¡Entregado!',         sublabel: '¡Que lo disfrutes!',              emoji: '🎉' },
+  { key: 'confirmed', label: 'Pedido confirmado', sublabel: 'El restaurante aceptó tu orden', emoji: '✅' },
+  { key: 'preparing', label: 'Preparando', sublabel: 'El restaurante está cocinando', emoji: '👨‍🍳' },
+  { key: 'ready', label: 'Listo para recoger', sublabel: 'Esperando al repartidor', emoji: '📦' },
+  { key: 'on_the_way', label: 'En camino', sublabel: 'Tu repartidor va en camino', emoji: '🛵' },
+  { key: 'delivered', label: '¡Entregado!', sublabel: '¡Que lo disfrutes!', emoji: '🎉' },
 ]
 
 const STATUS_ORDER: OrderStatus[] = ['confirmed', 'preparing', 'ready', 'on_the_way', 'delivered']
 
 // Mapeo de estados del backend a los pasos del timeline
 const ESTADO_A_STEP: Record<string, OrderStatus> = {
-  confirmed:  'confirmed',
-  preparing:  'preparing',
-  ready:      'ready',
-  picked_up:  'on_the_way',
+  confirmed: 'confirmed',
+  preparing: 'preparing',
+  ready: 'ready',
+  picked_up: 'on_the_way',
   on_the_way: 'on_the_way',
-  delivered:  'delivered',
+  delivered: 'delivered',
 }
 
 export default function OrderTrackingScreen({ route, navigation }: Props) {
@@ -48,8 +50,9 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
 
   // Suscripción Realtime — actualiza cuando el negocio cambia el estado
   const { order } = useOrderRealtime(initialOrder.id, initialOrder)
+  const { ubicacion } = useRepartidorUbicacion(order?.status === 'on_the_way' || order?.status === 'picked_up' ? initialOrder.id : null)
 
-  const pulseAnim    = useRef(new Animated.Value(1)).current
+  const pulseAnim = useRef(new Animated.Value(1)).current
   const progressAnim = useRef(new Animated.Value(0)).current
 
   // Mapear el estado del backend al step del timeline
@@ -62,7 +65,7 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1.25, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1,    duration: 700, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
       ])
     ).start()
   }, [])
@@ -118,12 +121,40 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        {/* Map Placeholder */}
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapEmoji}>🗺️</Text>
-          <Text style={styles.mapText}>Mapa en vivo</Text>
-          <Text style={styles.mapSub}>Próximamente — rastreo GPS en tiempo real</Text>
-        </View>
+        {/* Mapa en vivo */}
+        {ubicacion ? (
+          <MapView
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            region={{
+              latitude: ubicacion.lat,
+              longitude: ubicacion.lng,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+            showsUserLocation
+            showsMyLocationButton={false}
+          >
+            <Marker
+              coordinate={{ latitude: ubicacion.lat, longitude: ubicacion.lng }}
+              title="Tu repartidor"
+              description={ubicacion.velocidad_kmh ? `${ubicacion.velocidad_kmh.toFixed(0)} km/h` : ''}
+            >
+              <View style={styles.markerContainer}>
+                <Text style={styles.markerEmoji}>🛵</Text>
+              </View>
+            </Marker>
+          </MapView>
+        ) : (
+          <View style={styles.mapPlaceholder}>
+            <Text style={styles.mapEmoji}>🗺️</Text>
+            <Text style={styles.mapText}>
+              {order?.status === 'on_the_way' || order?.status === 'picked_up'
+                ? 'Esperando ubicación del repartidor...'
+                : 'El mapa aparecerá cuando el repartidor esté en camino'}
+            </Text>
+          </View>
+        )}
 
         {/* Timeline de estados */}
         <View style={styles.timelineSection}>
@@ -134,8 +165,8 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
             <Animated.View style={[styles.trackFill, { height: progressHeight }]} />
 
             {STEPS.map((step, index) => {
-              const isDone    = index < currentIndex
-              const isActive  = index === currentIndex
+              const isDone = index < currentIndex
+              const isActive = index === currentIndex
               const isPending = index > currentIndex
 
               return (
@@ -157,8 +188,8 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
                   <View style={styles.stepContent}>
                     <Text style={[
                       styles.stepLabel,
-                      isDone    && styles.stepLabelDone,
-                      isActive  && styles.stepLabelActive,
+                      isDone && styles.stepLabelDone,
+                      isActive && styles.stepLabelActive,
                       isPending && styles.stepLabelPending,
                     ]}>
                       {step.label}
@@ -211,10 +242,14 @@ const styles = StyleSheet.create({
   statusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#2ECC40' },
   statusBadgeText: { fontSize: 12, fontWeight: '700', color: '#1A8C2A' },
 
-  mapPlaceholder: { backgroundColor: '#E4EDE0', borderRadius: 18, height: 120, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  mapPlaceholder: { backgroundColor: '#E4EDE0', borderRadius: 18, height: 220, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   mapEmoji: { fontSize: 32, marginBottom: 4 },
   mapText: { fontSize: 14, fontWeight: '700', color: '#3A5C30' },
   mapSub: { fontSize: 11, color: '#6A8C60', marginTop: 2, textAlign: 'center', paddingHorizontal: 16 },
+
+  map: { height: 220, borderRadius: 18, marginBottom: 20, overflow: 'hidden' },
+  markerContainer: { alignItems: 'center', justifyContent: 'center' },
+  markerEmoji: { fontSize: 28 },
 
   timelineSection: { marginBottom: 20 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1A1A1A', marginBottom: 18 },

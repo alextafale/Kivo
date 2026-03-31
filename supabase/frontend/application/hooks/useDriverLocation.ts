@@ -37,7 +37,7 @@ export function useDriverLocation({
 
       const { latitude, longitude, heading, speed } = location.coords
 
-      await fetch(`${API_URL}/api/v1/repartidores/ubicacion`, {
+      await fetch(`${API_URL}/repartidores/ubicacion`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
