@@ -11,10 +11,9 @@ class NegocioAdmin(Base):
         {"schema": "public"},
     )
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id         = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     negocio_id = Column(UUID(as_uuid=True), ForeignKey("public.negocios.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("public.profiles.id", ondelete="CASCADE"), nullable=False)
-    role = Column(String, nullable=False)  # business, repartidor, cliente
+    user_id    = Column(UUID(as_uuid=True), ForeignKey("public.profiles.id", ondelete="CASCADE"), nullable=False)
+    role       = Column(String, nullable=False)
 
-    negocio = relationship("Negocio", back_populates="admins")
-    usuario = relationship("Profile", back_populates="negocio_admins")
+    negocio    = relationship("Negocio", back_populates="admins")
