@@ -45,6 +45,7 @@ def get_sucursal_por_id(db: Session, sucursal_id: str):
 
     return {
         "id": sucursal.id,
+        "negocio_id": negocio.id,
         "nombre": negocio.nombre,
         "categoria": negocio.categoria,
         "logo_url": negocio.logo_url,
