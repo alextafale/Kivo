@@ -33,7 +33,7 @@ app.include_router(pedidos_router,     prefix="/api/v1")
 app.include_router(admin_router,       prefix="/api/v1")
 app.include_router(push_tokens_router, prefix="/api/v1")   # → /api/v1/users/push-token
 app.include_router(repartidores_router, prefix="/api/v1")
-app.include_router(comentarios.router)
+app.include_router(comentarios.router, prefix="/api/v1")
 
 
 @app.get("/")
