@@ -11,7 +11,7 @@ from routes.sucursales   import router as sucursal_router
 from routes.profiles     import router as profiles_router
 from routes.pedidos      import router as pedidos_router
 from routes.admin        import router as admin_router
-from routes.push_tokens  import router as push_tokens_router   # ← nuevo
+from routes.push_tokens  import router as push_tokens_router
 from routes.repartidores import router as repartidores_router
 from routes import comentarios
 
