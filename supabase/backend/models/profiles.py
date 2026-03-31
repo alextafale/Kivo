@@ -18,5 +18,3 @@ class Profile(Base):
     activo         = Column(Boolean, default=True)
     creado_en      = Column(TIMESTAMP(timezone=True))
     actualizado_en = Column(TIMESTAMP(timezone=True))
-    comentarios = relationship("NegocioComentario", back_populates="usuario")
-    reacciones = relationship("NegocioReaccion", back_populates="usuario")
