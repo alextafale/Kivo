@@ -1,5 +1,5 @@
 # 🛵 Pidelo — Tasks Pendientes
-> **Periodo:** 2 marzo → 1 mayo 2026 | **Equipo:** Yahir · Jesús · Tú
+> **Periodo:** 2 marzo → 1 mayo 2026 | **Equipo:** Yahir · Jesús · Alex · Fernanda
 > **Stack:** Python + FastAPI (backend) · React Native + Expo + TSX (frontend)
 
 ---
@@ -10,27 +10,27 @@
 |---|---|
 | Pedidos, Repartidores & Pagos | **Jesús** |
 | Restaurantes, Menú & Reviews | **Yahir** |
-| Usuarios, Auth & Cupones | **Tú** |
+| Usuarios, Auth & Cupones | **Alex** |
+| Diseño & Frontend | **Fernanda** |
 
 ---
 
-## Tú — Pendientes
+## Alex — Pendientes
 
-**Auth avanzado**
-- [ ] Sign In con Google (OAuth completo conectado a Supabase Auth)
-- [ ] Sign In con X / Twitter (OAuth completo conectado a Supabase Auth)
-- [x] Autenticación de 2 pasos (2FA) para login por correo electrónico ✅ (TOTP vía VerifyMfaModal + AuthContext)
-- [ ] Páginas de Términos y Condiciones (deploy en Vercel)
+**Features de IA (Qwen)**
+- [ ] Resolución automática de quejas — el LLM evalúa la queja, decide acción (cupón / reembolso parcial / disculpa) y la ejecuta usando el módulo de cupones existente
+- [ ] Prompt engineering: categorización automática de items del menú → JSON `{ categoria, confianza }`, fallback manual si confianza < 0.7
+- [ ] Prompt engineering: respuestas sugeridas a reviews negativas → 3 opciones con tono diferente, el admin elige y aprueba antes de publicar
 
-**Perfiles**
-- [ ] Subida de foto de perfil desde galería — cliente
-- [ ] Subida de foto de perfil desde galería — repartidor
-
-**Chatbot (frontend)**
-- [x] Ventana del chatbot con diseño integrado al resto de la app ✅
-- [x] Al confirmar el pedido, el chatbot muestra mensaje de agradecimiento personalizado ✅
-- [x] Botón "Ver mi carrito" dentro del chat para que el usuario verifique antes de enviar ✅
-- [x] El usuario confirma el pedido manualmente con un botón final (no automático) ✅
+**Perfil del negocio — Comentarios y Reacciones (backend)**
+- [ ] `POST /negocios/:id/comentarios` — publicar comentario en el perfil del negocio
+- [ ] `GET /negocios/:id/comentarios` — listar comentarios con paginación
+- [ ] `DELETE /negocios/:id/comentarios/:comentario_id` — eliminar comentario (autor o admin del negocio)
+- [ ] `POST /negocios/:id/comentarios/:comentario_id/reacciones` — agregar reacción (👍 ❤️ 😂 😮 😢)
+- [ ] `DELETE /negocios/:id/comentarios/:comentario_id/reacciones` — quitar reacción propia
+- [ ] `GET /negocios/:id/comentarios/:comentario_id/reacciones` — conteo de reacciones por tipo
+- [ ] Tabla `negocio_comentarios` en Supabase con RLS
+- [ ] Tabla `negocio_reacciones` en Supabase con RLS (unique por usuario + comentario + tipo)
 
 ---
 
@@ -63,16 +63,30 @@
 - [ ] Subida de logo del negocio desde galería (admin del negocio)
 - [ ] Subida de banner del negocio desde galería (admin del negocio)
 
+**IA — Generación automática de descripciones de platillos**
+- [ ] `POST /admin/menu/items/generar-descripcion` → `{ nombre, foto_url }` → `{ descripcion }`
+- [ ] El LLM genera descripción en 2-3 oraciones, el admin puede editar o regenerar antes de guardar
+- [ ] Se integra al flujo de creación de item (no es paso extra para el admin)
+
+**IA — Endpoint de categorización de platillos**
+- [ ] `POST /admin/menu/items/categorizar` → `{ nombre, descripcion }` → `{ categoria, confianza }`
+- [ ] Categorías válidas: Entradas / Platos fuertes / Postres / Bebidas / Otros
+
 ---
 
-## Fernanda — Ventanas
+## Fernanda — Pendientes
 
-**Screens**
+**Screens & Assets**
+- [ ] Reorganizar las pantallas existentes en assets
+- [ ] Diseñar las ventanas que el equipo identifique como faltantes
+- [ ] Mejorar el diseño de las pantallas que el equipo decida
 
-- [] Disenar las ventanas restantes
-- [] Reorganizarlas ventanas en assets
-- [] Mejorar las ventanas que el equipo decida que ocupan mejora del diseno
-
+**Perfil del negocio — Social (UI)**
+- [ ] Sección de comentarios en el perfil del negocio — estilo feed de Facebook (foto de usuario, nombre, texto, fecha)
+- [ ] Componente de reacciones — barra de emojis (👍 ❤️ 😂 😮 😢) con conteo por tipo
+- [ ] Animación al reaccionar (tap → emoji flota brevemente)
+- [ ] Pantalla de comentarios expandida con scroll infinito
+- [ ] Distinguir visualmente comentarios del dueño del negocio (badge "Dueño")
 
 ---
 
@@ -87,14 +101,6 @@
 - [ ] Pantalla admin: gestión de items (crear, editar, eliminar)
 - [ ] Toggle de disponibilidad de platillo en tiempo real
 - [ ] Subida de foto del platillo a Supabase Storage
-
-**Auth Repartidores**
-- [ ] `POST /repartidores/registro` + middleware `isDriver`
-- [ ] `PATCH /repartidores/estado` (offline/available/busy)
-- [ ] `GET /repartidores/pedidos-disponibles`
-- [ ] Pantalla de registro de repartidor (vehículo, placa)
-- [ ] Toggle de disponibilidad (online/offline) en la app del repartidor
-- [ ] Lista de pedidos disponibles para tomar en tiempo real
 
 **Tracking en tiempo real**
 - [ ] `POST /repartidores/ubicacion` → upsert GPS
@@ -115,37 +121,45 @@
 - [ ] Pantalla de estado del pago (procesando / completado / fallido)
 - [ ] Historial de pagos en el perfil del usuario
 
-**Cupones**
-- [ ] `POST /cupones/validar` → vigencia, usos, descuento por tipo
-- [ ] Aplicar cupón en `POST /pedidos` → registrar en `cupones_uso`
-- [ ] CRUD admin de cupones (`GET/POST /admin/cupones`)
-- [ ] Campo de código de cupón en pantalla de resumen del pedido
-- [ ] Validación en tiempo real con feedback (válido ✓ / inválido ✗)
-- [ ] Descuento reflejado en el total antes de confirmar
-- [ ] Pantalla admin: crear y gestionar cupones
-
 **WebSocket & Notificaciones**
 - [ ] WebSocket para repartidor (conexión persistente para ubicación y recepción de pedidos)
 - [ ] Integración de notificaciones push (Expo Notifications / FCM) para eventos clave
 - [ ] Notificaciones funcionales: nuevo pedido, cambio de estado, pedido entregado
 
-**Tickets**
-- [x] Generación de ticket al usuario al confirmar su pedido (número de orden, items y total) ✅ PDF con expo-print
-- [x] PDF de ticket generado automáticamente, compartido via Share Sheet + WhatsApp al número registrado ✅
+**IA — Contexto de queja para resolución automática**
+- [ ] `POST /orders/{order_id}/queja` → retorna contexto (tiempo entrega real vs prometido, items, total, historial quejas del usuario en los últimos 30 días)
+- [ ] `POST /orders/{order_id}/resolucion` → ejecuta la acción decidida por el LLM (reembolso parcial / cupón / disculpa)
+- [ ] Tabla `quejas_resoluciones` en Supabase (pedido_id, usuario_id, accion, monto, razon_interna, created_at)
 
-**Chatbot (backend)**
-- [ ] Endpoint para que el chatbot reciba y procese el pedido del usuario
-- [ ] Lógica para confirmar pedido desde el chat y generar la orden en la DB
+---
+
+## ✅ Completado
+
+| Integrante | Feature |
+|---|---|
+| Alex | Sign In con Google (OAuth + Supabase Auth) |
+| Alex | Sign In con X / Twitter (OAuth + Supabase Auth) |
+| Alex | Autenticación de 2 pasos — TOTP vía VerifyMfaModal + AuthContext |
+| Alex | Páginas de Términos y Condiciones (Vercel) |
+| Alex | Subida de foto de perfil desde galería — cliente |
+| Alex | Subida de foto de perfil desde galería — repartidor |
+| Alex | Cupones — dominio, repositorio, hooks, pantallas cliente y admin, migración Supabase con RLS |
+| Alex | Chatbot frontend — ventana integrada, agradecimiento personalizado, botón carrito, confirmación manual |
+| Jesús | Tickets PDF — generación con expo-print, compartido via Share Sheet + WhatsApp |
+| Jesús | Chatbot backend — endpoint recibe y procesa pedido, genera orden en DB |
+| Jesús | Auth repartidores — registro, estado, pedidos disponibles |
 
 ---
 
 ## ⚠️ Dependencias clave
 
 ```
-Auth de Tú (OAuth/2FA) listo → base segura antes de testing
-WebSocket de Jesús listo → tracking en tiempo real operativo
-Reviews de Yahir listas → visibles en perfil del negocio
-Chatbot backend de Jesús listo → Tú conecta el flujo de confirmación en el frontend
+CRUD menú de Jesús listo        → Yahir conecta generación de descripciones (IA)
+                                → Alex activa categorización automática (IA)
+Reviews de Yahir listas         → Alex activa respuestas sugeridas a reviews negativas (IA)
+Endpoint queja de Jesús listo   → Alex conecta resolución automática de quejas
+WebSocket de Jesús listo        → tracking en tiempo real operativo
+Screens de Fernanda             → pantalla ReportarProblema para resolución de quejas
 ```
 
 ---
@@ -163,7 +177,7 @@ Chatbot backend de Jesús listo → Tú conecta el flujo de confirmación en el 
 | Mapas | react-native-maps |
 | Pagos | Stripe SDK |
 | Notificaciones | Expo Notifications / FCM |
+| IA | Qwen (modelo gratuito, integrado) |
 | Landing / T&C | Vercel |
 | Build | EAS (Expo Application Services) |
-| Testing | Pytest (backend) |
 | Docs | Swagger / Scalar |
