@@ -13,6 +13,8 @@ import { useDomicilios } from '../../../application/context/DomiciliosContext'
 import { useAuth } from '../../../application/context/AuthContext'
 import type { Domicilio } from '../../../domain/entities/Domicilio'
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL
+
 type OrderSummaryNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderSummary'>
 type OrderSummaryRouteProp = RouteProp<RootStackParamList, 'OrderSummary'>
 
@@ -121,7 +123,7 @@ export default function OrderSummary({ navigation, route }: Props) {
             })),
           }
 
-          const res = await fetch('https://kivo-v1.onrender.com/api/v1/pedidos', {
+          const res = await fetch(`${API_URL}/pedidos`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

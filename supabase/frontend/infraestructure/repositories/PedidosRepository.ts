@@ -19,7 +19,7 @@ export class PedidosRepositoryImpl {
   }
 
   async getPedidoById(accessToken: string, pedidoId: string): Promise<Order> {
-    const res = await fetch(`${API_URL}/api/v1/pedidos/${pedidoId}`, {
+    const res = await fetch(`${API_URL}/pedidos/${pedidoId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
