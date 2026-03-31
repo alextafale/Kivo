@@ -1,35 +1,83 @@
-import { useState, useEffect } from 'react'
-import { NegocioRepositoryImpl } from '../../infraestructure/repositories/NegocioRepositoryImpl'
-import type { NegocioResumen } from '../../domain/entities/Negocio'
+import { useState, useEffect } from 'react';
+import { supabase } from '../../config/supabaseConfig';
 
-const negocioRepo = new NegocioRepositoryImpl()
+export interface NegocioCard {
+  id: string;           // negocio_id
+  sucursal_id: string;
+  nombre: string;
+  descripcion: string | null;
+  categoria: string;
+  calificacion: number | null;
+  banner_url: string | null;
+}
 
-// Obtiene los negocios disponibles en una ciudad y categoría dadas
-export const useNegociosPorCiudad = (ciudad: string | null, categoria: string) => {
-  const [negocios, setNegocios] = useState<NegocioResumen[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export function useNegociosPorCiudad(ciudad: string | null, categoria: string) {
+  const [negocios, setNegocios] = useState<NegocioCard[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // No hacer fetch hasta tener la ciudad
-    if (!ciudad) return
-
-    const fetchNegocios = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const data = await negocioRepo.getNegociosPorCiudad(ciudad, categoria)
-        setNegocios(data)
-      } catch (e) {
-        console.error('[useNegociosPorCiudad] Error:', e)
-        setError('No se pudieron cargar los negocios')
-      } finally {
-        setIsLoading(false)
-      }
+    if (!ciudad) {
+      setNegocios([]);
+      return;
     }
 
-    fetchNegocios()
-  }, [ciudad, categoria])
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
 
-  return { negocios, isLoading, error }
+    (async () => {
+      try {
+        let query = supabase
+          .from('sucursales')
+          .select(`
+            id,
+            calificacion,
+            negocios!inner (
+              id,
+              nombre,
+              descripcion,
+              categoria,
+              banner_url,
+              activo
+            )
+          `)
+          .eq('ciudad', ciudad)
+          .eq('activo', true)
+          .eq('negocios.activo', true)
+          .order('calificacion', { ascending: false });
+
+        // Filtro de categoría (excepto "Todos")
+        if (categoria !== 'Todos') {
+          query = query.ilike('negocios.categoria', `%${categoria}%`);
+        }
+
+        const { data, error: sbError } = await query;
+
+        if (sbError) throw sbError;
+        if (cancelled) return;
+
+        const mapped: NegocioCard[] = (data ?? []).map((row: any) => ({
+          id:           row.negocios.id,
+          sucursal_id:  row.id,
+          nombre:       row.negocios.nombre,
+          descripcion:  row.negocios.descripcion ?? null,
+          categoria:    row.negocios.categoria,
+          calificacion: row.calificacion != null ? Number(row.calificacion) : null,
+          banner_url:   row.negocios.banner_url ?? null,
+        }));
+
+        setNegocios(mapped);
+      } catch (e: any) {
+        if (!cancelled) setError('No pudimos cargar los negocios. Intenta de nuevo.');
+        console.error('useNegociosPorCiudad error:', e);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [ciudad, categoria]);
+
+  return { negocios, isLoading, error };
 }

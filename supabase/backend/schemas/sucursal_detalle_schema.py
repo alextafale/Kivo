@@ -19,6 +19,7 @@ class MenuItemDetalle(BaseModel):
 
 class SucursalDetalleResponse(BaseModel):
     id: UUID
+    negocio_id: UUID
     nombre: str
     categoria: str
     logo_url: Optional[str]

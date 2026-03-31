@@ -36,3 +36,5 @@ class Negocio(Base):
     )
 
     sucursales = relationship("Sucursal", back_populates="negocio")
+    comentarios = relationship("NegocioComentario", back_populates="negocio", cascade="all, delete-orphan")
+    admins = relationship("NegocioAdmin", back_populates="negocio", cascade="all, delete-orphan")
