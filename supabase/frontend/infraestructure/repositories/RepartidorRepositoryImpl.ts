@@ -78,6 +78,9 @@ export class RepartidorRepositoryImpl implements IRepartidorRepository {
       .is('repartidor_id', null)
       .order('creado_en', { ascending: true })
 
+    console.log('Pedidos disponibles:', data)  // ← agregar esto
+    console.log('Error:', error)
+
     if (error) throw new Error(error.message)
 
     return (data || []).map((p: any) => ({
@@ -119,31 +122,31 @@ export class RepartidorRepositoryImpl implements IRepartidorRepository {
   // ── Foto de perfil ────────────────────────────────────────────────────────
 
   // Sube la foto al bucket "avatars" en la carpeta drivers/{repartidorId}/
-async uploadFoto(repartidorId: string, localUri: string, mimeType: string): Promise<string> {
-  const base64 = await FileSystem.readAsStringAsync(localUri, {
-    encoding: 'base64',   
-  })
+  async uploadFoto(repartidorId: string, localUri: string, mimeType: string): Promise<string> {
+    const base64 = await FileSystem.readAsStringAsync(localUri, {
+      encoding: 'base64',
+    })
 
-  const binary = atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i)
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i)
+    }
+
+    const ext = mimeType.includes('png') ? 'png' : mimeType.includes('webp') ? 'webp' : 'jpg'
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Sin sesión activa')
+    const path = `drivers/${session.user.id}/avatar.${ext}`
+
+    const { error } = await supabase.storage
+      .from('avatars')
+      .upload(path, bytes.buffer, { contentType: mimeType, upsert: true })
+
+    if (error) throw new Error(`Error al subir foto: ${error.message}`)
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+    return `${data.publicUrl}?t=${Date.now()}`
   }
-
-  const ext  = mimeType.includes('png') ? 'png' : mimeType.includes('webp') ? 'webp' : 'jpg'
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) throw new Error('Sin sesión activa')
-  const path = `drivers/${session.user.id}/avatar.${ext}`
-
-  const { error } = await supabase.storage
-    .from('avatars')
-    .upload(path, bytes.buffer, { contentType: mimeType, upsert: true })
-
-  if (error) throw new Error(`Error al subir foto: ${error.message}`)
-
-  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-  return `${data.publicUrl}?t=${Date.now()}`
-}
 
   // Persiste la URL pública en la columna foto_url de la fila del repartidor
   async updateFotoUrl(repartidorId: string, fotoUrl: string): Promise<void> {

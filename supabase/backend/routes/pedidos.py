@@ -326,6 +326,16 @@ def create_pedido(
             notas=item.notas,
         )
         db.add(pedido_item)
+
+    db.commit()
+    db.refresh(pedido)
+
+    items = db.query(PedidoItem).filter(PedidoItem.pedido_id == pedido.id).all()
+    pedido.items = items
+
+    return pedido
+
+
 # ─── GET /negocios/{negocio_id}/metricas ─────────────────────────────────────
 
 @router.get("/negocios/{negocio_id}/metricas", summary="Métricas de pedidos del negocio")
@@ -370,14 +380,6 @@ def get_metricas_negocio(
         "entregados": entregados,
         "cancelados": cancelados,
         "pendientes": row["pendientes"] or 0,
-        "tasa_entrega": tasa_entrega,          # % pedidos entregados exitosamente
+        "tasa_entrega": tasa_entrega,
         "tiempo_promedio_min": int(row["tiempo_promedio_min"]) if row["tiempo_promedio_min"] else None,
     }
-
-    db.commit()
-    db.refresh(pedido)
-
-    items = db.query(PedidoItem).filter(PedidoItem.pedido_id == pedido.id).all()
-    pedido.items = items
-
-    return pedido
