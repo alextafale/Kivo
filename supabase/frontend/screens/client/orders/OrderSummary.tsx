@@ -12,6 +12,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useDomicilios } from '../../../application/context/DomiciliosContext'
 import { useAuth } from '../../../application/context/AuthContext'
 import type { Domicilio } from '../../../domain/entities/Domicilio'
+import { supabase } from '../../../config/supabaseConfig'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
@@ -100,14 +101,20 @@ export default function OrderSummary({ navigation, route }: Props) {
       alert('Selecciona una dirección de entrega')
       return
     }
-    if (!session?.accessToken) {
-      alert('Sesión expirada, vuelve a iniciar sesión')
-      return
-    }
 
     setIsSubmitting(true)
 
     try {
+      // Obtener un token fresco del SDK (auto-renueva si expiró)
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData?.session?.access_token
+
+      if (!accessToken) {
+        alert('Sesión expirada, vuelve a iniciar sesión')
+        setIsSubmitting(false)
+        return
+      }
+
       // Hacer un POST por cada restaurante en paralelo
       const results = await Promise.all(
         restaurants.map(async (restaurant) => {
@@ -127,7 +134,7 @@ export default function OrderSummary({ navigation, route }: Props) {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.accessToken}`,
+              'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify(body),
           })

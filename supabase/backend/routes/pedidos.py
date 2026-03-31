@@ -335,6 +335,12 @@ def create_pedido(
         items = db.query(PedidoItem).filter(PedidoItem.pedido_id == pedido.id).all()
         pedido.items = items
 
+        # Explicitly validate to catch ResponseValidationError inside this block
+        try:
+            PedidoOut.model_validate(pedido)
+        except Exception as ve:
+            raise Exception(f"Pydantic Validation Error: {ve}")
+
         return pedido
 
     except HTTPException:
@@ -342,6 +348,7 @@ def create_pedido(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"ERROR: {str(e)} | {traceback.format_exc()}")
+
 
 
 # ─── GET /negocios/{negocio_id}/metricas ─────────────────────────────────────
