@@ -1,10 +1,10 @@
 import type { Order } from '../../types/order'
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 export class PedidosRepositoryImpl {
 
   async getPedidos(accessToken: string): Promise<Order[]> {
-    const res = await fetch(`${API_URL}/api/v1/pedidos`, {
+    console.log("accessToken",accessToken);
+    const res = await fetch(`${process.env.API_BASE_URL}/pedidos`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -19,7 +19,7 @@ export class PedidosRepositoryImpl {
   }
 
   async getPedidoById(accessToken: string, pedidoId: string): Promise<Order> {
-    const res = await fetch(`${API_URL}/pedidos/${pedidoId}`, {
+    const res = await fetch(`${process.env.API_BASE_URL}/pedidos/${pedidoId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

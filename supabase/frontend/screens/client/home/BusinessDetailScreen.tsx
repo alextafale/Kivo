@@ -11,7 +11,6 @@ import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useCart } from '../../../application/context/CartContext';
 import { useAuth } from '../../../application/context/AuthContext';
 
-const API = 'https://kivo-v1.onrender.com/api/v1';
 const GREEN = '#22c55e';
 const ORANGE = '#FF6B00';
 
@@ -91,7 +90,7 @@ const ReaccionesRow = ({
       const headers: any = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(
-        `${API}/negocios/${negocioId}/comentarios/${comentarioId}/reacciones`,
+        `${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios/${comentarioId}/reacciones`,
         { headers }
       );
       if (res.ok) setData(await res.json());
@@ -112,19 +111,19 @@ const ReaccionesRow = ({
       if (data?.mi_reaccion) {
         // Quitar reacción existente
         await fetch(
-          `${API}/negocios/${negocioId}/comentarios/${comentarioId}/reacciones`,
+          `${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios/${comentarioId}/reacciones`,
           { method: 'DELETE', headers }
         );
         // Si era distinta, poner la nueva
         if (data.mi_reaccion !== tipo) {
           await fetch(
-            `${API}/negocios/${negocioId}/comentarios/${comentarioId}/reacciones`,
+            `${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios/${comentarioId}/reacciones`,
             { method: 'POST', headers, body: JSON.stringify({ tipo }) }
           );
         }
       } else {
         await fetch(
-          `${API}/negocios/${negocioId}/comentarios/${comentarioId}/reacciones`,
+          `${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios/${comentarioId}/reacciones`,
           { method: 'POST', headers, body: JSON.stringify({ tipo }) }
         );
       }
@@ -185,7 +184,7 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
   useEffect(() => {
     const fetchBusiness = async () => {
       try {
-        const res  = await fetch(`${API}/sucursales/${sucursal_id}`);
+        const res  = await fetch(`${process.env.API_BASE_URL}/sucursales/${sucursal_id}`);
         const data = await res.json();
         console.log('sucursal data:', JSON.stringify(data)); // ← confirma el campo
         setNegocioId(data.negocio_id ?? null);
@@ -224,7 +223,8 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
   const cargarComentarios = useCallback(async (nid: string, p: number, reset = false) => {
     setLoadingComentarios(true);
     try {
-      const res  = await fetch(`${API}/negocios/${nid}/comentarios?pagina=${p}&por_pagina=10`);
+      console.log("Borrar luego: ", `${process.env.API_BASE_URL}/negocios/${nid}/comentarios?pagina=${p}&por_pagina=10`);
+      const res  = await fetch(`${process.env.API_BASE_URL}/negocios/${nid}/comentarios?pagina=${p}&por_pagina=10`);
       const data = await res.json();
       setComentarios(prev => reset ? data.items : [...prev, ...data.items]);
       setHayMas(data.hay_mas);
@@ -249,7 +249,7 @@ const publicarComentario = async () => {
 
   setPublicando(true);
   try {
-    const res = await fetch(`${API}/negocios/${negocioId}/comentarios`, {
+    const res = await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios`, {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',
@@ -282,7 +282,7 @@ const publicarComentario = async () => {
         text: 'Eliminar', style: 'destructive',
         onPress: async () => {
           try {
-            await fetch(`${API}/negocios/${negocioId}/comentarios/${comentarioId}`, {
+            await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios/${comentarioId}`, {
               method:  'DELETE',
               headers: { 'Authorization': `Bearer ${token}` },
             });

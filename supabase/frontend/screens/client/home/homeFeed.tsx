@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -121,18 +121,27 @@ export default function HomeFeed() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { ciudad, isLoading: loadingCiudad } = useCiudadUsuario();
-  const { negocios, isLoading: loadingNegocios, error } = useNegociosPorCiudad(ciudad, selectedCategory);
+  const [page, setPage] = useState(1);
+  const { negocios = [], isLoading: loadingNegocios, error, hasMore } = useNegociosPorCiudad(ciudad, selectedCategory, page, 4);
   const { getTotalItems } = useCart();
 
   const isLoading = loadingCiudad || loadingNegocios;
   const cartCount = getTotalItems();
 
-  const filteredNegocios = searchQuery.trim() === ''
-    ? negocios
-    : negocios.filter(n =>
-        n.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (n.descripcion ?? '').toLowerCase().includes(searchQuery.toLowerCase())
-      );
+
+  const filteredNegocios = (negocios || []).filter(n => {
+    if (searchQuery.trim() === '') return true;
+    return (
+      n.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (n.descripcion ?? '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategory, ciudad]);
+
+
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -337,6 +346,27 @@ export default function HomeFeed() {
               ))}
             </View>
           )}
+
+          {/* ── PAGINACIÓN ── */}
+          {filteredNegocios.length > 0 && hasMore && (
+            <View style={styles.paginationContainer}>
+              <TouchableOpacity
+                style={styles.loadMoreBtn}
+                onPress={() => setPage(prev => prev + 1)}
+                disabled={isLoading}
+              >
+                {loadingNegocios ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.loadMoreText}>Cargar más negocios</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {!hasMore && filteredNegocios.length > 0 && (
+            <Text style={styles.endMessage}>Has llegado al final de la lista</Text>
+          )}
         </ScrollView>
 
         {/* ── BOTTOM NAV ── */}
@@ -390,6 +420,7 @@ export default function HomeFeed() {
           </TouchableOpacity>
         </View>
 
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -411,6 +442,37 @@ const styles = StyleSheet.create({
   avatarWrap: { borderRadius: 22, overflow: 'hidden', borderWidth: 2, borderColor: '#22c55e' },
   avatar: { width: 40, height: 40, borderRadius: 20 },
 
+  paginationContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  loadMoreBtn: {
+    backgroundColor: '#22c55e',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+    minWidth: 180,
+    alignItems: 'center',
+  },
+  loadMoreText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  endMessage: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    fontSize: 13,
+    paddingVertical: 20,
+    fontStyle: 'italic',
+  },
+
   // Search bar (toca → chatbot)
   searchBar: {
     flexDirection: 'row', alignItems: 'center',
@@ -427,13 +489,13 @@ const styles = StyleSheet.create({
   // Real search input (filtro por texto)
   realSearchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#F3F4F6', marginHorizontal: 16, marginTop: 8,
+    backgroundColor: '#F3F4F6', marginHorizontal: 16, marginTop: 8, marginBottom: 12,
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8,
   },
   realSearchInput: { flex: 1, fontSize: 14, color: '#111827', paddingVertical: 2 },
 
   // Chatbot banner
-  chatbotBanner: { marginHorizontal: 16, marginTop: 14, borderRadius: 16, overflow: 'hidden' },
+  chatbotBanner: { marginHorizontal: 16, borderRadius: 16, overflow: 'hidden' },
   chatbotBannerGradient: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between',

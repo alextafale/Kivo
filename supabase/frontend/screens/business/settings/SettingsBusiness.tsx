@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Switch, TextInput, Alert, ActivityIndicator,
+  Image
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as ImagePicker from "expo-image-picker";
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import BottomNavBar, { TabName } from '../../../components/business/tabNavigation';
 
@@ -147,11 +150,12 @@ const mapStyles = StyleSheet.create({
 
 export default function SettingsScreen({ navigation }: Props) {
   const [activeTab, setActiveTab] = useState<TabName>('Settings');
+  console.log('Estas en settings business');
 
   // IDs dinámicos desde AuthContext
   const { adminAccess, logout } = useAuth();
-  const negocioId   = adminAccess?.negocioId  ?? '';
-  const sucursalId  = adminAccess?.sucursalId ?? '';
+  const negocioId = adminAccess?.negocioId ?? '';
+  const sucursalId = adminAccess?.sucursalId ?? '';
   const puedeEditar = adminAccess?.puedeEditarNegocio ?? false;
   // Agrega el hook junto a los otros
   const { metricas, isLoading: loadingMetricas } = useAdminMetricas(negocioId)
@@ -160,8 +164,21 @@ export default function SettingsScreen({ navigation }: Props) {
   const { negocio, isLoading: loadingNegocio, isSaving: savingNegocio, error: errorNegocio, updateNegocio } =
     useAdminNegocio(negocioId);
 
-  const [nombreEdit,   setNombreEdit]   = useState('');
-  const [categoriaEdit, setCatEdit]     = useState('');
+
+
+  const [slugEdit, setSlugEdit] = useState('');
+  const [nombreEdit, setNombreEdit] = useState('');
+  const [descripcionEdit, setDescriptionEdit] = useState('');
+  const [categoriaEdit, setCatEdit] = useState('');
+  const [tagsEdit, setTagsEdit] = useState<string[]>([]);
+  const [paisEdit, setPaisEdit] = useState('');
+  const [logoUrlEdit, setLogoUrlEdit] = useState('');
+  const [bannerUrlEdit, setBannerUrlEdit] = useState('');
+  const [imageLogoUri, setImageLogoUri] = useState<string | null>(null);
+  const [imageBannerUri, setImageBannerUri] = useState<string | null>(null); // [,setBannerUri]
+  const [isLoadingSave, setLoadingSave] = useState(false);
+
+
 
   // ── Sucursal / Horarios ──────────────────────────────────────────────────
   const { sucursal, isSaving: savingHorarios, error: errorHorarios, updateHorarios, updateSucursal } =
@@ -176,55 +193,40 @@ export default function SettingsScreen({ navigation }: Props) {
   // Inicializar estados locales cuando llegan los datos del backend
   React.useEffect(() => {
     if (negocio) {
+      setSlugEdit(negocio.slug);
       setNombreEdit(negocio.nombre);
+      setDescriptionEdit(negocio.descripcion ?? '');
       setCatEdit(negocio.categoria);
+      setTagsEdit(negocio.tags);
+      setPaisEdit(negocio.pais);
+      setLogoUrlEdit(negocio.logo_url ?? '');
+      setBannerUrlEdit(negocio.banner_url ?? '');
+      console.log("Negocio despues borrar: ", negocio);
     }
   }, [negocio]);
-// sincroniza siempre que sucursal cambie y tenga horarios reales
-React.useEffect(() => {
-  if (!sucursal) return;
+  // sincroniza siempre que sucursal cambie y tenga horarios reales
+  React.useEffect(() => {
+    if (!sucursal) return;
 
-  setRadius(sucursal.radio_entrega_km);
+    setRadius(sucursal.radio_entrega_km);
 
-  const sucursalHorarios = sucursal.horarios ?? [];
+    const sucursalHorarios = sucursal.horarios ?? [];
 
-  // Solo sobreescribir si llegaron horarios reales del backend,
-  // o si el usuario aún no ha editado nada (horariosEdit vacío)
-  if (sucursalHorarios.length > 0 || horariosEdit.length === 0) {
-    const base: HorarioDia[] = DIAS.map(dia => {
-      const existente = sucursalHorarios.find(h => h.dia === dia);
-      return existente ?? { dia, abre: '09:00', cierra: '22:00', cerrado: false };
-    });
-    setHorariosEdit(base);
-  }
-}, [sucursal]);
+    // Solo sobreescribir si llegaron horarios reales del backend,
+    // o si el usuario aún no ha editado nada (horariosEdit vacío)
+    if (sucursalHorarios.length > 0 || horariosEdit.length === 0) {
+      const base: HorarioDia[] = DIAS.map(dia => {
+        const existente = sucursalHorarios.find(h => h.dia === dia);
+        return existente ?? { dia, abre: '09:00', cierra: '22:00', cerrado: false };
+      });
+      setHorariosEdit(base);
+    }
+  }, [sucursal]);
 
   function toggleDia(dia: string) {
     setHorariosEdit(prev =>
       prev.map(h => h.dia === dia ? { ...h, cerrado: !h.cerrado, abre: null, cierra: null } : h)
     );
-  }
-
-  // Guardar todo con el botón "Save All Changes"
-  async function handleSaveAll() {
-    let ok = true;
-
-    // 1. Guardar datos del negocio (solo si tiene permisos)
-    if (puedeEditar) {
-      ok = await updateNegocio({ nombre: nombreEdit, categoria: categoriaEdit });
-      if (!ok) { Alert.alert('Error', errorNegocio ?? 'No se pudo guardar el negocio'); return; }
-    }
-
-    // 2. Guardar horarios y radio de entrega
-    if (sucursalId) {
-      ok = await updateHorarios(horariosEdit);
-      if (!ok) { Alert.alert('Error', errorHorarios ?? 'No se pudo guardar los horarios'); return; }
-
-      ok = await updateSucursal({ radio_entrega_km: radius });
-      if (!ok) { Alert.alert('Error', 'No se pudo guardar el radio de entrega'); return; }
-    }
-
-    Alert.alert('✓ Guardado', 'Los cambios se guardaron correctamente');
   }
 
   // Logout usando AuthContext (limpia sesión + SecureStore)
@@ -245,6 +247,87 @@ React.useEffect(() => {
       ]
     );
   };
+
+  const pickImage = async (tipo: 'logo' | 'banner') => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: tipo === 'logo' ? [1, 1] : [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      if (tipo === 'logo') {
+        setImageLogoUri(uri);
+      } else {
+        setImageBannerUri(uri);
+      }
+    }
+  };
+
+  const buildFormData = () => {
+    const formData = new FormData();
+
+    formData.append("slug", slugEdit);
+    formData.append("nombre", nombreEdit);
+    formData.append("descripcion", descripcionEdit);
+    formData.append("categoria", categoriaEdit);
+    formData.append("tags", tagsEdit.join(', '));
+    formData.append("pais", paisEdit);
+
+    if (imageLogoUri) {
+      formData.append("logo_url", {
+        uri: imageLogoUri,
+        name: "logo.jpg",
+        type: "image/jpeg",
+      } as any | null);
+    }
+
+    if (imageBannerUri) {
+      formData.append("banner_url", {
+        uri: imageBannerUri,
+        name: "banner.jpg",
+        type: "image/jpeg",
+      } as any | null);
+    }
+
+    return formData;
+  };
+
+  const handleSaveAll = async () => {
+    try {
+      setLoadingSave(true);
+      const formData = buildFormData();
+
+      const res = await fetch(
+        `http://192.168.100.7:8000/api/v1/negocios/${negocioId}`,
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
+
+      if (!res.ok) throw new Error("Error actualizando");
+      Alert.alert("Éxito", "Negocio actualizado");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoadingSave(false);
+    }
+  };
+
+  const generateSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  };
+
 
   const isSaving = savingNegocio || savingHorarios;
   const displayRadius = Math.round(radius * 2) / 2;
@@ -282,22 +365,61 @@ React.useEffect(() => {
           </TouchableOpacity>
         </View>
 
-        {/* Avatar */}
+        {/* Avatar Section con Banner y Logo */}
         <View style={styles.avatarSection}>
+
+          {/* 1. IMAGEN DE BANNER (FONDO) */}
+          <View style={StyleSheet.absoluteFill}>
+            {(imageBannerUri || bannerUrlEdit) ? (
+              <Image
+                source={{ uri: imageBannerUri || bannerUrlEdit }}
+                style={styles.bannerImageBackground}
+                blurRadius={4} // Difuminado nativo de React Native
+              />
+            ) : (
+              <View style={[styles.bannerImageBackground, { backgroundColor: '#F3F4F6' }]} />
+            )}
+            {/* Capa oscura para que el texto sea legible */}
+            <View style={styles.bannerOverlay} />
+          </View>
+
+          {/* 2. BOTÓN EDITAR BANNER (PORTADA) */}
+          <TouchableOpacity
+            style={styles.changeBannerButton}
+            onPress={() => pickImage('banner')}
+          >
+            <View style={styles.bannerEditBadge}>
+              <CameraIcon />
+              <Text style={styles.bannerEditText}>Cambiar banner</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* 3. CONTENEDOR DEL LOGO (AVATAR) */}
           <View style={styles.avatarWrapper}>
             <View style={styles.avatar}>
-              <LinearGradient colors={['#DCFCE7', '#BBF7D0']} style={styles.avatarGradient}>
-                <Text style={styles.avatarEmoji}>🍽️</Text>
-              </LinearGradient>
+              {imageLogoUri || logoUrlEdit ? (
+                <Image
+                  source={{ uri: imageLogoUri || logoUrlEdit }}
+                  style={styles.avatarGradient}
+                />
+              ) : (
+                <LinearGradient colors={['#DCFCE7', '#BBF7D0']} style={styles.avatarGradient}>
+                  <Text style={styles.avatarEmoji}>🍽️</Text>
+                </LinearGradient>
+              )}
             </View>
-            <TouchableOpacity style={styles.cameraButton}>
+
+            {/* BOTÓN EDITAR LOGO */}
+            <TouchableOpacity style={styles.cameraButton} onPress={() => pickImage('logo')}>
               <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.cameraGradient}>
                 <CameraIcon />
               </LinearGradient>
             </TouchableOpacity>
           </View>
-          <Text style={styles.businessNameText}>{negocio?.nombre ?? '—'}</Text>
-          <Text style={styles.businessMeta}>{negocio?.categoria ?? '—'}</Text>
+
+          {/* INFO DEL NEGOCIO (Usando los estados de edición para feedback instantáneo) */}
+          <Text style={styles.businessNameText}>{nombreEdit || '—'}</Text>
+          <Text style={styles.businessMeta}>{categoriaEdit || '—'}</Text>
         </View>
 
         {/* Performance */}
@@ -316,8 +438,8 @@ React.useEffect(() => {
                 {loadingMetricas
                   ? <ActivityIndicator color="#22c55e" style={{ marginTop: 8 }} />
                   : <Text style={styles.aiRate}>
-                      {metricas ? `${metricas.tasa_entrega}%` : '—'}
-                    </Text>
+                    {metricas ? `${metricas.tasa_entrega}%` : '—'}
+                  </Text>
                 }
               </View>
               <View style={styles.robotIconContainer}><RobotIcon /></View>
@@ -343,11 +465,10 @@ React.useEffect(() => {
               <BoltIcon />
               <Text style={styles.aiInfoText}>
                 {metricas
-                  ? `${metricas.total} pedidos en total · ${
-                      metricas.tiempo_promedio_min
-                        ? `${metricas.tiempo_promedio_min} min promedio`
-                        : 'sin datos de tiempo aún'
-                    }`
+                  ? `${metricas.total} pedidos en total · ${metricas.tiempo_promedio_min
+                    ? `${metricas.tiempo_promedio_min} min promedio`
+                    : 'sin datos de tiempo aún'
+                  }`
                   : 'Cargando estadísticas…'
                 }
               </Text>
@@ -412,14 +533,21 @@ React.useEffect(() => {
             )}
           </View>
           <View style={styles.whiteCard}>
-            <Text style={styles.fieldLabel}>BUSINESS NAME</Text>
+            <Text style={styles.fieldLabel}>NOMBRE DEL NEGOCIO</Text>
             <TextInput
               style={[styles.fieldInput, !puedeEditar && styles.fieldInputDisabled]}
               value={nombreEdit}
-              onChangeText={setNombreEdit}
+              onChangeText={(text) => {
+                setNombreEdit(text);
+                // Actualizamos el slug automáticamente al escribir el nombre
+                setSlugEdit(generateSlug(text));
+              }}
               editable={puedeEditar}
+              placeholder="Ej. Mi Restaurante"
             />
+
             <View style={styles.fieldDivider} />
+
             <Text style={styles.fieldLabel}>CATEGORÍA</Text>
             <TextInput
               style={[styles.fieldInput, !puedeEditar && styles.fieldInputDisabled]}
@@ -427,12 +555,16 @@ React.useEffect(() => {
               onChangeText={setCatEdit}
               editable={puedeEditar}
             />
+
             <View style={styles.fieldDivider} />
-            <Text style={styles.fieldLabel}>SLUG</Text>
+
+            <Text style={styles.fieldLabel}>SLUG (URL)</Text>
             <TextInput
               style={[styles.fieldInput, styles.fieldInputDisabled]}
-              value={negocio?.slug ?? ''}
-              editable={false}
+              /* Usamos el nuevo estado slugEdit para que sea reactivo */
+              value={slugEdit}
+              editable={false} // El slug suele ser automático, no manual
+              placeholder="auto-generado"
             />
           </View>
         </View>
@@ -450,9 +582,9 @@ React.useEffect(() => {
 
       {/* Save Button */}
       <View style={styles.saveContainer}>
-        <TouchableOpacity activeOpacity={0.85} style={styles.saveWrapper} onPress={handleSaveAll} disabled={isSaving}>
+        <TouchableOpacity activeOpacity={0.85} style={styles.saveWrapper} onPress={handleSaveAll} disabled={isLoadingSave}>
           <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.saveButton} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-            {isSaving
+            {isLoadingSave
               ? <ActivityIndicator color="#fff" />
               : <><SaveIcon /><Text style={styles.saveButtonText}>Save All Changes</Text></>
             }
@@ -468,61 +600,101 @@ React.useEffect(() => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container:          { flex: 1, backgroundColor: '#F2F7F2' },
-  centered:           { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  noAccessText:       { fontSize: 15, color: '#6B7280', textAlign: 'center', paddingHorizontal: 32 },
-  scrollContent:      { paddingBottom: 160 },
-  header:             { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  backButton:         { width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  headerTitle:        { fontSize: 17, fontWeight: '700', color: '#111827' },
-  previewLink:        { fontSize: 14, fontWeight: '700', color: '#22c55e' },
-  avatarSection:      { alignItems: 'center', paddingVertical: 12, marginBottom: 8 },
-  avatarWrapper:      { position: 'relative', marginBottom: 12 },
-  avatar:             { width: 88, height: 88, borderRadius: 44, overflow: 'hidden', borderWidth: 3, borderColor: '#DCFCE7', shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10, elevation: 6 },
-  avatarGradient:     { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  avatarEmoji:        { fontSize: 38 },
-  cameraButton:       { position: 'absolute', bottom: 0, right: 0, borderRadius: 14, overflow: 'hidden', borderWidth: 2, borderColor: '#FFFFFF' },
-  cameraGradient:     { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  businessNameText:   { fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 4 },
-  businessMeta:       { fontSize: 13, color: '#9CA3AF' },
-  section:            { paddingHorizontal: 20, marginBottom: 24 },
-  sectionHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle:       { fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 12 },
-  liveBadge:          { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#DCFCE7', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  liveDot:            { width: 7, height: 7, borderRadius: 4, backgroundColor: '#22c55e' },
-  liveText:           { fontSize: 10, fontWeight: '800', color: '#16a34a', letterSpacing: 0.5 },
-  aiCard:             { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, borderWidth: 1, borderColor: '#DCFCE7', shadowColor: '#22c55e', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
-  aiTopRow:           { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  aiLabel:            { fontSize: 10, fontWeight: '700', color: '#9CA3AF', letterSpacing: 1, marginBottom: 4 },
-  aiRate:             { fontSize: 38, fontWeight: '800', color: '#111827', letterSpacing: -1 },
+  container: { flex: 1, backgroundColor: '#F2F7F2' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  noAccessText: { fontSize: 15, color: '#6B7280', textAlign: 'center', paddingHorizontal: 32 },
+  scrollContent: { paddingBottom: 160 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  backButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: '#111827' },
+  previewLink: { fontSize: 14, fontWeight: '700', color: '#22c55e' },
+  avatarWrapper: { position: 'relative', marginBottom: 12 },
+  avatar: { width: 88, height: 88, borderRadius: 44, overflow: 'hidden', borderWidth: 3, borderColor: '#DCFCE7', shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10, elevation: 6 },
+  avatarGradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  avatarEmoji: { fontSize: 38 },
+  cameraButton: { position: 'absolute', bottom: 0, right: 0, borderRadius: 14, overflow: 'hidden', borderWidth: 2, borderColor: '#FFFFFF' },
+  cameraGradient: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  businessNameText: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 4 },
+  businessMeta: { fontSize: 13, color: '#9CA3AF' },
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 12 },
+  liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#DCFCE7', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#22c55e' },
+  liveText: { fontSize: 10, fontWeight: '800', color: '#16a34a', letterSpacing: 0.5 },
+  aiCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, borderWidth: 1, borderColor: '#DCFCE7', shadowColor: '#22c55e', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
+  aiTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  aiLabel: { fontSize: 10, fontWeight: '700', color: '#9CA3AF', letterSpacing: 1, marginBottom: 4 },
+  aiRate: { fontSize: 38, fontWeight: '800', color: '#111827', letterSpacing: -1 },
   robotIconContainer: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#F0FDF4', borderWidth: 2, borderColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center' },
-  aiStatsRow:         { flexDirection: 'row', marginBottom: 14 },
-  aiStat:             { flex: 1, backgroundColor: '#F9FAFB', borderRadius: 12, padding: 12 },
-  aiStatDivider:      { width: 8 },
-  aiStatLabel:        { fontSize: 11, color: '#9CA3AF', marginBottom: 4 },
-  aiStatValue:        { fontSize: 20, fontWeight: '800', color: '#111827' },
-  aiInfoBar:          { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F0FDF4', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10 },
-  aiInfoText:         { fontSize: 12, color: '#16a34a', fontWeight: '500' },
-  radiusValue:        { fontSize: 16, fontWeight: '800', color: '#22c55e', marginBottom: 12 },
-  whiteCard:          { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  scheduleRow:        { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
-  dayLabel:           { width: 38, fontSize: 13, fontWeight: '800', color: '#22c55e', letterSpacing: 0.3 },
-  dayLabelDisabled:   { color: '#9CA3AF' },
-  timeRow:            { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  timeText:           { fontSize: 14, color: '#374151', fontWeight: '500' },
-  timeDash:           { fontSize: 14, color: '#9CA3AF' },
-  closedNote:         { flex: 1, fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' },
-  rowDivider:         { height: 1, backgroundColor: '#F3F4F6' },
-  lockedRow:          { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
-  lockedText:         { fontSize: 12, color: '#9CA3AF' },
-  fieldLabel:         { fontSize: 10, fontWeight: '700', color: '#9CA3AF', letterSpacing: 1, marginBottom: 8 },
-  fieldInput:         { fontSize: 15, color: '#111827', paddingVertical: 0 },
+  aiStatsRow: { flexDirection: 'row', marginBottom: 14 },
+  aiStat: { flex: 1, backgroundColor: '#F9FAFB', borderRadius: 12, padding: 12 },
+  aiStatDivider: { width: 8 },
+  aiStatLabel: { fontSize: 11, color: '#9CA3AF', marginBottom: 4 },
+  aiStatValue: { fontSize: 20, fontWeight: '800', color: '#111827' },
+  aiInfoBar: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F0FDF4', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10 },
+  aiInfoText: { fontSize: 12, color: '#16a34a', fontWeight: '500' },
+  radiusValue: { fontSize: 16, fontWeight: '800', color: '#22c55e', marginBottom: 12 },
+  whiteCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  scheduleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
+  dayLabel: { width: 38, fontSize: 13, fontWeight: '800', color: '#22c55e', letterSpacing: 0.3 },
+  dayLabelDisabled: { color: '#9CA3AF' },
+  timeRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timeText: { fontSize: 14, color: '#374151', fontWeight: '500' },
+  timeDash: { fontSize: 14, color: '#9CA3AF' },
+  closedNote: { flex: 1, fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' },
+  rowDivider: { height: 1, backgroundColor: '#F3F4F6' },
+  lockedRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
+  lockedText: { fontSize: 12, color: '#9CA3AF' },
+  fieldLabel: { fontSize: 10, fontWeight: '700', color: '#9CA3AF', letterSpacing: 1, marginBottom: 8 },
+  fieldInput: { fontSize: 15, color: '#111827', paddingVertical: 0 },
   fieldInputDisabled: { color: '#9CA3AF' },
-  fieldDivider:       { height: 1, backgroundColor: '#F3F4F6', marginVertical: 16 },
-  saveContainer:      { position: 'absolute', bottom: 120, left: 20, right: 20, shadowColor: '#22c55e', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10 },
-  saveWrapper:        { borderRadius: 30, overflow: 'hidden' },
-  saveButton:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 18 },
-  saveButtonText:     { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
-  logoutButton:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA', borderRadius: 16, paddingVertical: 16 },
-  logoutButtonText:   { fontSize: 16, fontWeight: '700', color: '#EF4444' },
+  fieldDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 16 },
+  saveContainer: { position: 'absolute', bottom: 120, left: 20, right: 20, shadowColor: '#22c55e', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 10 },
+  saveWrapper: { borderRadius: 30, overflow: 'hidden' },
+  saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 18 },
+  saveButtonText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA', borderRadius: 16, paddingVertical: 16 },
+  logoutButtonText: { fontSize: 16, fontWeight: '700', color: '#EF4444' },
+  avatarSection: {
+    alignItems: 'center',
+    paddingVertical: 35,
+    position: 'relative',
+    overflow: 'hidden',
+    marginBottom: 20
+  },
+  bannerImageBackground: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  changeBannerButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    zIndex: 10,
+  },
+  bannerEditBadge: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignItems: 'center',
+    gap: 6,
+  },
+  bannerEditText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
 });

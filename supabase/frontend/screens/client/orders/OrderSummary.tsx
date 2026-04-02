@@ -14,8 +14,6 @@ import { useAuth } from '../../../application/context/AuthContext'
 import type { Domicilio } from '../../../domain/entities/Domicilio'
 import { supabase } from '../../../config/supabaseConfig'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL
-
 type OrderSummaryNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderSummary'>
 type OrderSummaryRouteProp = RouteProp<RootStackParamList, 'OrderSummary'>
 
@@ -61,6 +59,7 @@ const ChevronIcon = () => (
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function OrderSummary({ navigation, route }: Props) {
+   console.log("Estas en orderSummary");
   const { restaurants } = route.params
 
   const [notas, setNotas] = useState('')
@@ -130,7 +129,7 @@ export default function OrderSummary({ navigation, route }: Props) {
             })),
           }
 
-          const res = await fetch(`${API_URL}/pedidos`, {
+          const res = await fetch(`${process.env.API_BASE_URL}/pedidos`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

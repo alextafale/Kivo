@@ -1,5 +1,6 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from exceptions.domicilios import DomicilioNoExistente
 from exceptions.negocios import NegocioNoExistente
 from exceptions.sucursal import SucursalNoExistente
 from exceptions.isBusinessAdmin import NoEsAdminDelNegocio
@@ -7,6 +8,17 @@ from exceptions.isBusinessAdmin import NoEsAdminDelNegocio
 
 def register_exception_handlers(app):
 
+
+    @app.exception_handler(DomicilioNoExistente)
+    async def domicilio_no_existente_handler(
+        request: Request,
+        exc: DomicilioNoExistente,
+    ):
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Domicilio no encontrado"},
+        )
+    
     @app.exception_handler(NegocioNoExistente)
     async def negocio_no_existente_handler(
         request: Request,

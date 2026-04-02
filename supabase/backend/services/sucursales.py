@@ -9,11 +9,6 @@ from schemas.menu_items import MenuItemFrontendCreate, MenuItemFrontendUpdate
 from fastapi import HTTPException,UploadFile
 from core.cloudinary import upload_image
 
-"""def get_sucursal_por_id(db: Session, sucursal_id: str):
-    sucursal = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
-    if not sucursal:
-        raise SucursalNoExistente()
-    return sucursal"""
 
 def get_sucursal_por_id(db: Session, sucursal_id: str):
 
@@ -107,7 +102,7 @@ def add_menu_item(db: Session, sucursal_id: str, item_data: MenuItemFrontendCrea
         db.rollback()
         raise Exception("Error al crear el item")
 
-def update_menu_item(db: Session, sucursal_id: str, item_id: str, item_data: MenuItemFrontendUpdate):
+def update_menu_item(db: Session, sucursal_id: str, item_id: str, item_data: MenuItemFrontendUpdate, imagen:Optional[UploadFile]):
     item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.sucursal_id == sucursal_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item no encontrado")
@@ -126,6 +121,11 @@ def update_menu_item(db: Session, sucursal_id: str, item_id: str, item_data: Men
         )
         db.add(categoria)
         db.flush()
+        
+    if(imagen is not None):
+        imagen_url = upload_image(imagen)
+    else:
+        imagen_url = None
         
     item.categoria_id = categoria.id
     item.nombre = item_data.nombre

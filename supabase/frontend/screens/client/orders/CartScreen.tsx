@@ -109,6 +109,7 @@ const RestaurantCard = ({ restaurant }: { restaurant: CartRestaurant }) => {
 // ─── CartScreen ───────────────────────────────────────────────────────────────
 
 export default function CartScreen({ navigation }: Props) {
+   console.log("Estas en cart screen");
   const { cart, clearCart, clearChatbotOrder, getSubtotal, getTotalItems, chatbotOrder } = useCart();
   const { session } = useAuth();
   const { profile } = useProfile();

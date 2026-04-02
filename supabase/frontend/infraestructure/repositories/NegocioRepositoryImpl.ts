@@ -1,30 +1,48 @@
 import type { INegocioRepository } from '../../domain/ports/repositories/lNegocioRepository'
 import type { NegocioResumen } from '../../domain/entities/Negocio'
 
-const BASE_URL = 'https://kivo-v1.onrender.com/api/v1'
 
-// Implementación concreta — consume el endpoint FastAPI
 export class NegocioRepositoryImpl implements INegocioRepository {
-
-  // Obtiene los negocios que tienen sucursal en la ciudad dada
-  async getNegociosPorCiudad(ciudad: string, categoria: string): Promise<NegocioResumen[]> {
+  async getNegociosPorCiudad(
+    ciudad: string,
+    categoria: string,
+    page: number,
+    limit: number
+  ): Promise<{ data: NegocioResumen[], total: number }> {
     try {
-      const params = new URLSearchParams({ ciudad, categoria })
-      const response = await fetch(`${BASE_URL}/negocios/sucursales?${params}`, {
+      const params = new URLSearchParams({
+        ciudad,
+        categoria,
+        page: page.toString(),
+        limit: limit.toString()
+      });
+      
+      console.log(`${process.env.API_BASE_URL}/negocios/sucursales?${params}`);
+      
+      const response = await fetch(`${process.env.API_BASE_URL}/negocios/sucursales?${params}`, {
         method: 'GET',
         headers: { Accept: 'application/json' },
-      })
+      });
 
-      if (!response.ok) {
-        console.warn('[NegocioRepo] Error HTTP:', response.status)
-        return []
+      if (!response.ok) return { data: [], total: 0 };
+
+      const json = await response.json();
+
+      if (Array.isArray(json)) {
+        return {
+          data: json,
+          total: json.length 
+        };
       }
 
-      const data = await response.json()
-      return data as NegocioResumen[]
+      return {
+        data: json.data || [],
+        total: json.total || 0
+      };
+
     } catch (error) {
-      console.error('[NegocioRepo] Error de red:', error)
-      return []
+      console.error('[NegocioRepo] Error de red:', error);
+      return { data: [], total: 0 };
     }
   }
 }

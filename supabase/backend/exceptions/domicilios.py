@@ -1,0 +1,2 @@
+class DomicilioNoExistente(Exception):
+    pass
