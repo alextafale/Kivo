@@ -29,6 +29,7 @@ from services.repartidores import (
     actualizar_ubicacion,
     avanzar_estado_pedido,
 )
+from services.notification_service import send_push_notification
 
 router = APIRouter(prefix="/repartidores", tags=["Repartidores"])
 
@@ -73,12 +74,28 @@ def update_estado(
     summary="Tomar un pedido disponible",
     description="Asigna el pedido al repartidor y lo marca como picked_up. Solo repartidores available.",
 )
-def tomar(
+async def tomar(
     pedido_id: str,
     db: Session = Depends(get_db),
     user_id: str = Depends(require_driver),
 ):
-    return tomar_pedido(db, user_id, pedido_id)
+    result = tomar_pedido(db, user_id, pedido_id)
+    
+    # Enviar push notification
+    pedido_info = db.execute(
+        text("SELECT p.user_id, p.order_number, pr.expo_push_token FROM pedidos p JOIN profiles pr ON pr.id = p.user_id WHERE p.id = :id"),
+        {"id": pedido_id}
+    ).mappings().first()
+
+    if pedido_info and pedido_info.get("expo_push_token"):
+        await send_push_notification(
+            expo_push_token=pedido_info["expo_push_token"],
+            estado="picked_up",
+            order_number=pedido_info["order_number"],
+            pedido_id=pedido_id,
+        )
+        
+    return result
 
 def pedidos_disponibles(
     db: Session = Depends(get_db),
@@ -106,7 +123,7 @@ def update_ubicacion(
     "/pedidos/{pedido_id}/estado",
     summary="Avanzar estado del pedido (on_the_way → delivered)",
 )
-def update_pedido_estado(
+async def update_pedido_estado(
     pedido_id: str,
     data: PedidoEstadoUpdate,
     db: Session = Depends(get_db),
@@ -116,7 +133,24 @@ def update_pedido_estado(
     El repartidor avanza el estado del pedido.
     Solo puede avanzar de picked_up → on_the_way → delivered.
     """
-    return avanzar_estado_pedido(db, user_id, pedido_id, data)
+    result = avanzar_estado_pedido(db, user_id, pedido_id, data)
+    
+    # Enviar push notification
+    pedido_info = db.execute(
+        text("SELECT p.user_id, p.order_number, pr.expo_push_token FROM pedidos p JOIN profiles pr ON pr.id = p.user_id WHERE p.id = :id"),
+        {"id": pedido_id}
+    ).mappings().first()
+
+    if pedido_info and pedido_info.get("expo_push_token"):
+        estado_str = data.estado.value if hasattr(data.estado, 'value') else data.estado
+        await send_push_notification(
+            expo_push_token=pedido_info["expo_push_token"],
+            estado=estado_str,
+            order_number=pedido_info["order_number"],
+            pedido_id=pedido_id,
+        )
+        
+    return result
 
 
 @router.get(

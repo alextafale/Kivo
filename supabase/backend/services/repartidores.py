@@ -289,11 +289,7 @@ def avanzar_estado_pedido(db: Session, user_id: str, pedido_id: str, data: Pedid
         )
 
     now = datetime.now(timezone.utc)
-    campos = {"actualizado_en": now, "estado": data.estado}
-
     if data.estado == 'delivered':
-        campos["entregado_en"] = now
-        # Poner al repartidor como available de nuevo
         db.execute(
             text("""
                 UPDATE repartidores SET estado = 'available', actualizado_en = :now
@@ -301,15 +297,23 @@ def avanzar_estado_pedido(db: Session, user_id: str, pedido_id: str, data: Pedid
             """),
             {"now": now, "repartidor_id": str(repartidor.id)}
         )
-
-    db.execute(
-        text("""
-            UPDATE pedidos
-            SET estado = :estado, actualizado_en = :actualizado_en
-            WHERE id = :pedido_id
-        """),
-        {"estado": data.estado, "actualizado_en": now, "pedido_id": pedido_id}
-    )
+        db.execute(
+            text("""
+                UPDATE pedidos
+                SET estado = :estado, actualizado_en = :now, entregado_en = :now
+                WHERE id = :pedido_id
+            """),
+            {"estado": data.estado, "now": now, "pedido_id": pedido_id}
+        )
+    else:
+        db.execute(
+            text("""
+                UPDATE pedidos
+                SET estado = :estado, actualizado_en = :now
+                WHERE id = :pedido_id
+            """),
+            {"estado": data.estado, "now": now, "pedido_id": pedido_id}
+        )
 
     db.commit()
     return {"ok": True, "pedido_id": pedido_id, "estado": data.estado}

@@ -4,7 +4,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL
 export class PedidosRepositoryImpl {
 
   async getPedidos(accessToken: string): Promise<Order[]> {
-    const res = await fetch(`${API_URL}/api/v1/pedidos`, {
+    const res = await fetch(`${API_URL}/pedidos`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

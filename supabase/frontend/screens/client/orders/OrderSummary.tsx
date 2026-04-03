@@ -12,7 +12,6 @@ import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useDomicilios } from '../../../application/context/DomiciliosContext'
 import { useAuth } from '../../../application/context/AuthContext'
 import type { Domicilio } from '../../../domain/entities/Domicilio'
-import { supabase } from '../../../config/supabaseConfig'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
@@ -101,20 +100,14 @@ export default function OrderSummary({ navigation, route }: Props) {
       alert('Selecciona una dirección de entrega')
       return
     }
+    if (!session?.accessToken) {
+      alert('Sesión expirada, vuelve a iniciar sesión')
+      return
+    }
 
     setIsSubmitting(true)
 
     try {
-      // Obtener un token fresco del SDK (auto-renueva si expiró)
-      const { data: sessionData } = await supabase.auth.getSession()
-      const accessToken = sessionData?.session?.access_token
-
-      if (!accessToken) {
-        alert('Sesión expirada, vuelve a iniciar sesión')
-        setIsSubmitting(false)
-        return
-      }
-
       // Hacer un POST por cada restaurante en paralelo
       const results = await Promise.all(
         restaurants.map(async (restaurant) => {
@@ -134,7 +127,7 @@ export default function OrderSummary({ navigation, route }: Props) {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
+              'Authorization': `Bearer ${session.accessToken}`,
             },
             body: JSON.stringify(body),
           })
@@ -352,42 +345,42 @@ export default function OrderSummary({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container:              { flex: 1, backgroundColor: '#F9FAFB' },
-  header:                 { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFFFFF' },
-  backButton:             { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle:            { fontSize: 18, fontWeight: 'bold', color: '#000' },
-  scroll:                 { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
-  card:                   { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  cardTitle:              { fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 12 },
-  sectionHeader:          { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
-  sectionTitle:           { fontSize: 15, fontWeight: '700', color: '#111827' },
-  addDomicilioButton:     { paddingVertical: 12, borderRadius: 12, backgroundColor: '#F0FDF4', alignItems: 'center', borderWidth: 1, borderColor: '#BBF7D0' },
-  addDomicilioText:       { fontSize: 14, fontWeight: '700', color: '#16a34a' },
-  domicilioSelected:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
-  domicilioSelectedInfo:  { flex: 1 },
-  domicilioOption:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', marginTop: 8 },
-  domicilioOptionSelected:{ borderColor: '#22c55e', backgroundColor: '#F0FDF4' },
-  domicilioOptionInfo:    { flex: 1 },
-  domicilioEtiqueta:      { fontSize: 14, fontWeight: '700', color: '#000' },
-  domicilioDireccion:     { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  itemRow:                { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  itemQtyBadge:           { width: 26, height: 26, borderRadius: 8, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  itemQtyText:            { fontSize: 13, fontWeight: '700', color: '#16a34a' },
-  itemName:               { flex: 1, fontSize: 14, color: '#374151' },
-  itemPrice:              { fontSize: 14, fontWeight: '600', color: '#000' },
-  restaurantSubtotal:     { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
-  subtotalLabel:          { fontSize: 14, color: '#6B7280' },
-  subtotalValue:          { fontSize: 14, fontWeight: '600', color: '#000' },
-  notasInput:             { backgroundColor: '#F9FAFB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#374151', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 72, textAlignVertical: 'top' },
-  totalRow:               { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  totalLabel:             { fontSize: 14, color: '#6B7280' },
-  totalValue:             { fontSize: 14, color: '#374151', fontWeight: '500' },
-  totalDivider:           { height: 1, backgroundColor: '#F3F4F6', marginVertical: 4 },
-  totalFinalLabel:        { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  totalFinalValue:        { fontSize: 20, fontWeight: 'bold', color: '#000' },
-  footer:                 { paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
-  confirmButton:          { borderRadius: 16, overflow: 'hidden' },
-  confirmButtonGradient:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 24 },
-  confirmButtonText:      { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  confirmButtonTotal:     { fontSize: 18, fontWeight: 'bold', color: '#000' },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFFFFF' },
+  backButton: { width: 40, height: 40, justifyContent: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
+  scroll: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  cardTitle: { fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 12 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  addDomicilioButton: { paddingVertical: 12, borderRadius: 12, backgroundColor: '#F0FDF4', alignItems: 'center', borderWidth: 1, borderColor: '#BBF7D0' },
+  addDomicilioText: { fontSize: 14, fontWeight: '700', color: '#16a34a' },
+  domicilioSelected: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB' },
+  domicilioSelectedInfo: { flex: 1 },
+  domicilioOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', marginTop: 8 },
+  domicilioOptionSelected: { borderColor: '#22c55e', backgroundColor: '#F0FDF4' },
+  domicilioOptionInfo: { flex: 1 },
+  domicilioEtiqueta: { fontSize: 14, fontWeight: '700', color: '#000' },
+  domicilioDireccion: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  itemQtyBadge: { width: 26, height: 26, borderRadius: 8, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  itemQtyText: { fontSize: 13, fontWeight: '700', color: '#16a34a' },
+  itemName: { flex: 1, fontSize: 14, color: '#374151' },
+  itemPrice: { fontSize: 14, fontWeight: '600', color: '#000' },
+  restaurantSubtotal: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  subtotalLabel: { fontSize: 14, color: '#6B7280' },
+  subtotalValue: { fontSize: 14, fontWeight: '600', color: '#000' },
+  notasInput: { backgroundColor: '#F9FAFB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#374151', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 72, textAlignVertical: 'top' },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+  totalLabel: { fontSize: 14, color: '#6B7280' },
+  totalValue: { fontSize: 14, color: '#374151', fontWeight: '500' },
+  totalDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 4 },
+  totalFinalLabel: { fontSize: 16, fontWeight: 'bold', color: '#000' },
+  totalFinalValue: { fontSize: 20, fontWeight: 'bold', color: '#000' },
+  footer: { paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  confirmButton: { borderRadius: 16, overflow: 'hidden' },
+  confirmButtonGradient: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 24 },
+  confirmButtonText: { fontSize: 16, fontWeight: 'bold', color: '#000' },
+  confirmButtonTotal: { fontSize: 18, fontWeight: 'bold', color: '#000' },
 })

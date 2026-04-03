@@ -105,7 +105,20 @@ function OrderCard({
   const StatusIcon = statusInfo?.icon ?? ClockIcon
 
   return (
-    <TouchableOpacity style={styles.orderCard}>
+    <TouchableOpacity 
+      style={styles.orderCard}
+      activeOpacity={order.status === 'delivered' ? 0.7 : 1}
+      onPress={() => {
+        if (order.status === 'delivered') {
+          navigation.navigate('OrderDelivered', {
+            orderNumber: order.orderNumber,
+            restaurantName: order.restaurantName,
+            total: order.total,
+            deliveryAddress: order.deliveryAddress,
+          });
+        }
+      }}
+    >
       <View style={styles.orderHeader}>
         <Image source={{ uri: order.restaurantImage }} style={styles.restaurantImage} />
         <View style={styles.orderHeaderInfo}>

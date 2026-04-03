@@ -13,6 +13,7 @@ import { useAuth } from '../../../application/context/AuthContext'
 import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/RepartidorRepositoryImpl'
 import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../domain/ports/repositories/lRepartidorRepository'
 import { useDriverLocation } from '../../../application/hooks/useDriverLocation'
+import { supabase } from '../../../config/supabaseConfig'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'DriverDashboard'>
@@ -88,6 +89,7 @@ export default function DriverDashboard({ navigation }: Props) {
   const [updatingEstado, setUpdatingEstado] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [pedidoActivoId, setPedidoActivoId] = useState<string | null>(null)
+  const [estadoPedido, setEstadoPedido] = useState<string | null>(null)
   const fadeAnim = React.useRef(new Animated.Value(0)).current
   const slideAnim = React.useRef(new Animated.Value(16)).current
 
@@ -170,8 +172,62 @@ export default function DriverDashboard({ navigation }: Props) {
             await repartidorRepo.tomarPedido(pedidoId)
             setRepartidor(prev => prev ? { ...prev, estado: 'busy' } : prev)
             setPedidoActivoId(pedidoId) // ← guardar el pedido activo
+            setEstadoPedido('picked_up')
             setPedidos([])
           } catch (e: any) { Alert.alert('Error', e.message) }
+        }
+      },
+    ])
+  }
+
+  const handleAvanzarEstado = async () => {
+    if (!pedidoActivoId || !estadoPedido) return
+
+    const siguienteEstado = estadoPedido === 'picked_up' ? 'on_the_way' : 'delivered'
+    const mensaje = siguienteEstado === 'on_the_way'
+      ? '¿Confirmas que estás en camino?'
+      : '¿Confirmas que entregaste el pedido?'
+
+    Alert.alert('Actualizar estado', mensaje, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Confirmar', onPress: async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session?.access_token) return
+
+            const API_URL = process.env.EXPO_PUBLIC_API_URL
+
+            const res = await fetch(
+              `${API_URL}/repartidores/pedidos/${pedidoActivoId}/estado`,
+              {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({ estado: siguienteEstado }),
+              }
+            )
+
+            if (!res.ok) {
+              const err = await res.json()
+              throw new Error(err.detail ?? 'Error al actualizar estado')
+            }
+
+            setEstadoPedido(siguienteEstado)
+
+            if (siguienteEstado === 'delivered') {
+              // Pedido entregado — limpiar estado y volver a available
+              setRepartidor(prev => prev ? { ...prev, estado: 'available' } : prev)
+              setPedidoActivoId(null)
+              setEstadoPedido(null)
+              Alert.alert('¡Entrega completada!', '¡Buen trabajo! Ya puedes tomar otro pedido.')
+              await fetchPedidos()
+            }
+          } catch (e: any) {
+            Alert.alert('Error', e.message)
+          }
         }
       },
     ])
@@ -348,10 +404,37 @@ export default function DriverDashboard({ navigation }: Props) {
                   <PackageIcon color="#22c55e" size={22} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.activoTitle}>Pedido en camino 🛵</Text>
-                  <Text style={styles.activoSubtitle}>Cambia a "Offline" al terminar la entrega</Text>
+                  <Text style={styles.activoTitle}>
+                    {estadoPedido === 'picked_up' ? 'Pedido recogido 📦' : 'En camino 🛵'}
+                  </Text>
+                  <Text style={styles.activoSubtitle}>
+                    {estadoPedido === 'picked_up'
+                      ? 'Confirma cuando estés en camino'
+                      : 'Confirma cuando hayas entregado'}
+                  </Text>
                 </View>
               </LinearGradient>
+
+              {/* Botón para avanzar estado */}
+              <TouchableOpacity
+                style={[
+                  styles.avanzarBtn,
+                  estadoPedido === 'delivered' && styles.avanzarBtnDisabled
+                ]}
+                onPress={handleAvanzarEstado}
+                disabled={estadoPedido === 'delivered'}
+              >
+                <LinearGradient
+                  colors={estadoPedido === 'on_the_way' ? ['#F59E0B', '#D97706'] : ['#22c55e', '#16a34a']}
+                  style={styles.avanzarBtnGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.avanzarBtnText}>
+                    {estadoPedido === 'picked_up' ? '🛵 Ya voy en camino' : '✅ Pedido entregado'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -524,6 +607,10 @@ const styles = StyleSheet.create({
   aceptarGradient: { paddingHorizontal: 22, paddingVertical: 10 },
   aceptarText: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
+  avanzarBtn: { marginTop: 12, borderRadius: 14, overflow: 'hidden' },
+  avanzarBtnDisabled: { opacity: 0.5 },
+  avanzarBtnGradient: { paddingVertical: 14, alignItems: 'center' },
+  avanzarBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
   // Logout
   logoutBtn: { paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: '#FFF5F5', borderWidth: 1, borderColor: '#FEE2E2' },
   logoutText: { fontSize: 14, fontWeight: '700', color: '#EF4444' },

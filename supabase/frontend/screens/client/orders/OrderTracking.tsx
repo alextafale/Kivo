@@ -16,7 +16,7 @@ const { width } = Dimensions.get('window')
 
 type Props = NativeStackScreenProps<RootStackParamList, 'orderTracking'>
 
-type OrderStatus = 'confirmed' | 'preparing' | 'ready' | 'on_the_way' | 'delivered'
+type OrderStatus = 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'on_the_way' | 'delivered'
 
 interface Step {
   key: OrderStatus
@@ -29,18 +29,19 @@ const STEPS: Step[] = [
   { key: 'confirmed', label: 'Pedido confirmado', sublabel: 'El restaurante aceptó tu orden', emoji: '✅' },
   { key: 'preparing', label: 'Preparando', sublabel: 'El restaurante está cocinando', emoji: '👨‍🍳' },
   { key: 'ready', label: 'Listo para recoger', sublabel: 'Esperando al repartidor', emoji: '📦' },
+  { key: 'picked_up', label: 'Recogido', sublabel: 'El repartidor tiene tu pedido', emoji: '🛍️' },
   { key: 'on_the_way', label: 'En camino', sublabel: 'Tu repartidor va en camino', emoji: '🛵' },
   { key: 'delivered', label: '¡Entregado!', sublabel: '¡Que lo disfrutes!', emoji: '🎉' },
 ]
 
-const STATUS_ORDER: OrderStatus[] = ['confirmed', 'preparing', 'ready', 'on_the_way', 'delivered']
+const STATUS_ORDER: OrderStatus[] = ['confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered']
 
 // Mapeo de estados del backend a los pasos del timeline
 const ESTADO_A_STEP: Record<string, OrderStatus> = {
   confirmed: 'confirmed',
   preparing: 'preparing',
   ready: 'ready',
-  picked_up: 'on_the_way',
+  picked_up: 'picked_up',
   on_the_way: 'on_the_way',
   delivered: 'delivered',
 }
@@ -79,6 +80,28 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
     }).start()
   }, [currentIndex])
 
+  const prevStatusRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!order?.status) return
+
+    console.log('Estado del pedido:', prevStatusRef.current, '->', order.status)
+    
+    if (order.status === 'delivered' && prevStatusRef.current !== 'delivered') {
+      console.log('Navegando a OrderDelivered...')
+      // Un pequeño retraso para permitir que la barra llegue al final
+      setTimeout(() => {
+        navigation.replace('OrderDelivered', {
+          orderNumber: initialOrder.orderNumber ?? '',
+          restaurantName: initialOrder.restaurantName ?? '',
+          total: initialOrder.total ?? 0,
+          deliveryAddress: initialOrder.deliveryAddress ?? '',
+        })
+      }, 500)
+    }
+
+    prevStatusRef.current = order.status
+  }, [order?.status, initialOrder, navigation])
   const progressHeight = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%'],
