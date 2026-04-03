@@ -180,6 +180,7 @@ function OrderCard({
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 
 export default function Orders({ navigation }: Props) {
+   console.log("Estas en orders");
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('Todos');
   const [dateFilterVisible, setDateFilterVisible] = useState(false);

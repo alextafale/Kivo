@@ -31,12 +31,9 @@ class NegocioUpdate(BaseModel):
     slug: Optional[str] = None
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
-    logo_url: Optional[str] = None
-    banner_url: Optional[str] = None
     categoria: Optional[str] = None
     tags: Optional[List[str]] = None
     pais: Optional[str] = None
-    fecha_entrega: Optional[datetime] = None
 
 
 class NegocioOut(NegocioBase):

@@ -147,7 +147,10 @@ export default function MenuEditor({ navigation }: Props) {
     if (!sucursalId) return;
     try {
       const res = await fetch(`https://kivo-v1.onrender.com/api/v1/sucursales/${sucursalId}`);
+
       console.log("Respuesta",res); 
+
+      console.log(res);
       if (res.ok) {
         const data = await res.json();
         const menuItems = data.menu || [];

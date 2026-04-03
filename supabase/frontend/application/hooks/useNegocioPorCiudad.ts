@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../config/supabaseConfig';
+import { NegocioRepositoryImpl } from '../../infraestructure/repositories/NegocioRepositoryImpl';
+import type { NegocioResumen } from '../../domain/entities/Negocio';
 
-export interface NegocioCard {
-  id: string;           // negocio_id
-  sucursal_id: string;
-  nombre: string;
-  descripcion: string | null;
-  categoria: string;
-  calificacion: number | null;
-  banner_url: string | null;
-}
+const negocioRepo = new NegocioRepositoryImpl();
 
-export function useNegociosPorCiudad(ciudad: string | null, categoria: string) {
-  const [negocios, setNegocios] = useState<NegocioCard[]>([]);
+export const useNegociosPorCiudad = (
+  ciudad: string | null,
+  categoria: string,
+  page: number,
+  limit: number
+) => {
+  const [negocios, setNegocios] = useState<NegocioResumen[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     if (!ciudad) {
@@ -22,62 +21,49 @@ export function useNegociosPorCiudad(ciudad: string | null, categoria: string) {
       return;
     }
 
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
+    const fetchNegocios = async () => {
+      setIsLoading(true);
+      setError(null);
 
-    (async () => {
       try {
-        let query = supabase
-          .from('sucursales')
-          .select(`
-            id,
-            calificacion,
-            negocios!inner (
-              id,
-              nombre,
-              descripcion,
-              categoria,
-              banner_url,
-              activo
-            )
-          `)
-          .eq('ciudad', ciudad)
-          .eq('activo', true)
-          .eq('negocios.activo', true)
-          .order('calificacion', { ascending: false });
+        const res = await negocioRepo.getNegociosPorCiudad(
+          ciudad,
+          categoria,
+          page,
+          limit
+        );
 
-        // Filtro de categoría (excepto "Todos")
-        if (categoria !== 'Todos') {
-          query = query.ilike('negocios.categoria', `%${categoria}%`);
+        const nuevos = res?.data || [];
+        // Si tu backend NO manda un total real, 'total' será igual a nuevos.length (según el repo que arreglamos antes)
+        const totalEnRespuesta = res?.total || 0;
+
+        // 1. Actualizamos la lista
+        setNegocios(prev => {
+          if (page === 1) return nuevos;
+          const idsExistentes = new Set(prev.map(n => n.id));
+          const nuevosNoDuplicados = nuevos.filter(n => !idsExistentes.has(n.id));
+          return [...prev, ...nuevosNoDuplicados];
+        });
+
+        // 2. LÓGICA DE PAGINACIÓN CORREGIDA
+        // Si llegaron MENOS de los que pedimos (ej. llegaron 3 y pedimos 4), ya no hay más.
+        if (nuevos.length < limit) {
+          setHasMore(false);
+        } else {
+          // Si llegaron exactamente el límite (ej. 4 de 4), asumimos que PUEDE haber más.
+          setHasMore(true);
         }
 
-        const { data, error: sbError } = await query;
-
-        if (sbError) throw sbError;
-        if (cancelled) return;
-
-        const mapped: NegocioCard[] = (data ?? []).map((row: any) => ({
-          id:           row.negocios.id,
-          sucursal_id:  row.id,
-          nombre:       row.negocios.nombre,
-          descripcion:  row.negocios.descripcion ?? null,
-          categoria:    row.negocios.categoria,
-          calificacion: row.calificacion != null ? Number(row.calificacion) : null,
-          banner_url:   row.negocios.banner_url ?? null,
-        }));
-
-        setNegocios(mapped);
-      } catch (e: any) {
-        if (!cancelled) setError('No pudimos cargar los negocios. Intenta de nuevo.');
-        console.error('useNegociosPorCiudad error:', e);
+      } catch (e) {
+        console.error('[useNegociosPorCiudad] Error:', e);
+        setError('No se pudieron cargar los negocios');
       } finally {
-        if (!cancelled) setIsLoading(false);
+        setIsLoading(false);
       }
-    })();
+    };
 
-    return () => { cancelled = true; };
-  }, [ciudad, categoria]);
+    fetchNegocios();
+  }, [ciudad, categoria, page, limit]);
 
-  return { negocios, isLoading, error };
-}
+  return { negocios, isLoading, error, hasMore };
+};

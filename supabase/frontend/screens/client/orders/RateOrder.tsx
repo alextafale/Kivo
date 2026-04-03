@@ -34,6 +34,7 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onRate, size = 36 }) =>
 };
 
 export default function RateOrderScreen() {
+   console.log("Estas en rate order screen");
   const [overallRating, setOverallRating] = useState(4);
   const [foodRating, setFoodRating] = useState(4);
   const [deliveryRating, setDeliveryRating] = useState(5);

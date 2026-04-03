@@ -47,6 +47,7 @@ const ESTADO_A_STEP: Record<string, OrderStatus> = {
 }
 
 export default function OrderTrackingScreen({ route, navigation }: Props) {
+   console.log("Estas en order taracking screen");
   const { order: initialOrder } = route.params
 
   // Suscripción Realtime — actualiza cuando el negocio cambia el estado

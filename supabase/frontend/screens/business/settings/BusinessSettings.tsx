@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  TouchableOpacity, SafeAreaView, StatusBar,
+  TouchableOpacity, StatusBar, SafeAreaView,
   ActivityIndicator, Alert, Switch,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -52,6 +52,7 @@ type Props = {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function BusinessSettings({ navigation }: Props) {
+  console.log('Esta en la pantalla de business settings');
   const [activeTab, setActiveTab] = useState<TabName>('Settings')
 
   // negocio_id y permisos vienen directamente del AuthContext — nada hardcodeado

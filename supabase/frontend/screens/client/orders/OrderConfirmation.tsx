@@ -26,6 +26,7 @@ const CheckIcon = () => (
 )
 
 export default function OrderConfirmation({ navigation, route }: Props) {
+   console.log("Estas en order confirmation");
   const { orders, totalGeneral } = route.params
   const { clearCart } = useCart()
 
