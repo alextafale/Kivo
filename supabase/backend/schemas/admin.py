@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import List, Optional
+from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 import re
 
@@ -61,7 +62,7 @@ class HorarioDia(BaseModel):
 
 class NegocioAdminRead(BaseModel):
     """Respuesta completa del negocio para el panel de administrador."""
-    id: str
+    id: UUID
     slug: str
     nombre: str
     descripcion: Optional[str]
@@ -95,7 +96,7 @@ class NegocioPatch(BaseModel):
 
 class SucursalCreate(BaseModel):
     """Payload para crear una nueva sucursal bajo un negocio."""
-    negocio_id: str
+    negocio_id: UUID
     nombre: str
     telefono: Optional[str] = None
     whatsapp: Optional[str] = None
@@ -134,8 +135,8 @@ class SucursalPatch(BaseModel):
 
 class SucursalAdminRead(BaseModel):
     """Respuesta completa de sucursal para el panel admin."""
-    id: str
-    negocio_id: str
+    id: UUID
+    negocio_id: UUID
     nombre: str
     telefono: Optional[str]
     whatsapp: Optional[str]

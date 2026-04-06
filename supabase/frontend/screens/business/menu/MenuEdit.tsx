@@ -141,16 +141,13 @@ export default function MenuEditor({ navigation }: Props) {
 
   const { adminAccess } = useAuth();
   const sucursalId = adminAccess?.sucursalId;
-  console.log("Aqui es",sucursalId);
+  console.log("Aqui es menu edit");
 
   const fetchMenu = useCallback(async () => {
     if (!sucursalId) return;
     try {
-      const res = await fetch(`https://kivo-v1.onrender.com/api/v1/sucursales/${sucursalId}`);
+      const res = await fetch(`${process.env.API_BASE_URL}/sucursales/${sucursalId}`);
 
-      console.log("Respuesta",res); 
-
-      console.log(res);
       if (res.ok) {
         const data = await res.json();
         const menuItems = data.menu || [];

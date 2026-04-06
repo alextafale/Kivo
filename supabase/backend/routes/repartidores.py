@@ -5,7 +5,7 @@ from datetime import datetime,timezone
 
 
 from db.database import get_db
-from core.dependencies import get_current_user_id
+from core.dependencies import get_current_user
 from core.isDriver import require_driver
 
 from schemas.repartidores import (
@@ -31,6 +31,9 @@ from services.repartidores import (
 )
 from services.notification_service import send_push_notification
 
+def _get_user_id(user: dict):
+    return user["sub"]
+
 router = APIRouter(prefix="/repartidores", tags=["Repartidores"])
 
 
@@ -44,9 +47,9 @@ router = APIRouter(prefix="/repartidores", tags=["Repartidores"])
 def registro(
     data: RepartidorRegistro,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),  # solo auth, aún no es repartidor
+    user = Depends(get_current_user),  # solo auth, aún no es repartidor
 ):
-    return registrar_repartidor(db, user_id, data)
+    return registrar_repartidor(db, _get_user_id(user), data)
 
 
 @router.patch(
@@ -160,7 +163,7 @@ async def update_pedido_estado(
 def get_ubicacion_repartidor(
     pedido_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user = Depends(get_current_user),
 ):
     """
     El cliente consulta la ubicación del repartidor asignado a su pedido.
@@ -180,7 +183,7 @@ def get_ubicacion_repartidor(
             ORDER BY ru.registrado_en DESC
             LIMIT 1
         """),
-        {"pedido_id": pedido_id, "user_id": user_id}
+        {"pedido_id": pedido_id, "user_id": _get_user_id(user)}
     ).mappings().first()
 
     if not row:

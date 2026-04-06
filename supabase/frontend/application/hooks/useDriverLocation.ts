@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react'
 import * as Location from 'expo-location'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 /**
  * useDriverLocation — Hook para tracking GPS del repartidor
@@ -37,7 +36,7 @@ export function useDriverLocation({
 
       const { latitude, longitude, heading, speed } = location.coords
 
-      await fetch(`${API_URL}/repartidores/ubicacion`, {
+      await fetch(`${process.env.API_BASE_URL}/repartidores/ubicacion`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

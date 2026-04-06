@@ -6,7 +6,7 @@ import { useDomicilios } from '../context/DomiciliosContext'
 import type { Domicilio, DomicilioCreate, Coordenadas } from '../../domain/entities/Domicilio'
 
 export type DomicilioFormState = {
-  etiqueta:         string
+  alias:         string
   calle:            string
   numeroExt:        string
   numeroInt:        string
@@ -23,7 +23,7 @@ export type DomicilioFormState = {
 export type DomicilioFormErrors = Partial<Record<keyof DomicilioFormState, string>>
 
 const INITIAL: DomicilioFormState = {
-  etiqueta: 'Casa', calle: '', numeroExt: '', numeroInt: '',
+  alias: 'Casa', calle: '', numeroExt: '', numeroInt: '',
   colonia: '', ciudad: '', estado: '', pais: 'MX',
   codigoPostal: '', referencias: '', coordenadas: null,
   esPredeterminado: false,
@@ -31,7 +31,7 @@ const INITIAL: DomicilioFormState = {
 
 function fromDomicilio(d: Domicilio): DomicilioFormState {
   return {
-    etiqueta:         d.etiqueta,
+    alias:         d.alias,
     calle:            d.calle,
     numeroExt:        d.numeroExt     ?? '',
     numeroInt:        d.numeroInt     ?? '',
@@ -82,7 +82,7 @@ export const useDomicilioForm = (domicilioExistente?: Domicilio) => {
     if (!validate(currentForm)) return null
 
     const payload: DomicilioCreate = {
-      etiqueta:         currentForm.etiqueta        || 'Casa',
+      alias:         currentForm.alias        || 'Casa',
       calle:            currentForm.calle.trim(),
       numeroExt:        currentForm.numeroExt       || undefined,
       numeroInt:        currentForm.numeroInt       || undefined,

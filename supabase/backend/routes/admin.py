@@ -164,7 +164,11 @@ def update_horarios(
 
 from schemas.admin import NegocioCreate, OnboardingResponse
 from services.admin import create_negocio_onboarding
-from core.dependencies import get_current_user_id
+from core.dependencies import get_current_user
+
+
+def _get_user_id(user: dict):
+    return user["sub"]
 
 @router.post(
     "/onboarding/negocio",
@@ -175,10 +179,10 @@ from core.dependencies import get_current_user_id
 def onboarding_crear_negocio(
     payload: NegocioCreate,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),   # solo JWT válido, sin isBusinessAdmin
+    user = Depends(get_current_user),   # solo JWT válido, sin isBusinessAdmin
 ):
     """
     Endpoint de onboarding: crea el negocio y lo vincula al user_id.
     No usa require_business_admin porque el usuario aún no tiene negocio asignado.
     """
-    return create_negocio_onboarding(db, user_id, payload)
+    return create_negocio_onboarding(db, _get_user_id(user), payload)

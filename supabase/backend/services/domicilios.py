@@ -2,14 +2,18 @@ from sqlalchemy.orm import Session
 from models.domicilios import Domicilio
 from schemas.domicilios import DomicilioOut
 from exceptions.domicilios import DomicilioNoExistente
-from typing import List,Optional,UUID
-
+from typing import List
+from uuid import UUID
 
 def get_domicilios(db: Session, user_id: UUID) -> List[DomicilioOut]:
-    return db.query(Domicilio).filter(Domicilio.user_id == user_id).all()
+    return db.query(Domicilio).filter(Domicilio.user_id == user_id, Domicilio.activo == True).all()
 
-def get_domicilio_por_id(db: Session, id: str) -> DomicilioOut:
-    domicilio = db.query(Domicilio).filter(Domicilio.id == id).first()
+def get_domicilio_por_id(db: Session, id: str, user_id: UUID) -> DomicilioOut:
+    domicilio = db.query(Domicilio).filter(
+        Domicilio.id == id,
+        Domicilio.user_id == user_id,
+        Domicilio.activo == True
+        ).first()
 
     if not domicilio:
         raise DomicilioNoExistente()
@@ -46,8 +50,11 @@ def actualizar_domicilio(db: Session, id: str, domicilio: DomicilioOut) -> Domic
 
     return domicilio
 
-def eliminar_domicilio(db: Session, id: str) -> DomicilioOut:
-    domicilio_a_eliminar = db.query(Domicilio).filter(Domicilio.id == id, Domicilio.activo == True).first()
+def eliminar_domicilio(db: Session, id: str, user_id: UUID) -> DomicilioOut:
+    domicilio_a_eliminar = db.query(Domicilio).filter(
+        Domicilio.id == id,
+        Domicilio.user_id == user_id, 
+        Domicilio.activo == True).first()
 
     if not domicilio_a_eliminar:
         raise DomicilioNoExistente()

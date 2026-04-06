@@ -12,7 +12,6 @@ export const usePedidos = () => {
   const [error, setError] = useState<string | null>(null)
 
   const fetchPedidos = useCallback(async () => {
-    console.log('Token:', session?.accessToken)
     if (!session?.accessToken) return
     setIsLoading(true)
     setError(null)

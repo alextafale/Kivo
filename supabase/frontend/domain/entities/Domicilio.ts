@@ -9,7 +9,7 @@ export type Coordenadas = {
 export type Domicilio = {
   id:               string
   userId:           string
-  etiqueta:         string
+  alias:         string
   calle:            string
   numeroExt:        string | null
   numeroInt:        string | null
@@ -27,7 +27,7 @@ export type Domicilio = {
 }
 
 export type DomicilioCreate = {
-  etiqueta?:         string
+  alias?:         string
   calle:             string
   numeroExt?:        string
   numeroInt?:        string

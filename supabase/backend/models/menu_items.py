@@ -24,6 +24,7 @@ class MenuItem(Base):
     orden = Column(Integer, default=0)
     creado_en = Column(TIMESTAMP, nullable=False, server_default=func.now())
     actualizado_en = Column(TIMESTAMP, nullable=False, onupdate=func.now())
+    activo = Column(Boolean, default=True)
 
     __table_args__ = (
         {"schema": "public"},

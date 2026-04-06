@@ -19,12 +19,16 @@ import { useAuth } from '../../../application/context/AuthContext';
 import { useAdminNegocio } from '../../../application/hooks/useAdminNegocio';
 import { supabase } from '../../../config/supabaseConfig';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 type BusinessDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BusinessDashboard'>;
 
 type Props = {
   navigation: BusinessDashboardNavigationProp;
+};
+
+type Sucursal = {
+  calificacion: number;
+  total_reviews: number;
 };
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -95,6 +99,8 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; bg: string }
 export default function BusinessDashboard({ navigation }: Props) {
   const [storeOpen, setStoreOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('Dashboard');
+  const [deliveryScore, setDeliveryScore] = useState(0);
+  const [deliveryReviews, setDeliveryReviews] = useState(0);
 
   // ✅ Tomamos session directamente del contexto — sin getSession() inline
   const { adminAccess, session } = useAuth();
@@ -107,8 +113,9 @@ export default function BusinessDashboard({ navigation }: Props) {
   const fetchPedidos = useCallback(async () => {
     if (!negocioId || !session?.accessToken) return;
     try {
-      const res = await fetch(`${BASE_URL}/negocios/${negocioId}/pedidos`, {
+      const res = await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/pedidos`, {
         headers: { Authorization: `Bearer ${session.accessToken}` },
+        method: 'GET',
       });
       if (res.ok) {
         const data = await res.json();
@@ -119,9 +126,37 @@ export default function BusinessDashboard({ navigation }: Props) {
     }
   }, [negocioId, session?.accessToken]); // ✅ depende del token, no llama getSession
 
+  const fetchSucursalesInfo = async () => {
+    if (!negocioId || !session?.accessToken) return;
+    try {
+      const res = await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/sucursales`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const data: Sucursal[] = await res.json();
+        if (data.length > 0) {
+        const totalReviews = data.reduce(
+          (acc, s) => acc + (s.total_reviews || 0),
+          0
+        );
+
+        const avgScore =
+          data.reduce((acc, s) => acc + (s.calificacion || 0), 0) /
+          data.length;
+
+        setDeliveryScore(avgScore);
+        setDeliveryReviews(totalReviews);
+      }
+      }
+    } catch (e) {
+      console.warn('fetchPedidos error:', e);
+    }
+  }
+
   // ✅ Solo corre cuando negocioId Y session están listos
   useEffect(() => {
     fetchPedidos();
+    fetchSucursalesInfo();
   }, [fetchPedidos]);
 
   // ✅ Realtime channel — también espera a que haya negocioId
@@ -234,12 +269,12 @@ export default function BusinessDashboard({ navigation }: Props) {
                 <StarIcon size={24} />
               </View>
               <View style={styles.reviewsContent}>
-                <Text style={styles.reviewsRating}>4.9</Text>
+                <Text style={styles.reviewsRating}>{deliveryScore}</Text>
                 <View style={styles.reviewsStars}>
                   <StarIcon size={16} />
                 </View>
               </View>
-              <Text style={styles.reviewsCount}>21k Reviews</Text>
+              <Text style={styles.reviewsCount}>{deliveryReviews} Reviews</Text>
             </View>
           </View>
         </View>

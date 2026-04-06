@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from uuid import UUID
 from typing import List, Dict
-from app.models.reaccion import NegocioReaccion
-from app.schemas.reaccion import ReaccionCreate
+from models.reaccion import NegocioReaccion
+from schemas.reaccion import ReaccionCreate
 
 def add_reaccion(db: Session, comentario_id: UUID, usuario_id: UUID, reaccion: ReaccionCreate) -> NegocioReaccion:
     # Verificar que el comentario existe

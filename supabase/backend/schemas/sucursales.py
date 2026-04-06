@@ -3,6 +3,12 @@ from uuid import UUID
 from datetime import datetime
 from typing import List, Optional
 
+class Horario(BaseModel):
+    dia: str
+    abre: str
+    cierra: str
+    cerrado: bool
+
 class SucursalBase(BaseModel):
     negocio_id: UUID
     nombre: str
@@ -14,7 +20,7 @@ class SucursalBase(BaseModel):
     pais: Optional[str] = None
     codigo_postal: Optional[str] = None
     ubicacion: Optional[str] = None
-    horarios: Optional[List[str]] = Field(default_factory=list)
+    horarios: Optional[List[Horario]] = Field(default_factory=list)
     radio_entrega_km: Optional[float] = Field(default=5.0)
     tiempo_entrega_min: Optional[int] = Field(default=30)
     calificacion: Optional[float] = Field(default=0)
@@ -34,7 +40,7 @@ class SucursalCreate(BaseModel):
     pais: Optional[str] = None
     codigo_postal: Optional[str] = None
     ubicacion: Optional[str] = None
-    horarios: Optional[List[str]] = Field(default_factory=list)
+    horarios: Optional[List[Horario]] = Field(default_factory=list)
     radio_entrega_km: Optional[float] = Field(default=5.0)
     tiempo_entrega_min: Optional[int] = Field(default=30)
     calificacion: Optional[float] = Field(default=0)
@@ -46,6 +52,7 @@ class SucursalCreate(BaseModel):
     
 class SucursalOut(SucursalBase):
     id: UUID
+    costo_envio: int
     creado_en: datetime
     actualizado_en: datetime
 

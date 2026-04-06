@@ -4,6 +4,7 @@ from models.negocios import Negocio
 from models.menu_items import MenuItem
 from models.menu_categorias import MenuCategoria
 from exceptions.sucursal import SucursalNoExistente
+from exceptions.menu_items import ItemNoExistente
 from typing import List,Optional
 from schemas.menu_items import MenuItemFrontendCreate, MenuItemFrontendUpdate
 from fastapi import HTTPException,UploadFile
@@ -15,14 +16,17 @@ def get_sucursal_por_id(db: Session, sucursal_id: str):
     sucursal = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
 
     if not sucursal:
-        raise Exception("Sucursal no encontrada")
+        raise SucursalNoExistente()
 
     negocio = sucursal.negocio
 
     menu_items = (
         db.query(MenuItem, MenuCategoria)
         .join(MenuCategoria, MenuItem.categoria_id == MenuCategoria.id)
-        .filter(MenuItem.sucursal_id == sucursal_id)
+        .filter(
+            MenuItem.sucursal_id == sucursal_id,
+            MenuItem.activo == True
+        )
         .all()
     )
 
@@ -60,7 +64,7 @@ def get_sucursal_por_id(db: Session, sucursal_id: str):
 def add_menu_item(db: Session, sucursal_id: str, item_data: MenuItemFrontendCreate, imagen:Optional[UploadFile]):
     sucursal = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
     if not sucursal:
-        raise HTTPException(status_code=404, detail="Sucursal no encontrada")
+        raise SucursalNoExistente()
 
     categoria_nombre = item_data.categoria.strip()
     categoria = db.query(MenuCategoria).filter(
@@ -105,7 +109,7 @@ def add_menu_item(db: Session, sucursal_id: str, item_data: MenuItemFrontendCrea
 def update_menu_item(db: Session, sucursal_id: str, item_id: str, item_data: MenuItemFrontendUpdate, imagen:Optional[UploadFile]):
     item = db.query(MenuItem).filter(MenuItem.id == item_id, MenuItem.sucursal_id == sucursal_id).first()
     if not item:
-        raise HTTPException(status_code=404, detail="Item no encontrado")
+        raise ItemNoExistente()
         
     categoria_nombre = item_data.categoria.strip()
     categoria = db.query(MenuCategoria).filter(
@@ -125,13 +129,13 @@ def update_menu_item(db: Session, sucursal_id: str, item_id: str, item_data: Men
     if(imagen is not None):
         imagen_url = upload_image(imagen)
     else:
-        imagen_url = None
+        imagen_url = item.imagen_url
         
     item.categoria_id = categoria.id
     item.nombre = item_data.nombre
     item.descripcion = item_data.descripcion
     item.precio = item_data.precio
-    item.imagen_url = item_data.imagen_url
+    item.imagen_url = imagen_url
     item.disponible = item_data.disponible
     
     db.commit()

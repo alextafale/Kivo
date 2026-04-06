@@ -66,6 +66,7 @@ const ESTADO_LABEL: Record<string, { label: string; color: string; bg: string }>
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function DriverProfile({ navigation, route }: Props) {
+  console.log("Estas en DriverProfile")
   const { session, logout } = useAuth()
   const { isUploading, pickAndUpload } = useDriverPhoto()
 

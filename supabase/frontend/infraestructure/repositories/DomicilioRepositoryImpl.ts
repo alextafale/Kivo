@@ -27,7 +27,7 @@ function fromRow(row: any): Domicilio {
   return {
     id:               row.id,
     userId:           row.user_id,
-    etiqueta:         row.etiqueta          ?? 'Casa',
+    alias:         row.etiqueta          ?? 'Casa',
     calle:            row.calle,
     numeroExt:        row.numero_ext        ?? null,
     numeroInt:        row.numero_int        ?? null,
@@ -40,14 +40,14 @@ function fromRow(row: any): Domicilio {
     coordenadas,
     esPredeterminado: row.es_predeterminado ?? false,
     activo:           row.activo            ?? true,
-    creadoEn:         row.creado_en,
+    creadoEn:         row.created_at,
     actualizadoEn:    row.actualizado_en,
   }
 }
 
 function toRow(data: DomicilioCreate | DomicilioUpdate): Record<string, any> {
   const row: Record<string, any> = {}
-  if (data.etiqueta         !== undefined) row.etiqueta          = data.etiqueta
+  if (data.alias         !== undefined) row.etiqueta          = data.alias
   if (data.calle            !== undefined) row.calle             = data.calle
   if (data.numeroExt        !== undefined) row.numero_ext        = data.numeroExt    || null
   if (data.numeroInt        !== undefined) row.numero_int        = data.numeroInt    || null
@@ -86,7 +86,7 @@ export class DomicilioRepositoryImpl implements IDomicilioRepository {
       .select('*')
       .eq('activo', true)
       .order('es_predeterminado', { ascending: false })
-      .order('creado_en', { ascending: true })
+      .order('created_at', { ascending: true })
 
     if (error) throw new Error(error.message)
     return (data ?? []).map(fromRow)

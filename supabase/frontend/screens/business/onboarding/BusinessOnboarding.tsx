@@ -1,18 +1,18 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, SafeAreaView, StatusBar,
   ScrollView, TextInput, TouchableOpacity,
   ActivityIndicator, Alert, Switch, Modal, FlatList,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import * as Location from 'expo-location';
 import Svg, { Path, Circle } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
-
+import { MapPicker } from '../../../components/addresses/MapPicker'
 import { useAuth } from '../../../application/context/AuthContext'
 import { AdminRepositoryImpl } from '../../../infraestructure/repositories/AdminRepositoryImpl'
 import { supabase } from '../../../config/supabaseConfig'
-import { API_URL } from '@env'
 import type { HorarioDia } from '../../../domain/entities/Negocio'
 import { NOMBRES_ESTADOS, getCiudadesByEstado } from '../../../domain/data/mexicoLocations'
 
@@ -92,15 +92,15 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
 }
 
 const stepStyles = StyleSheet.create({
-  container:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
-  stepRow:           { flexDirection: 'row', alignItems: 'center' },
-  dot:               { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#E5E7EB' },
-  dotActive:         { backgroundColor: '#22c55e', borderColor: '#22c55e' },
-  dotDone:           { backgroundColor: '#16a34a', borderColor: '#16a34a' },
-  dotNumber:         { fontSize: 14, fontWeight: '700', color: 'white' },
+  container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
+  stepRow: { flexDirection: 'row', alignItems: 'center' },
+  dot: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#E5E7EB' },
+  dotActive: { backgroundColor: '#22c55e', borderColor: '#22c55e' },
+  dotDone: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
+  dotNumber: { fontSize: 14, fontWeight: '700', color: 'white' },
   dotNumberInactive: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
-  line:              { width: 40, height: 2, backgroundColor: '#E5E7EB', marginHorizontal: 4 },
-  lineDone:          { backgroundColor: '#22c55e' },
+  line: { width: 40, height: 2, backgroundColor: '#E5E7EB', marginHorizontal: 4 },
+  lineDone: { backgroundColor: '#22c55e' },
 })
 
 // ─── Input Component ──────────────────────────────────────────────────────────
@@ -131,7 +131,7 @@ const fieldStyles = StyleSheet.create({
   group: { marginBottom: 16 },
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 },
   input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#111827', backgroundColor: '#F9FAFB' },
-  hint:  { fontSize: 12, color: '#9CA3AF', marginTop: 4 },
+  hint: { fontSize: 12, color: '#9CA3AF', marginTop: 4 },
 })
 
 // ─── SelectField Component ────────────────────────────────────────────────────
@@ -147,7 +147,7 @@ function SelectField({
   disabled?: boolean
 }) {
   const [visible, setVisible] = useState(false)
-  const [search, setSearch]   = useState('')
+  const [search, setSearch] = useState('')
 
   const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()))
 
@@ -221,46 +221,69 @@ function SelectField({
 }
 
 const selectStyles = StyleSheet.create({
-  trigger:             { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: '#F9FAFB' },
-  triggerDisabled:     { opacity: 0.45 },
-  triggerText:         { fontSize: 15, color: '#111827', flex: 1 },
-  triggerPlaceholder:  { color: '#9CA3AF' },
-  chevron:             { fontSize: 16, color: '#6B7280', marginLeft: 8 },
-  overlay:             { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
-  sheet:               { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, paddingHorizontal: 20, paddingTop: 12 },
-  handle:              { width: 40, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
-  sheetTitle:          { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 14, textAlign: 'center' },
-  searchWrap:          { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
-  searchIcon:          { fontSize: 14, marginRight: 6 },
-  searchInput:         { flex: 1, fontSize: 15, color: '#111827' },
-  clearBtn:            { fontSize: 14, color: '#9CA3AF', marginLeft: 8 },
-  option:              { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, paddingHorizontal: 4 },
-  optionSelected:      { backgroundColor: '#F0FDF4', borderRadius: 10, paddingHorizontal: 10 },
-  optionText:          { fontSize: 15, color: '#374151', flex: 1 },
-  optionTextSelected:  { color: '#16a34a', fontWeight: '700' },
-  optionCheck:         { fontSize: 15, color: '#22c55e', fontWeight: '700' },
-  separator:           { height: 1, backgroundColor: '#F3F4F6' },
+  trigger: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, backgroundColor: '#F9FAFB' },
+  triggerDisabled: { opacity: 0.45 },
+  triggerText: { fontSize: 15, color: '#111827', flex: 1 },
+  triggerPlaceholder: { color: '#9CA3AF' },
+  chevron: { fontSize: 16, color: '#6B7280', marginLeft: 8 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
+  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32, paddingHorizontal: 20, paddingTop: 12 },
+  handle: { width: 40, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  sheetTitle: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 14, textAlign: 'center' },
+  searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
+  searchIcon: { fontSize: 14, marginRight: 6 },
+  searchInput: { flex: 1, fontSize: 15, color: '#111827' },
+  clearBtn: { fontSize: 14, color: '#9CA3AF', marginLeft: 8 },
+  option: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, paddingHorizontal: 4 },
+  optionSelected: { backgroundColor: '#F0FDF4', borderRadius: 10, paddingHorizontal: 10 },
+  optionText: { fontSize: 15, color: '#374151', flex: 1 },
+  optionTextSelected: { color: '#16a34a', fontWeight: '700' },
+  optionCheck: { fontSize: 15, color: '#22c55e', fontWeight: '700' },
+  separator: { height: 1, backgroundColor: '#F3F4F6' },
 })
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function BusinessOnboarding({ navigation }: Props) {
   const { session, refreshAdminAccess } = useAuth()
+  const [coordenadas, setCoordenadas] = useState<{ latitud: number; longitud: number } | null>(null)
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
 
   // Paso 1 — Negocio
-  const [nombre,      setNombre]      = useState('')
-  const [slug,        setSlug]        = useState('')
-  const [categoria,   setCategoria]   = useState('')
+  const [nombre, setNombre] = useState('')
+  const [slug, setSlug] = useState('')
+  const [categoria, setCategoria] = useState('')
   const [descripcion, setDescripcion] = useState('')
 
   // Paso 2 — Sucursal
-  const [sucNombre,   setSucNombre]   = useState('')
-  const [direccion,   setDireccion]   = useState('')
-  const [ciudad,      setCiudad]      = useState('')
-  const [estado,      setEstado]      = useState('')
-  const [telefono,    setTelefono]    = useState('')
+  const [sucNombre, setSucNombre] = useState('')
+  const [direccion, setDireccion] = useState('')
+  const [ciudad, setCiudad] = useState('')
+  const [estado, setEstado] = useState('')
+  const [telefono, setTelefono] = useState('')
+
+  useEffect(() => {
+  const traducirCoordenadas = async () => {
+    if (coordenadas) {
+      try {
+        const [resultado] = await Location.reverseGeocodeAsync({
+          latitude: coordenadas.latitud,
+          longitude: coordenadas.longitud
+        });
+
+        if (resultado) {
+          const { formattedAddress } = resultado;
+          setDireccion(formattedAddress || "");
+        }
+      } catch (error) {
+        console.warn('No se pudo obtener la dirección de este punto en el mapa', error);
+      }
+    }
+  };
+
+  traducirCoordenadas();
+}, [coordenadas]);
 
   // Paso 3 — Horarios
   const [horarios, setHorarios] = useState<HorarioDia[]>(
@@ -268,7 +291,7 @@ export default function BusinessOnboarding({ navigation }: Props) {
   )
 
   // IDs creados en los pasos anteriores
-  const [negocioId,  setNegocioId]  = useState('')
+  const [negocioId, setNegocioId] = useState('')
   const [sucursalId, setSucursalId] = useState('')
 
   // ── Auto-slug desde el nombre ──
@@ -330,7 +353,7 @@ export default function BusinessOnboarding({ navigation }: Props) {
       if (adminError) {
         // Log, pero no bloquea el flujo si la DB no dejó por RLS pero ya se asignó internamente en un trigger (opcional)
         console.warn('Error al asignar admin:', adminError.message)
-         throw new Error(adminError.message ?? 'Error al asignarte como administrador') 
+        throw new Error(adminError.message ?? 'Error al asignarte como administrador')
       }
 
       setNegocioId(negocio.id)
@@ -378,6 +401,14 @@ export default function BusinessOnboarding({ navigation }: Props) {
         throw new Error(sucursalError.message ?? 'Error al crear la sucursal')
       }
 
+      if (coordenadas) {
+        await supabase.rpc('set_sucursal_ubicacion', {
+          p_id: sucursal.id,
+          p_lat: coordenadas.latitud,
+          p_lng: coordenadas.longitud,
+        })
+      }
+
       setSucursalId(sucursal.id)
       setStep(2)
     } catch (e: any) {
@@ -411,9 +442,9 @@ export default function BusinessOnboarding({ navigation }: Props) {
   }
 
   const STEPS = [
-    { icon: <StoreIcon />,   title: 'Tu Negocio',  subtitle: 'Cuéntanos sobre tu negocio' },
+    { icon: <StoreIcon />, title: 'Tu Negocio', subtitle: 'Cuéntanos sobre tu negocio' },
     { icon: <LocationIcon />, title: 'Tu Sucursal', subtitle: 'Dónde están ubicados' },
-    { icon: <ClockIcon />,   title: 'Horarios',    subtitle: 'Cuándo atienden a clientes' },
+    { icon: <ClockIcon />, title: 'Horarios', subtitle: 'Cuándo atienden a clientes' },
   ]
 
   return (
@@ -454,6 +485,11 @@ export default function BusinessOnboarding({ navigation }: Props) {
         {/* ── Paso 1: Sucursal ─────────────────────────────────────────── */}
         {step === 1 && (
           <View style={styles.form}>
+            <MapPicker
+              coordenadas={coordenadas}   // null si es nueva sucursal
+              onPinDrop={(coords) => setCoordenadas(coords)}
+              height={280}
+            />
             <Field label="Nombre de la sucursal *" value={sucNombre} onChange={setSucNombre} placeholder="Ej: Sucursal Centro" />
             <Field label="Dirección *" value={direccion} onChange={setDireccion} placeholder="Calle, número, colonia" />
             <SelectField
@@ -540,11 +576,11 @@ export default function BusinessOnboarding({ navigation }: Props) {
             {saving
               ? <ActivityIndicator color="white" />
               : <>
-                  <Text style={styles.nextBtnText}>
-                    {step === 2 ? '¡Listo! Ir al Dashboard' : 'Continuar'}
-                  </Text>
-                  {step < 2 && <ArrowIcon />}
-                </>
+                <Text style={styles.nextBtnText}>
+                  {step === 2 ? '¡Listo! Ir al Dashboard' : 'Continuar'}
+                </Text>
+                {step < 2 && <ArrowIcon />}
+              </>
             }
           </LinearGradient>
         </TouchableOpacity>
@@ -556,29 +592,29 @@ export default function BusinessOnboarding({ navigation }: Props) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: '#FFFFFF' },
-  scroll:         { paddingBottom: 100 },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  scroll: { paddingBottom: 100 },
   headerGradient: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 },
-  headerTitle:    { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },
+  headerTitle: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },
   headerSubtitle: { fontSize: 14, color: '#6B7280', marginBottom: 28 },
-  stepHeader:     { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, marginBottom: 24 },
-  stepIconWrap:   { width: 52, height: 52, borderRadius: 16, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' },
-  stepTitle:      { fontSize: 20, fontWeight: '800', color: '#111827' },
-  stepSubtitle:   { fontSize: 13, color: '#6B7280', marginTop: 2 },
-  form:           { paddingHorizontal: 24 },
-  horariosHint:   { fontSize: 13, color: '#6B7280', marginBottom: 16 },
-  horarioRow:     { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 10 },
-  horarioDia:     { width: 90, fontSize: 14, fontWeight: '600', color: '#374151' },
+  stepHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 24, marginBottom: 24 },
+  stepIconWrap: { width: 52, height: 52, borderRadius: 16, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' },
+  stepTitle: { fontSize: 20, fontWeight: '800', color: '#111827' },
+  stepSubtitle: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  form: { paddingHorizontal: 24 },
+  horariosHint: { fontSize: 13, color: '#6B7280', marginBottom: 16 },
+  horarioRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 10 },
+  horarioDia: { width: 90, fontSize: 14, fontWeight: '600', color: '#374151' },
   horarioDiaCerrado: { color: '#9CA3AF' },
-  horaRow:        { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'flex-end' },
-  horaInput:      { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 13, width: 62, textAlign: 'center', backgroundColor: '#F9FAFB', color: '#111827' },
-  horaSep:        { fontSize: 13, color: '#9CA3AF' },
-  cerradoText:    { fontSize: 13, color: '#9CA3AF', fontStyle: 'italic', flex: 1, textAlign: 'right' },
-  divider:        { height: 1, backgroundColor: '#F3F4F6' },
-  footer:         { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', gap: 12, paddingHorizontal: 24, paddingVertical: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
-  backBtn:        { flex: 0.4, paddingVertical: 16, borderRadius: 30, borderWidth: 1.5, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
-  backBtnText:    { fontSize: 15, fontWeight: '600', color: '#374151' },
-  nextBtn:        { flex: 0.6, borderRadius: 30, overflow: 'hidden' },
-  nextBtnGradient:{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, gap: 8 },
-  nextBtnText:    { fontSize: 15, fontWeight: '700', color: 'white' },
+  horaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'flex-end' },
+  horaInput: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 13, width: 62, textAlign: 'center', backgroundColor: '#F9FAFB', color: '#111827' },
+  horaSep: { fontSize: 13, color: '#9CA3AF' },
+  cerradoText: { fontSize: 13, color: '#9CA3AF', fontStyle: 'italic', flex: 1, textAlign: 'right' },
+  divider: { height: 1, backgroundColor: '#F3F4F6' },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', gap: 12, paddingHorizontal: 24, paddingVertical: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  backBtn: { flex: 0.4, paddingVertical: 16, borderRadius: 30, borderWidth: 1.5, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' },
+  backBtnText: { fontSize: 15, fontWeight: '600', color: '#374151' },
+  nextBtn: { flex: 0.6, borderRadius: 30, overflow: 'hidden' },
+  nextBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, gap: 8 },
+  nextBtnText: { fontSize: 15, fontWeight: '700', color: 'white' },
 })

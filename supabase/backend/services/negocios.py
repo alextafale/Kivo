@@ -6,6 +6,7 @@ from exceptions.negocios import NegocioNoExistente
 from typing import List, Optional
 from fastapi import UploadFile
 from core.cloudinary import upload_image
+from uuid import UUID
 
 
 def get_negocios_sucursales(db: Session, ciudad: str, categoria: str, page: Optional[int], limit: Optional[int]):
@@ -32,12 +33,20 @@ def get_negocios_sucursales(db: Session, ciudad: str, categoria: str, page: Opti
     return negocios
 
 
-def get_negocio_por_id(db: Session, negocio_id: str):
+def get_negocio_por_id(db: Session, negocio_id: UUID):
     negocio = db.query(Negocio).filter(Negocio.id == negocio_id).first()
     if not negocio:
         raise NegocioNoExistente()
 
     return negocio
+
+def get_sucursales_por_id_de_negocio(db: Session, negocio_id: UUID):
+    sucursales = db.query(Sucursal).filter(
+        Sucursal.negocio_id == negocio_id, 
+        Sucursal.activo == True
+    ).all()
+
+    return sucursales
 
 
 def put_negocio_por_id(

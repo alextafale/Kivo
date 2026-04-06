@@ -1,0 +1,2 @@
+class PedidoNoExistente(Exception):
+    pass

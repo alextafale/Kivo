@@ -117,10 +117,10 @@ const AddressCard = ({
 
         <View style={styles.cardTop}>
           <View style={[styles.typeIconWrap, domicilio.esPredeterminado && styles.typeIconWrapActive]}>
-            {etiquetaIcon(domicilio.etiqueta)}
+            {etiquetaIcon(domicilio.alias)}
           </View>
           <View style={styles.cardTextBlock}>
-            <Text style={styles.cardLabel}>{domicilio.etiqueta}</Text>
+            <Text style={styles.cardLabel}>{domicilio.alias}</Text>
             <Text style={styles.cardStreet}>{linea1}</Text>
             {!!linea2 && <Text style={styles.cardCity}>{linea2}</Text>}
             {!!domicilio.referencias && (

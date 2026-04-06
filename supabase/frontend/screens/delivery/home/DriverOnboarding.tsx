@@ -131,6 +131,7 @@ const VEHICULO_LABEL: Record<Vehiculo, string> = {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function DriverOnboarding({ navigation, route }: Props) {
+  console.log("Estas en driver onboarding")
   const { session } = useAuth()
   const [step, setStep]               = useState(0)
   const [saving, setSaving]           = useState(false)

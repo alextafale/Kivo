@@ -52,7 +52,7 @@ type Props = {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function BusinessSettings({ navigation }: Props) {
-  console.log('Esta en la pantalla de business settings');
+  console.log('Estas en la pantalla de business settings');
   const [activeTab, setActiveTab] = useState<TabName>('Settings')
 
   // negocio_id y permisos vienen directamente del AuthContext — nada hardcodeado

@@ -13,6 +13,9 @@ import { useDomicilios } from '../../../application/context/DomiciliosContext'
 import { useAuth } from '../../../application/context/AuthContext'
 import type { Domicilio } from '../../../domain/entities/Domicilio'
 
+import { useCart } from '../../../application/context/CartContext'
+import { supabase } from '../../../config/supabaseConfig'
+
 type OrderSummaryNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderSummary'>
 type OrderSummaryRouteProp = RouteProp<RootStackParamList, 'OrderSummary'>
 
@@ -58,8 +61,9 @@ const ChevronIcon = () => (
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function OrderSummary({ navigation, route }: Props) {
-   console.log("Estas en orderSummary");
+  console.log("Estas en orderSummary");
   const { restaurants } = route.params
+  const { clearCart } = useCart()
 
   const [notas, setNotas] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -159,6 +163,8 @@ export default function OrderSummary({ navigation, route }: Props) {
         })
       )
 
+      clearCart()
+
       navigation.navigate('OrderConfirmation', {
         orders: results,
         totalGeneral,
@@ -211,7 +217,7 @@ export default function OrderSummary({ navigation, route }: Props) {
                 >
                   <View style={styles.domicilioSelectedInfo}>
                     <Text style={styles.domicilioEtiqueta}>
-                      {selectedDomicilio?.etiqueta ?? 'Selecciona una dirección'}
+                      {selectedDomicilio?.alias ?? 'Selecciona una dirección'}
                     </Text>
                     {selectedDomicilio && (
                       <Text style={styles.domicilioDireccion} numberOfLines={1}>
@@ -235,7 +241,7 @@ export default function OrderSummary({ navigation, route }: Props) {
                     }}
                   >
                     <View style={styles.domicilioOptionInfo}>
-                      <Text style={styles.domicilioEtiqueta}>{d.etiqueta}</Text>
+                      <Text style={styles.domicilioEtiqueta}>{d.alias}</Text>
                       <Text style={styles.domicilioDireccion} numberOfLines={1}>
                         {getDireccion(d)}
                       </Text>

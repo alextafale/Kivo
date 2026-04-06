@@ -48,7 +48,7 @@ export class RepartidorRepositoryImpl implements IRepartidorRepository {
     const token = data.session?.access_token
     if (!token) throw new Error('Sin sesión activa')
 
-    const res = await fetch(`${process.env.API_URL}/repartidores/pedidos/${pedidoId}/tomar`, {
+    const res = await fetch(`${process.env.API_BASE_URL}/repartidores/pedidos/${pedidoId}/tomar`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

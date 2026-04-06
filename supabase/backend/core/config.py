@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     postgres_port:       int
     postgres_db:         str
 
-    supabase_url:        str  
+    supabase_url:        str
+    supabase_anon_key:   str  
     supabase_jwt_secret: str
 
     cloudinary_cloud_name: str
