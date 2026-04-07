@@ -224,18 +224,37 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   };
 
   const updateMenuItem = async () => {
-    const formData = buildFormData();
-
+  // Si hay imagen nueva, usar FormData
+  if (imageUri) {
+    const formData = buildFormData()
     const res = await fetch(
       `${process.env.API_BASE_URL}/sucursales/${sucursalId}/menu/${itemId}`,
       {
         method: "PUT",
         body: formData,
       }
-    );
+    )
+    if (!res.ok) throw new Error("Error actualizando")
+    return
+  }
 
-    if (!res.ok) throw new Error("Error actualizando");
-  };
+  // Sin imagen nueva, mandar JSON
+  const res = await fetch(
+    `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${itemId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombre: name,
+        descripcion: description,
+        precio: parseFloat(price),
+        disponible: enabled,
+        categoria: category,
+      }),
+    }
+  )
+  if (!res.ok) throw new Error("Error actualizando")
+};
 
   const handleSave = async () => {
     setIsLoading(true);

@@ -45,7 +45,7 @@ def crear_item_menu(
 
 @router.put("/{id}/menu/{item_id}")
 def actualizar_item_menu(id: str, item_id: str, item_data: MenuItemFrontendUpdate, db: Session = Depends(get_db)):
-    return update_menu_item(db, id, item_id, item_data)
+    return update_menu_item(db, id, item_id, item_data, None)
 
 
 @router.delete("/{id}/menu/{item_id}", summary="Eliminar item del menú")
