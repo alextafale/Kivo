@@ -11,6 +11,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useOrderRealtime } from '../../../application/hooks/useOrderRealTime'
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'
 import { useRepartidorUbicacion } from '../../../application/hooks/useRepartidorUbicacion'
+import { useETA } from '../../../application/hooks/useETA'
 
 const { width } = Dimensions.get('window')
 
@@ -47,7 +48,7 @@ const ESTADO_A_STEP: Record<string, OrderStatus> = {
 }
 
 export default function OrderTrackingScreen({ route, navigation }: Props) {
-   console.log("Estas en order taracking screen");
+  console.log("Estas en order taracking screen");
   const { order: initialOrder } = route.params
 
   // Suscripción Realtime — actualiza cuando el negocio cambia el estado
@@ -81,13 +82,19 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
     }).start()
   }, [currentIndex])
 
+  // Hook para obtener el ETA del repartidor
+  const { eta } = useETA(
+    initialOrder.id,
+    order?.status === 'picked_up' || order?.status === 'on_the_way'
+  )
+
   const prevStatusRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!order?.status) return
 
     console.log('Estado del pedido:', prevStatusRef.current, '->', order.status)
-    
+
     if (order.status === 'delivered' && prevStatusRef.current !== 'delivered') {
       console.log('Navegando a OrderDelivered...')
       // Un pequeño retraso para permitir que la barra llegue al final
@@ -129,7 +136,7 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
           <Text style={styles.orderNumberValue}>{order?.orderNumber ?? initialOrder.orderNumber}</Text>
         </View>
 
-        {/* ETA Banner */}
+        {/* ETA del reoartidor*/}
         <View style={styles.etaBanner}>
           <View style={styles.etaLeft}>
             <Text style={styles.etaLabel}>Estado actual</Text>
@@ -138,10 +145,20 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
           </View>
           <View style={styles.etaDivider} />
           <View style={styles.etaRight}>
-            <View style={styles.statusBadge}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusBadgeText}>En vivo</Text>
-            </View>
+            {eta?.eta_minutos ? (
+              <View style={styles.etaTimeContainer}>
+                <Text style={styles.etaMinutos}>{eta.eta_minutos}</Text>
+                <Text style={styles.etaMinutosLabel}>min</Text>
+                {eta.distancia_km && (
+                  <Text style={styles.etaDistancia}>{eta.distancia_km} km</Text>
+                )}
+              </View>
+            ) : (
+              <View style={styles.statusBadge}>
+                <View style={styles.statusDot} />
+                <Text style={styles.statusBadgeText}>En vivo</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -274,6 +291,11 @@ const styles = StyleSheet.create({
   map: { height: 220, borderRadius: 18, marginBottom: 20, overflow: 'hidden' },
   markerContainer: { alignItems: 'center', justifyContent: 'center' },
   markerEmoji: { fontSize: 28 },
+
+  etaTimeContainer: { alignItems: 'center' },
+  etaMinutos: { fontSize: 32, fontWeight: '800', color: '#1A8C2A' },
+  etaMinutosLabel: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
+  etaDistancia: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
 
   timelineSection: { marginBottom: 20 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1A1A1A', marginBottom: 18 },

@@ -349,7 +349,49 @@ def create_pedido(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"ERROR: {str(e)} | {traceback.format_exc()}")
 
+# ─── GET ETA del repartidor ─────────────────────────────────────
+@router.get("/pedidos/{pedido_id}/eta", summary="Obtener ETA del repartidor")
+def get_eta(
+    pedido_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Calcula el tiempo estimado de llegada del repartidor.
+    Usa ST_Distance de PostGIS para calcular la distancia
+    entre la ubicación actual del repartidor y el domicilio del cliente.
+    """
+    row = db.execute(
+        text("""
+            SELECT
+                ST_Distance(
+                    ru.ubicacion::geography,
+                    d.ubicacion::geography
+                ) / 1000.0 AS distancia_km
+            FROM pedidos p
+            JOIN domicilios d ON d.id = p.domicilio_id
+            JOIN repartidor_ubicacion ru ON ru.repartidor_id = p.repartidor_id
+            WHERE p.id = :pedido_id
+              AND p.user_id = :user_id
+              AND p.estado IN ('picked_up', 'on_the_way')
+        """),
+        {"pedido_id": pedido_id, "user_id": user_id}
+    ).mappings().first()
 
+    if not row:
+        return {"eta_minutos": None, "distancia_km": None}
+
+    distancia_km = float(row["distancia_km"])
+    velocidad_promedio = 30  # km/h promedio en ciudad
+    eta_minutos = round((distancia_km / velocidad_promedio) * 60)
+
+    # Mínimo 1 minuto
+    eta_minutos = max(1, eta_minutos)
+
+    return {
+        "eta_minutos": eta_minutos,
+        "distancia_km": round(distancia_km, 2)
+    }
 
 # ─── GET /negocios/{negocio_id}/metricas ─────────────────────────────────────
 
