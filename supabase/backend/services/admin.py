@@ -2,17 +2,18 @@ from typing import Any
 import json
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-
+from uuid import UUID
 from exceptions.negocios import NegocioNoExistente
 from exceptions.sucursal import SucursalNoExistente
 from schemas.admin import NegocioPatch, SucursalCreate, SucursalPatch
+
 
 
 # =============================================================================
 # Negocio
 # =============================================================================
 
-def get_negocio_admin(db: Session, negocio_id: str) -> dict:
+def get_negocio_admin(db: Session, negocio_id: UUID) -> dict:
     """
     Obtiene todos los campos del negocio para el panel admin.
     El middleware ya garantizó que el usuario es admin y el negocio existe.

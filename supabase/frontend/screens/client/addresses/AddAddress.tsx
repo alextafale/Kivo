@@ -249,12 +249,12 @@ export default function AddAddress({ navigation, route }: Props) {
             <Text style={styles.fieldLabel}>Guardar como:</Text>
             <View style={styles.typeRow}>
               {ETIQUETAS.map((etiqueta) => {
-                const active = form.etiqueta === etiqueta;
+                const active = form.alias === etiqueta;
                 return (
                   <TouchableOpacity
                     key={etiqueta}
                     style={[styles.typeChip, active && styles.typeChipActive]}
-                    onPress={() => setField('etiqueta', etiqueta)}
+                    onPress={() => setField('alias', etiqueta)}
                     activeOpacity={0.8}
                   >
                     {active ? (

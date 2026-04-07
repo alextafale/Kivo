@@ -79,6 +79,7 @@ const ESTADOS: DriverEstado[] = ['offline', 'available', 'busy']
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DriverDashboard({ navigation }: Props) {
+  console.log("Estas en DriverDashboard")
   const { session, logout } = useAuth()
 
   const [repartidor, setRepartidor] = useState<RepartidorInfo | null>(null)
@@ -345,7 +346,9 @@ export default function DriverDashboard({ navigation }: Props) {
             <View style={[styles.statCard, styles.statCardMiddle]}>
               <StarIcon size={18} />
               <Text style={styles.statValue}>
-                {repartidor?.calificacion?.toFixed(1) ?? '—'}
+                {repartidor?.calificacion != null
+                  ? repartidor.calificacion.toFixed(1)
+                  : '—'}
               </Text>
               <Text style={styles.statLabel}>Calificación</Text>
             </View>
@@ -469,7 +472,7 @@ export default function DriverDashboard({ navigation }: Props) {
                     <View style={styles.pedidoNumeroWrap}>
                       <Text style={styles.pedidoNumero}>{pedido.order_number}</Text>
                     </View>
-                    <Text style={styles.pedidoTotal}>${pedido.total.toFixed(2)}</Text>
+                    <Text style={styles.pedidoTotal}>${pedido.total != null ? pedido.total.toFixed(2) : '0.00'}</Text>
                   </View>
 
                   <Text style={styles.pedidoNegocio}>{pedido.negocio_nombre}</Text>
@@ -485,7 +488,7 @@ export default function DriverDashboard({ navigation }: Props) {
                   <View style={styles.pedidoFooter}>
                     <View style={styles.pedidoEnvioWrap}>
                       <MoneyIcon />
-                      <Text style={styles.pedidoEnvio}>+${pedido.costo_envio.toFixed(2)} envío</Text>
+                      <Text style={styles.pedidoEnvio}>+${pedido.costo_envio != null ? pedido.costo_envio.toFixed(2) : '0.00'} envío envío</Text>
                     </View>
                     <TouchableOpacity
                       style={styles.aceptarBtn}

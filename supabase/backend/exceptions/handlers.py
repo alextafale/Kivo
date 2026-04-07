@@ -1,7 +1,9 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from exceptions.domicilios import DomicilioNoExistente
+from exceptions.menu_items import ItemNoExistente
 from exceptions.negocios import NegocioNoExistente
+from exceptions.pedidos import PedidoNoExistente
 from exceptions.sucursal import SucursalNoExistente
 from exceptions.isBusinessAdmin import NoEsAdminDelNegocio
 
@@ -19,6 +21,16 @@ def register_exception_handlers(app):
             content={"detail": "Domicilio no encontrado"},
         )
     
+    @app.exception_handler(ItemNoExistente)
+    async def item_no_existente_handler(
+        request: Request,
+        exc: ItemNoExistente,
+    ):
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Item no encontrado"},
+        )
+    
     @app.exception_handler(NegocioNoExistente)
     async def negocio_no_existente_handler(
         request: Request,
@@ -27,6 +39,16 @@ def register_exception_handlers(app):
         return JSONResponse(
             status_code=404,
             content={"detail": "Negocio no encontrado"},
+        )
+    
+    @app.exception_handler(PedidoNoExistente)
+    async def pedido_no_existente_handler(
+        request: Request,
+        exc: PedidoNoExistente,
+    ):
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Pedido no encontrado"},
         )
 
     @app.exception_handler(SucursalNoExistente)

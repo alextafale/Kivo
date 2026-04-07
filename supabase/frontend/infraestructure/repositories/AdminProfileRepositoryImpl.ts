@@ -1,7 +1,6 @@
 import { supabase } from '../../config/supabaseConfig'
 import type { IAdminProfileRepository } from '../../domain/ports/repositories/lAdminProfileRepository'
 import type { AdminProfile } from '../../domain/entities/AdminProfile'
-import { API_URL } from '@env'
 
 async function getAuthHeaders(): Promise<HeadersInit> {
   const { data } = await supabase.auth.getSession()

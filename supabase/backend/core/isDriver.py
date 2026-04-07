@@ -2,14 +2,17 @@ from fastapi import Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from core.dependencies import get_current_user_id
+from core.dependencies import get_current_user
 from db.database import get_db
 from exceptions.isDriver import NoEsRepartidor
 
 
+def _get_user_id(user: dict):
+    return user["sub"]
+
 def require_driver(
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user = Depends(get_current_user),
 ) -> str:
     """
     Dependency reutilizable. Inyectar en cualquier endpoint exclusivo de repartidores.
@@ -32,10 +35,10 @@ def require_driver(
             LIMIT 1
             """
         ),
-        {"user_id": user_id},
+        {"user_id": _get_user_id(user)},
     ).fetchone()
 
     if not repartidor:
         raise NoEsRepartidor()
 
-    return user_id
+    return _get_user_id(user)

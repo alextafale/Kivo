@@ -109,6 +109,7 @@ const FieldLabel = ({ label, required }: { label: string; required?: boolean }) 
 
 export default function MenuItemEditor({ navigation, route }: Props) {
   const { itemId } = route.params;
+  console.log("Aqui es menu item editor");
 
   // ✅ session viene del contexto — sin supabase.auth.getSession() inline
   const { adminAccess, session } = useAuth();
@@ -125,6 +126,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   const [soldOut, setSoldOut] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
   //  Espera a que sucursalId Y session estén disponibles antes de hacer fetch
@@ -139,7 +141,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
       try {
         const res = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}`,
+          `${process.env.API_BASE_URL}/sucursales/${sucursalId}`,
           { headers: { Authorization: `Bearer ${session.accessToken}` } },
         );
 
@@ -152,6 +154,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
             setPrice(item.precio?.toString() || '0');
             setCategory(item.categoria || 'Main Course');
             setEnabled(item.disponible ?? true);
+            setImageUrl(item.imagen_url);
           }
         }
       } catch (e) {
@@ -209,7 +212,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
     const formData = buildFormData();
 
     const res = await fetch(
-      `https://kivo-v1.onrender.com/api/v1/sucursales/${sucursalId}/menu`,
+      `${process.env.API_BASE_URL}/sucursales/${sucursalId}/menu`,
       {
         method: "POST",
         body: formData,
@@ -223,7 +226,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
     const formData = buildFormData();
 
     const res = await fetch(
-      `https://kivo-v1.onrender.com/api/v1/sucursales/${sucursalId}/menu/${itemId}`,
+      `${process.env.API_BASE_URL}/sucursales/${sucursalId}/menu/${itemId}`,
       {
         method: "PUT",
         body: formData,
@@ -315,8 +318,11 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                 activeOpacity={0.85}
                 onPress={pickImage}
               >
-                {imageUri ? (
-                  <Image source={{ uri: imageUri }} style={styles.itemImage} />
+                {imageUri || imageUrl ? (
+                  <Image
+                    source={{ uri: (imageUri || imageUrl) as string}}
+                    style={styles.itemImage}
+                  />
                 ) : (
                   <View style={styles.imagePlaceholder}>
                     <CameraIcon />
@@ -324,6 +330,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                   </View>
                 )}
 
+                {/* 🔹 Badge para editar SIEMPRE visible */}
                 <View style={styles.imageEditBadge}>
                   <CameraIcon />
                 </View>

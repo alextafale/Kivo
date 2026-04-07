@@ -25,6 +25,7 @@ class Sucursal(Base):
     activo = Column(Boolean, nullable=True, default=True)
     acepta_efectivo = Column(Boolean, nullable=True, default=True)
     acepta_tarjeta = Column(Boolean, nullable=True, default=False)
+    costo_envio = Column(String, nullable=True, default=0)
     creado_en = Column(
         TIMESTAMP,
         nullable=False,

@@ -3,7 +3,7 @@ from fastapi import Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from core.dependencies import get_current_user_id
+from core.dependencies import get_current_user
 from db.database import SessionLocal
 from exceptions.isBusinessAdmin import NoEsAdminDelNegocio
 from exceptions.negocios import NegocioNoExistente
@@ -15,7 +15,10 @@ def get_db():
     finally:
         db.close()
 
-def require_business_admin(negocio_id: str, db: Session = Depends(get_db), user_id: str = Depends(get_current_user_id)) -> str:
+def _get_user_id(user: dict):
+    return user["sub"]
+
+def require_business_admin(negocio_id: str, db: Session = Depends(get_db), user = Depends(get_current_user)) -> str:
     """
     Dependency reutilizable. Inyectar en cualquier endpoint que requiera
     que el usuario autenticado sea admin del negocio.
@@ -49,19 +52,19 @@ def require_business_admin(negocio_id: str, db: Session = Depends(get_db), user_
             LIMIT 1
             """
         ),
-        {"negocio_id": negocio_id, "user_id": user_id},
+        {"negocio_id": negocio_id, "user_id": _get_user_id(user)},
     ).fetchone()
 
     if not admin:
         raise NoEsAdminDelNegocio()
 
-    return user_id
+    return _get_user_id(user)
 
 
 def require_business_admin_with_edit(
     negocio_id: str,
     db: Session = Depends(get_db),
-    user_id: str = Depends(get_current_user_id),
+    user = Depends(get_current_user),
 ) -> str:
     """
     Variante estricta: además de ser admin, debe tener puede_editar_negocio = TRUE.
@@ -87,10 +90,10 @@ def require_business_admin_with_edit(
             LIMIT 1
             """
         ),
-        {"negocio_id": negocio_id, "user_id": user_id},
+        {"negocio_id": negocio_id, "user_id": _get_user_id(user)},
     ).fetchone()
 
     if not admin:
         raise NoEsAdminDelNegocio()
 
-    return user_id
+    return _get_user_id(user)

@@ -60,17 +60,17 @@ const EyeIcon = ({ visible }: { visible: boolean }) => (
 export default function RegisterBusiness({ navigation }: Props) {
   const { registerBusiness } = useAuth()
 
-  const [nombre, setNombre]             = useState('')
-  const [apellido, setApellido]         = useState('')
-  const [telefono, setTelefono]         = useState('')
-  const [email, setEmail]               = useState('')
-  const [password, setPassword]         = useState('')
+  const [nombre, setNombre] = useState('')
+  const [apellido, setApellido] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm]   = useState(false)
-  const [acceptTerms, setAcceptTerms]   = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [acceptTerms, setAcceptTerms] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
-  const [loading, setLoading]           = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleRegister = async () => {
     if (!nombre.trim() || !apellido.trim() || !email.trim() || !password.trim()) {
@@ -91,11 +91,15 @@ export default function RegisterBusiness({ navigation }: Props) {
     }
     setLoading(true)
     try {
-      await registerBusiness(email.trim(), password, {
-        nombre:   nombre.trim(),
-        apellido: apellido.trim(),
-        telefono: telefono.trim(),
-      })
+      const nuevo = await registerBusiness(
+        email.trim(),
+        password, {
+          nombre: nombre.trim(),
+          apellido: apellido.trim(),
+          telefono: telefono.trim(),
+        }
+      )
+      console.log(nuevo)
       // Después del registro va al onboarding de negocio
       navigation.replace('BusinessOnboarding')
     } catch (e: any) {
@@ -289,34 +293,34 @@ export default function RegisterBusiness({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container:             { flex: 1, backgroundColor: '#FFFFFF' },
-  header:                { paddingHorizontal: 20, paddingTop: 10 },
-  backButton:            { width: 40, height: 40, justifyContent: 'center' },
-  badgeContainer:        { alignItems: 'center', marginTop: 16, marginBottom: 8, gap: 10 },
-  badge:                 {
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  header: { paddingHorizontal: 20, paddingTop: 10 },
+  backButton: { width: 40, height: 40, justifyContent: 'center' },
+  badgeContainer: { alignItems: 'center', marginTop: 16, marginBottom: 8, gap: 10 },
+  badge: {
     width: 72, height: 72, borderRadius: 20,
     backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0',
     justifyContent: 'center', alignItems: 'center',
   },
-  badgePill:             {
+  badgePill: {
     backgroundColor: '#DCFCE7', borderRadius: 20,
     paddingHorizontal: 14, paddingVertical: 4,
   },
-  badgePillText:         { fontSize: 12, fontWeight: '600', color: '#16a34a' },
-  titleContainer:        { paddingHorizontal: 20, marginTop: 12, marginBottom: 30 },
-  title:                 { fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 8, textAlign: 'center' },
-  subtitle:              { fontSize: 15, color: '#6B7280', textAlign: 'center' },
-  formContainer:         { paddingHorizontal: 20, paddingBottom: 20 },
-  row:                   { flexDirection: 'row' },
-  inputGroup:            { marginBottom: 20 },
-  label:                 { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  optional:              { fontWeight: '400', color: '#9CA3AF' },
-  inputWrapper:          {
+  badgePillText: { fontSize: 12, fontWeight: '600', color: '#16a34a' },
+  titleContainer: { paddingHorizontal: 20, marginTop: 12, marginBottom: 30 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#000', marginBottom: 8, textAlign: 'center' },
+  subtitle: { fontSize: 15, color: '#6B7280', textAlign: 'center' },
+  formContainer: { paddingHorizontal: 20, paddingBottom: 20 },
+  row: { flexDirection: 'row' },
+  inputGroup: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  optional: { fontWeight: '400', color: '#9CA3AF' },
+  inputWrapper: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#F9FAFB', borderRadius: 12,
     paddingHorizontal: 16, borderWidth: 1, borderColor: '#E5E7EB',
   },
-  input:                 { flex: 1, paddingVertical: 16, paddingHorizontal: 12, fontSize: 16, color: '#000' },
+  input: { flex: 1, paddingVertical: 16, paddingHorizontal: 12, fontSize: 16, color: '#000' },
   checkboxContainer: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, marginTop: 8 },
   checkbox: {
     width: 24, height: 24, borderRadius: 6, borderWidth: 2,
@@ -325,17 +329,17 @@ const styles = StyleSheet.create({
   checkboxChecked: { backgroundColor: '#22c55e', borderColor: '#22c55e' },
   checkboxText: { flex: 1, fontSize: 14, color: '#6B7280', lineHeight: 20 },
   linkText: { color: '#22c55e', fontWeight: '600' },
-  registerButton:        {
+  registerButton: {
     borderRadius: 30, overflow: 'hidden', marginTop: 8,
     shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
   },
   registerButtonGradient: { paddingVertical: 18, alignItems: 'center' },
-  registerButtonText:    { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  loginContainer:        {
+  registerButtonText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  loginContainer: {
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
     paddingVertical: 20, borderTopWidth: 1, borderTopColor: '#F3F4F6',
   },
-  loginText:             { fontSize: 14, color: '#6B7280' },
-  loginLink:             { fontSize: 14, color: '#22c55e', fontWeight: 'bold' },
+  loginText: { fontSize: 14, color: '#6B7280' },
+  loginLink: { fontSize: 14, color: '#22c55e', fontWeight: 'bold' },
 })

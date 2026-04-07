@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Switch, TextInput, Alert, ActivityIndicator,
@@ -153,7 +153,7 @@ export default function SettingsScreen({ navigation }: Props) {
   console.log('Estas en settings business');
 
   // IDs dinámicos desde AuthContext
-  const { adminAccess, logout } = useAuth();
+  const { adminAccess, session, logout } = useAuth();
   const negocioId = adminAccess?.negocioId ?? '';
   const sucursalId = adminAccess?.sucursalId ?? '';
   const puedeEditar = adminAccess?.puedeEditarNegocio ?? false;
@@ -178,6 +178,11 @@ export default function SettingsScreen({ navigation }: Props) {
   const [imageBannerUri, setImageBannerUri] = useState<string | null>(null); // [,setBannerUri]
   const [isLoadingSave, setLoadingSave] = useState(false);
 
+  const [delivered, setDelivered] = useState(0);
+  const [failed, setFailed] = useState(0);
+  const [deliveryRate, setDeliveryRate] = useState(0);
+
+
 
 
   // ── Sucursal / Horarios ──────────────────────────────────────────────────
@@ -189,6 +194,48 @@ export default function SettingsScreen({ navigation }: Props) {
 
   // Radio de entrega — inicializado desde la sucursal
   const [radius, setRadius] = useState(sucursal?.radio_entrega_km ?? 5);
+
+  const fetchPedidos = useCallback(async () => {
+    if (!negocioId || !session?.accessToken) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.API_BASE_URL}/negocios/${negocioId}/pedidos`,
+        {
+          headers: { Authorization: `Bearer ${session.accessToken}` },
+          method: 'GET',
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+
+        const delivered = data.filter(
+          (p: any) => p.status === 'delivered'
+        ).length;
+
+        const failed = data.filter(
+          (p: any) =>
+            p.status === 'cancelled' || p.status === 'refunded'
+        ).length;
+
+        const totalFinalizados = delivered + failed;
+
+        const deliveryRate =
+          totalFinalizados > 0 ? delivered / totalFinalizados : 0;
+
+        setDelivered(delivered);
+        setFailed(failed);
+        setDeliveryRate(deliveryRate);
+      }
+    } catch (e) {
+      console.warn('fetchPedidos error:', e);
+    }
+  }, [negocioId, session?.accessToken]);
+
+  React.useEffect(() => {
+    fetchPedidos();
+  }, [fetchPedidos]);
 
   // Inicializar estados locales cuando llegan los datos del backend
   React.useEffect(() => {
@@ -301,7 +348,7 @@ export default function SettingsScreen({ navigation }: Props) {
       const formData = buildFormData();
 
       const res = await fetch(
-        `http://192.168.100.7:8000/api/v1/negocios/${negocioId}`,
+        `${process.env.API_BASE_URL}/negocios/${negocioId}`,
         {
           method: "PUT",
           body: formData,
@@ -438,7 +485,7 @@ export default function SettingsScreen({ navigation }: Props) {
                 {loadingMetricas
                   ? <ActivityIndicator color="#22c55e" style={{ marginTop: 8 }} />
                   : <Text style={styles.aiRate}>
-                    {metricas ? `${metricas.tasa_entrega}%` : '—'}
+                    {deliveryRate}
                   </Text>
                 }
               </View>
@@ -449,14 +496,14 @@ export default function SettingsScreen({ navigation }: Props) {
               <View style={styles.aiStat}>
                 <Text style={styles.aiStatLabel}>Entregados</Text>
                 <Text style={styles.aiStatValue}>
-                  {metricas?.entregados ?? '—'}
+                  {delivered}
                 </Text>
               </View>
               <View style={styles.aiStatDivider} />
               <View style={styles.aiStat}>
                 <Text style={styles.aiStatLabel}>Cancelados</Text>
                 <Text style={styles.aiStatValue}>
-                  {metricas?.cancelados ?? '—'}
+                  {failed}
                 </Text>
               </View>
             </View>
