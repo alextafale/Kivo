@@ -146,7 +146,7 @@ export default function MenuEditor({ navigation }: Props) {
   const fetchMenu = useCallback(async () => {
     if (!sucursalId) return;
     try {
-      const res = await fetch(`${process.env.API_BASE_URL}/sucursales/${sucursalId}`);
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}`);
 
       if (res.ok) {
         const data = await res.json();

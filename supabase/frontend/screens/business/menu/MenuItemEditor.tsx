@@ -142,7 +142,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
       try {
         const res = await fetch(
-          `${process.env.API_BASE_URL}/sucursales/${sucursalId}`,
+          `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}`,
           { headers: { Authorization: `Bearer ${session.accessToken}` } },
         );
 
@@ -213,7 +213,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
     const formData = buildFormData();
 
     const res = await fetch(
-      `${process.env.API_BASE_URL}/sucursales/${sucursalId}/menu`,
+      `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu`,
       {
         method: "POST",
         body: formData,
@@ -228,7 +228,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   if (imageUri) {
     const formData = buildFormData()
     const res = await fetch(
-      `${process.env.API_BASE_URL}/sucursales/${sucursalId}/menu/${itemId}`,
+      `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${itemId}`,
       {
         method: "PUT",
         body: formData,
@@ -295,7 +295,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
           try {
             const { data: { session } } = await supabase.auth.getSession()
             const res = await fetch(
-              `${process.env.API_BASE_URL}/sucursales/${sucursalId}/menu/${itemId}`,
+              `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${itemId}`,
               {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${session?.access_token}` },
