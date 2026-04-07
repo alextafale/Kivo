@@ -141,3 +141,83 @@ def update_menu_item(db: Session, sucursal_id: str, item_id: str, item_data: Men
     db.commit()
     db.refresh(item)
     return item
+
+def delete_menu_item(db: Session, sucursal_id: str, item_id: str):
+    item = db.query(MenuItem).filter(
+        MenuItem.id == item_id,
+        MenuItem.sucursal_id == sucursal_id
+    ).first()
+    if not item:
+        raise ItemNoExistente()
+
+    # Soft delete 
+    item.activo = False
+    db.commit()
+    return {"ok": True, "message": "Item eliminado correctamente"}
+
+def toggle_item_disponibilidad(db: Session, sucursal_id: str, item_id: str):
+    item = db.query(MenuItem).filter(
+        MenuItem.id == item_id,
+        MenuItem.sucursal_id == sucursal_id
+    ).first()
+    if not item:
+        raise ItemNoExistente()
+
+    # Invertir disponibilidad
+    item.disponible = not item.disponible
+    db.commit()
+    db.refresh(item)
+    return {"ok": True, "disponible": item.disponible}
+
+
+def add_categoria(db: Session, sucursal_id: str, nombre: str):
+    sucursal = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
+    if not sucursal:
+        raise SucursalNoExistente()
+
+    # Verificar que no exista ya una categoría con ese nombre
+    existente = db.query(MenuCategoria).filter(
+        MenuCategoria.nombre == nombre.strip(),
+        MenuCategoria.sucursal_id == sucursal_id,
+        MenuCategoria.activo == True
+    ).first()
+
+    if existente:
+        raise HTTPException(status_code=400, detail="Ya existe una categoría con ese nombre")
+
+    categoria = MenuCategoria(
+        sucursal_id=sucursal_id,
+        nombre=nombre.strip(),
+        activo=True
+    )
+    db.add(categoria)
+    db.commit()
+    db.refresh(categoria)
+    return categoria
+
+
+def delete_categoria(db: Session, sucursal_id: str, categoria_id: str):
+    categoria = db.query(MenuCategoria).filter(
+        MenuCategoria.id == categoria_id,
+        MenuCategoria.sucursal_id == sucursal_id
+    ).first()
+
+    if not categoria:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+
+    # Verificar que no tenga items activos
+    items_activos = db.query(MenuItem).filter(
+        MenuItem.categoria_id == categoria_id,
+        MenuItem.activo == True
+    ).count()
+
+    if items_activos > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No puedes eliminar una categoría con {items_activos} items activos"
+        )
+
+    # Soft delete
+    categoria.activo = False
+    db.commit()
+    return {"ok": True, "message": "Categoría eliminada correctamente"}

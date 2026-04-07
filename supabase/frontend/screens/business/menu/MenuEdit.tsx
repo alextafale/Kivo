@@ -190,16 +190,31 @@ export default function MenuEditor({ navigation }: Props) {
     fetchMenu();
   }, [fetchMenu]);
 
-  const handleToggle = (id: string, val: boolean) => {
-    setSections((prev) =>
-      prev.map((sec) => ({
-        ...sec,
-        items: sec.items.map((item) =>
-          item.id === id ? { ...item, enabled: val, soldOut: val ? false : item.soldOut } : item
-        ),
-      }))
-    );
-  };
+  const handleToggle = async (id: string, val: boolean) => {
+  // Actualizar UI inmediatamente
+  setSections((prev) =>
+    prev.map((sec) => ({
+      ...sec,
+      items: sec.items.map((item) =>
+        item.id === id ? { ...item, enabled: val } : item
+      ),
+    }))
+  );
+
+  // Llamar al backend
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    await fetch(
+      `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${id}/disponibilidad`,
+      {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      }
+    )
+  } catch (e) {
+    console.warn('Error toggling disponibilidad:', e)
+  }
+}
 
   const handleEdit = (item: MenuItem) => {
     navigation.navigate('MenuItemEditor', { itemId: item.id });

@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from pydantic import BaseModel
 from db.database import SessionLocal
-from core.dependencies import get_current_user
+from core.dependencies import get_current_user, get_current_user_id
 from schemas.pedidos import PedidoIn, PedidoOut
 from schemas.enums import PedidoEstado
 
-from services.pedidos import get_pedido,get_pedidos,get_pedidos_negocio, change_estado_pedido, create_pedido, get_metricas_negocio
-
+from services.pedidos import get_pedido, get_pedidos, get_pedidos_negocio, change_estado_pedido, create_pedido, get_metricas_negocio
 
 router = APIRouter(tags=["Pedidos"])
 
@@ -18,7 +18,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
 
 
 class EstadoIn(BaseModel):
@@ -33,7 +32,7 @@ def _get_user_id(user: dict):
 @router.get("/pedidos")
 def obtener_pedidos(
     db: Session = Depends(get_db),
-    user = Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
     return get_pedidos(db, _get_user_id(user))
 
@@ -42,7 +41,7 @@ def obtener_pedidos(
 def obtener_pedido_por_id(
     pedido_id: str,
     db: Session = Depends(get_db),
-    user = Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
     return get_pedido(db, pedido_id, _get_user_id(user))
 
@@ -51,7 +50,7 @@ def obtener_pedido_por_id(
 def obtener_pedidos_negocio(
     negocio_id: str,
     db: Session = Depends(get_db),
-    user = Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
     return get_pedidos_negocio(db, negocio_id, _get_user_id(user))
 
@@ -61,7 +60,7 @@ async def cambiar_estado_pedido(
     pedido_id: str,
     body: EstadoIn,
     db: Session = Depends(get_db),
-    user = Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
     return await change_estado_pedido(
         db,
@@ -75,7 +74,7 @@ async def cambiar_estado_pedido(
 def crear_pedido(
     pedido_in: PedidoIn,
     db: Session = Depends(get_db),
-    user = Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
     return create_pedido(
         db,
@@ -83,18 +82,13 @@ def crear_pedido(
         _get_user_id(user)
     )
 
-# ─── GET ETA del repartidor ─────────────────────────────────────
+
 @router.get("/pedidos/{pedido_id}/eta", summary="Obtener ETA del repartidor")
 def get_eta(
     pedido_id: str,
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user_id)
 ):
-    """
-    Calcula el tiempo estimado de llegada del repartidor.
-    Usa ST_Distance de PostGIS para calcular la distancia
-    entre la ubicación actual del repartidor y el domicilio del cliente.
-    """
     row = db.execute(
         text("""
             SELECT
@@ -112,15 +106,12 @@ def get_eta(
         {"pedido_id": pedido_id, "user_id": user_id}
     ).mappings().first()
 
-<<<<<<< HEAD
     if not row:
         return {"eta_minutos": None, "distancia_km": None}
 
     distancia_km = float(row["distancia_km"])
-    velocidad_promedio = 30  # km/h promedio en ciudad
+    velocidad_promedio = 30
     eta_minutos = round((distancia_km / velocidad_promedio) * 60)
-
-    # Mínimo 1 minuto
     eta_minutos = max(1, eta_minutos)
 
     return {
@@ -128,17 +119,12 @@ def get_eta(
         "distancia_km": round(distancia_km, 2)
     }
 
-# ─── GET /negocios/{negocio_id}/metricas ─────────────────────────────────────
 
 @router.get("/negocios/{negocio_id}/metricas", summary="Métricas de pedidos del negocio")
-def get_metricas_negocio(
-=======
-@router.get("/negocios/{negocio_id}/metricas")
 def obtener_metricas_negocio(
->>>>>>> bc74e5cd5f588da88427f0ddd9d34b9cca7e37e6
     negocio_id: str,
     db: Session = Depends(get_db),
-    user = Depends(get_current_user),
+    user=Depends(get_current_user),
 ):
     return get_metricas_negocio(
         db,

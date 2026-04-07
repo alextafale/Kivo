@@ -21,6 +21,7 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useAuth } from '../../../application/context/AuthContext';
 import * as ImagePicker from "expo-image-picker";
+import { supabase } from '../../../config/supabaseConfig';
 
 type MenuItemEditorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MenuItemEditor'>;
 type MenuItemEditorRouteProp = RouteProp<RootStackParamList, 'MenuItemEditor'>;
@@ -263,15 +264,34 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Delete Item',
-      `Are you sure you want to remove "${name}" from your menu?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => navigation.goBack() },
-      ],
-    );
-  };
+  Alert.alert(
+    'Delete item',
+    `Are you sure you want to delete "${name}" from the menu?`,
+    [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const res = await fetch(
+              `${process.env.API_BASE_URL}/sucursales/${sucursalId}/menu/${itemId}`,
+              {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${session?.access_token}` },
+              }
+            )
+            if (!res.ok) throw new Error('There was an error')
+            navigation.goBack()
+          } catch (e) {
+            Alert.alert('Error', 'Could not delete item');
+          }
+        }
+      },
+    ],
+  );
+};
 
   const CATEGORIES = ['Main Course', 'Sides', 'Drinks', 'Desserts', 'Appetizers'];
 
