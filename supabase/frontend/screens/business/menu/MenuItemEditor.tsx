@@ -233,45 +233,21 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   };
 
   const updateMenuItem = async () => {
-    // Obtener token fresco
+    // El backend usa Form(...) en todos los campos → siempre FormData
     const { data: { session: s } } = await supabase.auth.getSession();
     const token = s?.access_token ?? session?.accessToken;
     const baseUrl = `${process.env.EXPO_PUBLIC_API_URL}/sucursales/negocios/${negocioId}/sucursales/${sucursalId}/menu/${itemId}`;
 
-    // Si hay imagen nueva, usar FormData
-    if (imageUri) {
-      const formData = buildFormData();
-      const res = await fetch(baseUrl, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      if (!res.ok) {
-        const body = await res.text();
-        console.warn('updateMenuItem (FormData) error:', res.status, body);
-        throw new Error("Error actualizando");
-      }
-      return;
-    }
-
-    // Sin imagen nueva, mandar JSON
+    const formData = buildFormData();
     const res = await fetch(baseUrl, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        nombre: name,
-        descripcion: description,
-        precio: parseFloat(price),
-        disponible: enabled,
-        categoria: category,
-      }),
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
     });
+
     if (!res.ok) {
       const body = await res.text();
-      console.warn('updateMenuItem (JSON) error:', res.status, body);
+      console.warn('updateMenuItem error:', res.status, body);
       throw new Error("Error actualizando");
     }
   };
