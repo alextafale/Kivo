@@ -165,7 +165,7 @@ export default function MenuEditor({ navigation }: Props) {
             id: item.id,
             name: item.nombre,
             price: item.precio,
-            enabled: item.disponible ?? true,
+            enabled: item.disponible === true,
             imageUrl: item.imagen_url,
             category: c as any,
           });
