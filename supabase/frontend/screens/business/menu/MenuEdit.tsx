@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import BottomNavBar, { TabName } from '../../../components/business/tabNavigation';
 
@@ -165,7 +166,7 @@ export default function MenuEditor({ navigation }: Props) {
             id: item.id,
             name: item.nombre,
             price: item.precio,
-            enabled: item.disponible === true,
+            enabled: item.disponible ?? true,
             imageUrl: item.imagen_url,
             category: c as any,
           });
@@ -187,9 +188,11 @@ export default function MenuEditor({ navigation }: Props) {
     }
   }, [sucursalId]);
 
-  useEffect(() => {
-    fetchMenu();
-  }, [fetchMenu]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchMenu();
+    }, [fetchMenu])
+  );
 
  const handleToggle = async (id: string, val: boolean) => {
   // Optimistic UI update
