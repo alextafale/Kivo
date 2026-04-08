@@ -203,20 +203,29 @@ export default function MenuEditor({ navigation }: Props) {
   );
 
   try {
-    // Obtener token fresco de supabase por si el del contexto expiró
     const { data: { session: freshSession } } = await supabase.auth.getSession();
     const token = freshSession?.access_token ?? session?.accessToken;
 
     const url = `${process.env.EXPO_PUBLIC_API_URL}/sucursales/negocios/${negocioId}/sucursales/${sucursalId}/menu/${id}/disponibilidad`;
     console.log('Toggle URL:', url);
-    console.log('Token:', token ? 'existe' : 'no existe');
 
     const res = await fetch(url, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!res.ok) {
+    if (res.ok) {
+      // Sincronizar con el valor REAL que devuelve el backend
+      const data = await res.json();
+      setSections((prev) =>
+        prev.map((sec) => ({
+          ...sec,
+          items: sec.items.map((item) =>
+            item.id === id ? { ...item, enabled: data.disponible } : item
+          ),
+        }))
+      );
+    } else {
       const body = await res.text();
       console.warn('Toggle error:', res.status, body);
       // Revertir optimistic update si falla

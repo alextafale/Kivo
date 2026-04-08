@@ -39,6 +39,7 @@ def get_sucursal_por_id(db: Session, sucursal_id: str):
             "precio": item.precio,
             "imagen_url": item.imagen_url,
             "descripcion": item.descripcion,
+            "disponible": item.disponible,
             "categoria": categoria.nombre
         })
 
