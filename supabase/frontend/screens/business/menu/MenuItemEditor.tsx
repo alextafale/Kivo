@@ -115,6 +115,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   // ✅ session viene del contexto — sin supabase.auth.getSession() inline
   const { adminAccess, session } = useAuth();
   const sucursalId = adminAccess?.sucursalId;
+  const negocioId  = adminAccess?.negocioId;
 
   const [isLoading, setIsLoading] = useState(true);
   const [name, setName] = useState('');
@@ -211,39 +212,55 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
   const createMenuItem = async () => {
     const formData = buildFormData();
+    // Obtener token fresco
+    const { data: { session: s } } = await supabase.auth.getSession();
+    const token = s?.access_token ?? session?.accessToken;
 
     const res = await fetch(
       `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu`,
       {
         method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       }
     );
 
-    if (!res.ok) throw new Error("Error creando");
+    if (!res.ok) {
+      const body = await res.text();
+      console.warn('createMenuItem error:', res.status, body);
+      throw new Error("Error creando");
+    }
   };
 
   const updateMenuItem = async () => {
-  // Si hay imagen nueva, usar FormData
-  if (imageUri) {
-    const formData = buildFormData()
-    const res = await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${itemId}`,
-      {
-        method: "PUT",
-        body: formData,
-      }
-    )
-    if (!res.ok) throw new Error("Error actualizando")
-    return
-  }
+    // Obtener token fresco
+    const { data: { session: s } } = await supabase.auth.getSession();
+    const token = s?.access_token ?? session?.accessToken;
+    const baseUrl = `${process.env.EXPO_PUBLIC_API_URL}/sucursales/negocios/${negocioId}/sucursales/${sucursalId}/menu/${itemId}`;
 
-  // Sin imagen nueva, mandar JSON
-  const res = await fetch(
-    `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${itemId}`,
-    {
+    // Si hay imagen nueva, usar FormData
+    if (imageUri) {
+      const formData = buildFormData();
+      const res = await fetch(baseUrl, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        console.warn('updateMenuItem (FormData) error:', res.status, body);
+        throw new Error("Error actualizando");
+      }
+      return;
+    }
+
+    // Sin imagen nueva, mandar JSON
+    const res = await fetch(baseUrl, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
         nombre: name,
         descripcion: description,
@@ -251,10 +268,13 @@ export default function MenuItemEditor({ navigation, route }: Props) {
         disponible: enabled,
         categoria: category,
       }),
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      console.warn('updateMenuItem (JSON) error:', res.status, body);
+      throw new Error("Error actualizando");
     }
-  )
-  if (!res.ok) throw new Error("Error actualizando")
-};
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -293,16 +313,21 @@ export default function MenuItemEditor({ navigation, route }: Props) {
         style: 'destructive',
         onPress: async () => {
           try {
-            const { data: { session } } = await supabase.auth.getSession()
+            const { data: { session: s } } = await supabase.auth.getSession();
+            const token = s?.access_token ?? session?.accessToken;
             const res = await fetch(
-              `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${itemId}`,
+              `${process.env.EXPO_PUBLIC_API_URL}/sucursales/negocios/${negocioId}/sucursales/${sucursalId}/menu/${itemId}`,
               {
                 method: 'DELETE',
-                headers: { Authorization: `Bearer ${session?.access_token}` },
+                headers: { Authorization: `Bearer ${token}` },
               }
-            )
-            if (!res.ok) throw new Error('There was an error')
-            navigation.goBack()
+            );
+            if (!res.ok) {
+              const body = await res.text();
+              console.warn('handleDelete error:', res.status, body);
+              throw new Error('There was an error');
+            }
+            navigation.goBack();
           } catch (e) {
             Alert.alert('Error', 'Could not delete item');
           }

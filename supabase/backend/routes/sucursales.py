@@ -43,46 +43,68 @@ def crear_item_menu(
 
     return add_menu_item(db, id, item_data, imagen)
 
-@router.put("/{id}/menu/{item_id}")
-def actualizar_item_menu(id: str, item_id: str, item_data: MenuItemFrontendUpdate, db: Session = Depends(get_db)):
-    return update_menu_item(db, id, item_id, item_data, None)
+@router.put("/negocios/{negocio_id}/sucursales/{sucursal_id}/menu/{item_id}")
+def actualizar_item_menu(
+    negocio_id: str,
+    sucursal_id: str,
+    item_id: str,
+    nombre: str = Form(...),
+    descripcion: str = Form(None),
+    precio: float = Form(...),
+    disponible: bool = Form(...),
+    categoria: str = Form(...),
+    imagen: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    _user_id: str = Depends(require_business_admin)
+):
+    item_data = MenuItemFrontendUpdate(
+        nombre=nombre,
+        descripcion=descripcion,
+        precio=precio,
+        disponible=disponible,
+        categoria=categoria
+    )
+    return update_menu_item(db, sucursal_id, item_id, item_data, imagen)
 
-
-@router.delete("/{id}/menu/{item_id}", summary="Eliminar item del menú")
+@router.delete("/negocios/{negocio_id}/sucursales/{sucursal_id}/menu/{item_id}", summary="Eliminar item del menú")
 def eliminar_item_menu(
-    id: str,
+    negocio_id: str,
+    sucursal_id: str,
     item_id: str,
     db: Session = Depends(get_db),
     _user_id: str = Depends(require_business_admin)
 ):
-    return delete_menu_item(db, id, item_id)
+    return delete_menu_item(db, sucursal_id, item_id)
 
 
-@router.patch("/{id}/menu/{item_id}/disponibilidad", summary="Toggle disponibilidad del item")
+@router.patch("/negocios/{negocio_id}/sucursales/{sucursal_id}/menu/{item_id}/disponibilidad", summary="Toggle disponibilidad del item")
 def toggle_disponibilidad(
-    id: str,
+    negocio_id: str,
+    sucursal_id: str,
     item_id: str,
     db: Session = Depends(get_db),
     _user_id: str = Depends(require_business_admin)
 ):
-    return toggle_item_disponibilidad(db, id, item_id)
+    return toggle_item_disponibilidad(db, sucursal_id, item_id)
 
 
-@router.post("/{id}/menu/categorias", summary="Crear categoría del menú")
+@router.post("/negocios/{negocio_id}/sucursales/{sucursal_id}/menu/categorias", summary="Crear categoría del menú")
 def crear_categoria(
-    id: str,
+    negocio_id: str,
+    sucursal_id: str,
     nombre: str = Form(...),
     db: Session = Depends(get_db),
     _user_id: str = Depends(require_business_admin)
 ):
-    return add_categoria(db, id, nombre)
+    return add_categoria(db, sucursal_id, nombre)
 
 
-@router.delete("/{id}/menu/categorias/{categoria_id}", summary="Eliminar categoría del menú")
+@router.delete("/negocios/{negocio_id}/sucursales/{sucursal_id}/menu/categorias/{categoria_id}", summary="Eliminar categoría del menú")
 def eliminar_categoria(
-    id: str,
+    negocio_id: str,
+    sucursal_id: str,
     categoria_id: str,
     db: Session = Depends(get_db),
     _user_id: str = Depends(require_business_admin)
 ):
-    return delete_categoria(db, id, categoria_id)
+    return delete_categoria(db, sucursal_id, categoria_id)

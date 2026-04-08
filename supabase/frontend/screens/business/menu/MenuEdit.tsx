@@ -139,8 +139,9 @@ export default function MenuEditor({ navigation }: Props) {
   const [categories, setCategories]   = useState<Category[]>(['All Items']);
   const [isLoading, setIsLoading]     = useState(true);
 
-  const { adminAccess } = useAuth();
+  const { adminAccess, session } = useAuth();
   const sucursalId = adminAccess?.sucursalId;
+  const negocioId  = adminAccess?.negocioId;
   console.log("Aqui es menu edit");
 
   const fetchMenu = useCallback(async () => {
@@ -190,8 +191,8 @@ export default function MenuEditor({ navigation }: Props) {
     fetchMenu();
   }, [fetchMenu]);
 
-  const handleToggle = async (id: string, val: boolean) => {
-  // Actualizar UI inmediatamente
+ const handleToggle = async (id: string, val: boolean) => {
+  // Optimistic UI update
   setSections((prev) =>
     prev.map((sec) => ({
       ...sec,
@@ -201,18 +202,44 @@ export default function MenuEditor({ navigation }: Props) {
     }))
   );
 
-  // Llamar al backend
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}/menu/${id}/disponibilidad`,
-      {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      }
-    )
+    // Obtener token fresco de supabase por si el del contexto expiró
+    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    const token = freshSession?.access_token ?? session?.accessToken;
+
+    const url = `${process.env.EXPO_PUBLIC_API_URL}/sucursales/negocios/${negocioId}/sucursales/${sucursalId}/menu/${id}/disponibilidad`;
+    console.log('Toggle URL:', url);
+    console.log('Token:', token ? 'existe' : 'no existe');
+
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.warn('Toggle error:', res.status, body);
+      // Revertir optimistic update si falla
+      setSections((prev) =>
+        prev.map((sec) => ({
+          ...sec,
+          items: sec.items.map((item) =>
+            item.id === id ? { ...item, enabled: !val } : item
+          ),
+        }))
+      );
+    }
   } catch (e) {
-    console.warn('Error toggling disponibilidad:', e)
+    console.warn('Error toggling disponibilidad:', e);
+    // Revertir
+    setSections((prev) =>
+      prev.map((sec) => ({
+        ...sec,
+        items: sec.items.map((item) =>
+          item.id === id ? { ...item, enabled: !val } : item
+        ),
+      }))
+    );
   }
 }
 
