@@ -7,6 +7,7 @@ from exceptions.sucursal import SucursalNoExistente
 from exceptions.menu_items import ItemNoExistente
 from typing import List,Optional
 from schemas.menu_items import MenuItemFrontendCreate, MenuItemFrontendUpdate
+from schemas.sucursal_detalle_schema import CategoriaOrdenUpdate
 from fastapi import HTTPException,UploadFile
 from core.cloudinary import upload_image
 
@@ -48,7 +49,7 @@ def get_sucursal_por_id(db: Session, sucursal_id: str):
     categorias_activas = db.query(MenuCategoria).filter(
         MenuCategoria.sucursal_id == sucursal_id,
         MenuCategoria.activo == True
-    ).all()
+    ).order_by(MenuCategoria.orden.asc()).all()
 
     return {
         "id": sucursal.id,
@@ -230,3 +231,12 @@ def delete_categoria(db: Session, sucursal_id: str, categoria_id: str):
     categoria.activo = False
     db.commit()
     return {"ok": True, "message": "Categoría eliminada correctamente"}
+
+def reordenar_categorias(db: Session, sucursal_id: str, orden_data: CategoriaOrdenUpdate):
+    for cat_data in orden_data.categorias:
+        db.query(MenuCategoria).filter(
+            MenuCategoria.id == cat_data.id,
+            MenuCategoria.sucursal_id == sucursal_id
+        ).update({"orden": cat_data.orden}, synchronize_session=False)
+    db.commit()
+    return {"ok": True, "message": "Categorías reordenadas correctamente"}

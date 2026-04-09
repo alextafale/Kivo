@@ -151,6 +151,7 @@ export default function MenuEditor({ navigation }: Props) {
   const [modalCategorias, setModalCategorias] = useState(false)
   const [nuevaCategoria, setNuevaCategoria] = useState('')
   const [loadingCategoria, setLoadingCategoria] = useState(false)
+  const [categoriaIdsMap, setCategoriaIdsMap] = useState<Record<string, string>>({});
 
   const fetchMenu = useCallback(async () => {
     if (!sucursalId) return;
@@ -207,6 +208,7 @@ export default function MenuEditor({ navigation }: Props) {
         
         setSections(newSections);
         setCategories(['All Items', ...Array.from(cats)] as Category[]);
+        setCategoriaIdsMap(categoriaIds);
       }
     } catch (e) {
       console.warn(e);
@@ -298,7 +300,53 @@ export default function MenuEditor({ navigation }: Props) {
         item.name.toLowerCase().includes(searchText.toLowerCase())
       ),
     }))
-    .filter((sec) => sec.items.length > 0 || searchText === '');
+    .filter((sec) => {
+      // Filtrar por categoría activa (píldora seleccionada)
+      if (activeCategory !== 'All Items' && sec.title !== activeCategory.toUpperCase()) {
+        return false;
+      }
+      // Mantener la lógica del buscador
+      return sec.items.length > 0 || searchText === '';
+    });
+
+  const handleMoverCategoria = async (index: number, direction: 'up' | 'down') => {
+    const editableCats = categories.filter(c => c !== 'All Items');
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === editableCats.length - 1) return;
+
+    const newEditable = [...editableCats];
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    [newEditable[index], newEditable[swapIndex]] = [newEditable[swapIndex], newEditable[index]];
+
+    setCategories(['All Items', ...(newEditable as Category[])]);
+
+    try {
+      const { data: { session: freshSession } } = await supabase.auth.getSession();
+      const token = freshSession?.access_token ?? session?.accessToken;
+
+      const payload = {
+        categorias: newEditable.map((cat, i) => ({
+          id: categoriaIdsMap[cat],
+          orden: i
+        }))
+      };
+
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/sucursales/negocios/${negocioId}/sucursales/${sucursalId}/menu/categorias/orden`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        console.warn("Fallo al reordenar");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
 
     const handleCrearCategoria = async () => {
@@ -483,16 +531,34 @@ const handleEliminarCategoria = async (nombre: string) => {
       </View>
 
       {/* Lista de categorías existentes */}
-      <ScrollView style={{ maxHeight: 300 }}>
-        {categories.filter(c => c !== 'All Items').map(cat => (
-          <View key={cat} style={styles.categoriaRow}>
-            <Text style={styles.categoriaRowText}>{cat}</Text>
-            <TouchableOpacity onPress={() => handleEliminarCategoria(cat)}>
-              <Text style={styles.categoriaDeleteBtn}>🗑️</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </ScrollView>
+      <View style={{ flexShrink: 1, maxHeight: 300, marginVertical: 10, width: '100%' }}>
+        <ScrollView 
+          showsVerticalScrollIndicator={true}
+          contentContainerStyle={{ paddingBottom: 10, flexGrow: 1 }}
+        >
+          {categories.filter(c => c !== 'All Items').map((cat, index, arr) => (
+            <View key={cat} style={styles.categoriaRow}>
+              <Text style={styles.categoriaRowText} numberOfLines={1}>{cat}</Text>
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                {index > 0 && (
+                  <TouchableOpacity onPress={() => handleMoverCategoria(index, 'up')} style={{ padding: 5 }}>
+                    <Text>⬆️</Text>
+                  </TouchableOpacity>
+                )}
+                {index < arr.length - 1 && (
+                  <TouchableOpacity onPress={() => handleMoverCategoria(index, 'down')} style={{ padding: 5 }}>
+                    <Text>⬇️</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={() => handleEliminarCategoria(cat)} style={{ padding: 5, marginLeft: 8 }}>
+                  <Text style={styles.categoriaDeleteBtn}>🗑️</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Crear nueva categoría */}
       <View style={styles.nuevaCategoriaRow}>
@@ -579,8 +645,9 @@ const styles = StyleSheet.create({
   categoryScroll: { flexGrow: 0, paddingBottom: 4 },
   categoryContent: { paddingHorizontal: 20, gap: 8, paddingBottom: 12 },
   categoryPill: {
-    paddingHorizontal: 18, paddingVertical: 9, borderRadius: 20,
+    paddingHorizontal: 18, borderRadius: 20,
     backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB',
+    height: 40, justifyContent: 'center', alignItems: 'center'
   },
   categoryPillActive: { backgroundColor: '#22c55e', borderColor: '#22c55e' },
   categoryPillText: { fontSize: 13, fontWeight: '600', color: '#374151' },

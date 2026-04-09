@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from db.database import SessionLocal
-from schemas.sucursal_detalle_schema import SucursalDetalleResponse
+from schemas.sucursal_detalle_schema import SucursalDetalleResponse, CategoriaOrdenUpdate
 from schemas.menu_items import MenuItemFrontendCreate, MenuItemFrontendUpdate
-from services.sucursales import get_sucursal_por_id, add_menu_item, update_menu_item, delete_menu_item, toggle_item_disponibilidad, add_categoria, delete_categoria
+from services.sucursales import get_sucursal_por_id, add_menu_item, update_menu_item, delete_menu_item, toggle_item_disponibilidad, add_categoria, delete_categoria, reordenar_categorias
 from fastapi import APIRouter, Depends, File, UploadFile, Form
 from core.isBusinessAdmin import require_business_admin
 
@@ -108,3 +108,13 @@ def eliminar_categoria(
     _user_id: str = Depends(require_business_admin)
 ):
     return delete_categoria(db, sucursal_id, categoria_id)
+
+@router.put("/negocios/{negocio_id}/sucursales/{sucursal_id}/menu/categorias/orden", summary="Reordenar categorías del menú")
+def reordenar_categorias_endpoint(
+    negocio_id: str,
+    sucursal_id: str,
+    orden_data: CategoriaOrdenUpdate,
+    db: Session = Depends(get_db),
+    _user_id: str = Depends(require_business_admin)
+):
+    return reordenar_categorias(db, sucursal_id, orden_data)

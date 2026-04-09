@@ -36,3 +36,10 @@ class SucursalDetalleResponse(BaseModel):
     horarios: HorariosResponse
     menu: List[MenuItemDetalle]
     categorias: Optional[List[CategoriaDetalle]] = []
+
+class CategoriaOrdenUpdateItem(BaseModel):
+    id: UUID
+    orden: int
+
+class CategoriaOrdenUpdate(BaseModel):
+    categorias: List[CategoriaOrdenUpdateItem]
