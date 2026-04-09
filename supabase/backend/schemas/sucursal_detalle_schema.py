@@ -17,6 +17,10 @@ class MenuItemDetalle(BaseModel):
     categoria: str
 
 
+class CategoriaDetalle(BaseModel):
+    id: UUID
+    nombre: str
+
 class SucursalDetalleResponse(BaseModel):
     id: UUID
     negocio_id: UUID
@@ -31,3 +35,4 @@ class SucursalDetalleResponse(BaseModel):
     direccion: str
     horarios: HorariosResponse
     menu: List[MenuItemDetalle]
+    categorias: Optional[List[CategoriaDetalle]] = []

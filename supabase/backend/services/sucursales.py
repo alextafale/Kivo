@@ -40,8 +40,15 @@ def get_sucursal_por_id(db: Session, sucursal_id: str):
             "imagen_url": item.imagen_url,
             "descripcion": item.descripcion,
             "disponible": bool(item.disponible) if item.disponible is not None else True,
-            "categoria": categoria.nombre
+            "categoria": categoria.nombre,
+            "categoria_id": str(categoria.id), 
+            "disponible": item.disponible, 
         })
+
+    categorias_activas = db.query(MenuCategoria).filter(
+        MenuCategoria.sucursal_id == sucursal_id,
+        MenuCategoria.activo == True
+    ).all()
 
     return {
         "id": sucursal.id,
@@ -59,7 +66,8 @@ def get_sucursal_por_id(db: Session, sucursal_id: str):
             "entre_semana": "9:00 - 22:00",
             "fin_semana": "9:00 - 22:00"
         },
-        "menu": menu
+        "menu": menu,
+        "categorias": [{"id": str(c.id), "nombre": c.nombre} for c in categorias_activas]
     }
 
 def add_menu_item(db: Session, sucursal_id: str, item_data: MenuItemFrontendCreate, imagen:Optional[UploadFile]):

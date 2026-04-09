@@ -12,6 +12,8 @@ import {
   Image,
   ActivityIndicator,
   Platform,
+  Alert,
+  Modal,
 } from 'react-native';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -71,6 +73,7 @@ interface MenuItem {
 }
 
 interface MenuSection {
+  id?: string;
   title: string;
   count: number;
   items: MenuItem[];
@@ -145,6 +148,10 @@ export default function MenuEditor({ navigation }: Props) {
   const negocioId  = adminAccess?.negocioId;
   console.log("Aqui es menu edit");
 
+  const [modalCategorias, setModalCategorias] = useState(false)
+  const [nuevaCategoria, setNuevaCategoria] = useState('')
+  const [loadingCategoria, setLoadingCategoria] = useState(false)
+
   const fetchMenu = useCallback(async () => {
     if (!sucursalId) return;
     try {
@@ -156,17 +163,36 @@ export default function MenuEditor({ navigation }: Props) {
         
         const cats = new Set<string>();
         const grouped: Record<string, MenuItem[]> = {};
-        
+        const categoriaIds: Record<string, string> = {};
+
+        // 1. Poblamos todas las categorías del backend (incluyendo vacías)
+        const serverCategorias = data.categorias || [];
+        serverCategorias.forEach((cat: any) => {
+          cats.add(cat.nombre);
+          categoriaIds[cat.nombre] = cat.id;
+          grouped[cat.nombre] = [];
+        });
+
+        // 2. Luego insertamos los items
         menuItems.forEach((item: any) => {
           const c = item.categoria || 'Uncategorized';
           cats.add(c);
+          categoriaIds[c] = item.categoria_id;
           if (!grouped[c]) grouped[c] = [];
           
+          // Debugging log para ver qué escupe el backend
+          console.log(`[MenuEdit] Item: ${item.nombre} | disponible: ${item.disponible} | type: ${typeof item.disponible}`);
+
+          let isEnabled = true; // Por defecto activo
+          if (item.disponible === false || item.disponible === 'false' || item.disponible === 0) {
+            isEnabled = false;
+          }
+
           grouped[c].push({
             id: item.id,
             name: item.nombre,
             price: item.precio,
-            enabled: item.disponible ?? true,
+            enabled: isEnabled,
             imageUrl: item.imagen_url,
             category: c as any,
           });
@@ -175,7 +201,8 @@ export default function MenuEditor({ navigation }: Props) {
         const newSections = Array.from(cats).map(c => ({
           title: c.toUpperCase(),
           count: grouped[c].length,
-          items: grouped[c]
+          items: grouped[c],
+          id: categoriaIds[c] 
         }));
         
         setSections(newSections);
@@ -220,11 +247,16 @@ export default function MenuEditor({ navigation }: Props) {
     if (res.ok) {
       // Sincronizar con el valor REAL que devuelve el backend
       const data = await res.json();
+      let realEnabled = true;
+      if (data.disponible === false || data.disponible === 'false' || data.disponible === 0) {
+        realEnabled = false;
+      }
+
       setSections((prev) =>
         prev.map((sec) => ({
           ...sec,
           items: sec.items.map((item) =>
-            item.id === id ? { ...item, enabled: data.disponible } : item
+            item.id === id ? { ...item, enabled: realEnabled } : item
           ),
         }))
       );
@@ -266,7 +298,75 @@ export default function MenuEditor({ navigation }: Props) {
         item.name.toLowerCase().includes(searchText.toLowerCase())
       ),
     }))
-    .filter((sec) => sec.items.length > 0);
+    .filter((sec) => sec.items.length > 0 || searchText === '');
+
+
+    const handleCrearCategoria = async () => {
+  if (!nuevaCategoria.trim()) return
+  setLoadingCategoria(true)
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const negocioId = adminAccess?.negocioId
+
+    const formData = new FormData()
+    formData.append('nombre', nuevaCategoria.trim())
+
+    const res = await fetch(
+      `${process.env.EXPO_PUBLIC_API_URL}/sucursales/negocios/${negocioId}/sucursales/${sucursalId}/menu/categorias`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+        body: formData,
+      }
+    )
+    if (!res.ok) throw new Error('Error al crear categoría')
+    setNuevaCategoria('')
+    await fetchMenu()
+  } catch (e) {
+    Alert.alert('Error', 'No se pudo crear la categoría')
+  } finally {
+    setLoadingCategoria(false)
+  }
+}
+
+const handleEliminarCategoria = async (nombre: string) => {
+  Alert.alert(
+    'Eliminar categoría',
+    `¿Estás seguro que quieres eliminar "${nombre}"?`,
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const negocioId = adminAccess?.negocioId
+
+            // Buscar el id de la categoría
+            const categoria = sections.find(s => s.title === nombre.toUpperCase())
+            if (!categoria) return
+
+            const res = await fetch(
+              `${process.env.EXPO_PUBLIC_API_URL}/sucursales/negocios/${negocioId}/sucursales/${sucursalId}/menu/categorias/${categoria.id}`,
+              {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${session?.access_token}` },
+              }
+            )
+            if (!res.ok) {
+              const err = await res.json()
+              throw new Error(err.detail ?? 'Error al eliminar')
+            }
+            await fetchMenu()
+          } catch (e: any) {
+            Alert.alert('Error', e.message)
+          }
+        }
+      }
+    ]
+  )
+}
 
   return (
     <SafeAreaView style={styles.container}>
@@ -286,7 +386,8 @@ export default function MenuEditor({ navigation }: Props) {
             <PlusIcon />
             <Text style={styles.addButtonText}>Añadir</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.filterIconButton}>
+          <TouchableOpacity style={styles.filterIconButton} 
+            onPress={() => setModalCategorias(true)}>
             <FilterIcon />
           </TouchableOpacity>
         </View>
@@ -365,6 +466,57 @@ export default function MenuEditor({ navigation }: Props) {
           <View style={{ height: 100 }} />
         </ScrollView>
       )}
+      
+      <Modal
+  visible={modalCategorias}
+  animationType="slide"
+  transparent
+  onRequestClose={() => setModalCategorias(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <View style={styles.modalHeader}>
+        <Text style={styles.modalTitle}>Categorías</Text>
+        <TouchableOpacity onPress={() => setModalCategorias(false)}>
+          <Text style={styles.modalClose}>✕</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Lista de categorías existentes */}
+      <ScrollView style={{ maxHeight: 300 }}>
+        {categories.filter(c => c !== 'All Items').map(cat => (
+          <View key={cat} style={styles.categoriaRow}>
+            <Text style={styles.categoriaRowText}>{cat}</Text>
+            <TouchableOpacity onPress={() => handleEliminarCategoria(cat)}>
+              <Text style={styles.categoriaDeleteBtn}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Crear nueva categoría */}
+      <View style={styles.nuevaCategoriaRow}>
+        <TextInput
+          style={styles.nuevaCategoriaInput}
+          placeholder="Nueva categoría..."
+          placeholderTextColor="#9CA3AF"
+          value={nuevaCategoria}
+          onChangeText={setNuevaCategoria}
+        />
+        <TouchableOpacity
+          style={styles.nuevaCategoriaBtn}
+          onPress={handleCrearCategoria}
+          disabled={loadingCategoria}
+        >
+          {loadingCategoria
+            ? <ActivityIndicator size="small" color="#fff" />
+            : <Text style={styles.nuevaCategoriaBtnText}>+</Text>
+          }
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
 
       <BottomNavBar
         activeTab={activeTab}
@@ -473,4 +625,16 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 44, marginBottom: 12 },
   emptyTitle: { fontSize: 17, fontWeight: '700', color: '#374151' },
   emptySubtitle: { fontSize: 13, color: '#9CA3AF', marginTop: 4 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '85%', backgroundColor: '#fff', borderRadius: 16, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  modalClose: { fontSize: 20, color: '#9CA3AF', fontWeight: 'bold' },
+  categoriaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  categoriaRowText: { fontSize: 15, color: '#374151', fontWeight: '500' },
+  categoriaDeleteBtn: { fontSize: 16 },
+  nuevaCategoriaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20, gap: 10 },
+  nuevaCategoriaInput: { flex: 1, height: 44, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, paddingHorizontal: 12, fontSize: 14, color: '#374151', backgroundColor: '#F9FAFB' },
+  nuevaCategoriaBtn: { width: 44, height: 44, borderRadius: 8, backgroundColor: '#22c55e', justifyContent: 'center', alignItems: 'center' },
+  nuevaCategoriaBtnText: { color: '#fff', fontSize: 24, fontWeight: '500', lineHeight: 28 },
 });

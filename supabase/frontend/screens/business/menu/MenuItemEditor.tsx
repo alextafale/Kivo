@@ -130,16 +130,12 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
 
   //  Espera a que sucursalId Y session estén disponibles antes de hacer fetch
   React.useEffect(() => {
-    const fetchItem = async () => {
+    const fetchData = async () => {
       if (!sucursalId || !session?.accessToken) return;
-
-      if (itemId === 'new') {
-        setIsLoading(false);
-        return;
-      }
 
       try {
         const res = await fetch(
@@ -149,24 +145,46 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
         if (res.ok) {
           const data = await res.json();
-          const item = data.menu?.find((m: { id: string }) => m.id === itemId);
-          if (item) {
-            setName(item.nombre || '');
-            setDescription(item.descripcion || '');
-            setPrice(item.precio?.toString() || '0');
-            setCategory(item.categoria || 'Main Course');
-            setEnabled(item.disponible ?? true);
-            setImageUrl(item.imagen_url);
+          let categoriasServidor = data.categorias?.map((c: any) => c.nombre) || [];
+          
+          if (categoriasServidor.length === 0) {
+              // Fallback for older backend without 'categorias' field
+              const uniqueCats = new Set<string>();
+              (data.menu || []).forEach((item: any) => {
+                  if (item.categoria) uniqueCats.add(item.categoria);
+              });
+              categoriasServidor = Array.from(uniqueCats);
+              if (categoriasServidor.length === 0) {
+                  categoriasServidor = ['Main Course', 'Sides', 'Drinks', 'Desserts', 'Appetizers'];
+              }
+          }
+          
+          setAvailableCategories(categoriasServidor);
+
+          if (itemId !== 'new') {
+            const item = data.menu?.find((m: { id: string }) => m.id === itemId);
+            if (item) {
+              setName(item.nombre || '');
+              setDescription(item.descripcion || '');
+              setPrice(item.precio?.toString() || '0');
+              setCategory(item.categoria || categoriasServidor[0]);
+              setEnabled(item.disponible ?? true);
+              setImageUrl(item.imagen_url);
+            }
+          } else {
+             if (categoriasServidor.length > 0) {
+               setCategory(categoriasServidor[0]);
+             }
           }
         }
       } catch (e) {
-        console.warn('fetchItem error:', e);
+        console.warn('fetchData error:', e);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchItem();
+    fetchData();
   }, [sucursalId, itemId, session?.accessToken]); // ✅ se re-ejecuta si el token cambia
 
   const mark = () => setHasChanges(true);
@@ -312,8 +330,6 @@ export default function MenuItemEditor({ navigation, route }: Props) {
     ],
   );
 };
-
-  const CATEGORIES = ['Main Course', 'Sides', 'Drinks', 'Desserts', 'Appetizers'];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -466,7 +482,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.categoryRow}
               >
-                {CATEGORIES.map((cat) => (
+                {availableCategories.map((cat) => (
                   <TouchableOpacity
                     key={cat}
                     style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
