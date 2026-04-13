@@ -17,22 +17,9 @@
 
 ## Alex — Pendientes
 
-**Features de IA (Qwen)**
-- [ ] Resolución automática de quejas — el LLM evalúa la queja, decide acción (cupón / reembolso parcial / disculpa) y la ejecuta usando el módulo de cupones existente
-- [ ] Prompt engineering: categorización automática de items del menú → JSON `{ categoria, confianza }`, fallback manual si confianza < 0.7
-- [ ] Prompt engineering: respuestas sugeridas a reviews negativas → 3 opciones con tono diferente, el admin elige y aprueba antes de publicar
 
-**Perfil del negocio — Comentarios y Reacciones (backend)**
-- [ ] `POST /negocios/:id/comentarios` — publicar comentario en el perfil del negocio
-- [ ] `GET /negocios/:id/comentarios` — listar comentarios con paginación
-- [ ] `DELETE /negocios/:id/comentarios/:comentario_id` — eliminar comentario (autor o admin del negocio)
-- [ ] `POST /negocios/:id/comentarios/:comentario_id/reacciones` — agregar reacción (👍 ❤️ 😂 😮 😢)
-- [ ] `DELETE /negocios/:id/comentarios/:comentario_id/reacciones` — quitar reacción propia
-- [ ] `GET /negocios/:id/comentarios/:comentario_id/reacciones` — conteo de reacciones por tipo
-- [ ] Tabla `negocio_comentarios` en Supabase con RLS
-- [ ] Tabla `negocio_reacciones` en Supabase con RLS (unique por usuario + comentario + tipo)
 
----
+
 
 ## Yahir — Pendientes
 
@@ -57,11 +44,6 @@
 - [ ] Subida de fotos opcionales en la review
 - [ ] Sección de reseñas visible en el perfil/detalle del negocio
 
-**Logo & Banner del negocio**
-- [ ] Endpoint para subir logo del negocio a Supabase Storage
-- [ ] Endpoint para subir banner del negocio a Supabase Storage
-- [ ] Subida de logo del negocio desde galería (admin del negocio)
-- [ ] Subida de banner del negocio desde galería (admin del negocio)
 
 **IA — Generación automática de descripciones de platillos**
 - [ ] `POST /admin/menu/items/generar-descripcion` → `{ nombre, foto_url }` → `{ descripcion }`
@@ -93,14 +75,9 @@
 ## Jesús — Pendientes
 
 **CRUD Menú (admin)**
-- [ ] `POST /admin/menu/categorias`
-- [ ] `POST /admin/menu/items` con personalizaciones
-- [ ] `PATCH /admin/menu/items/:id` → precio, disponibilidad
-- [ ] `DELETE /admin/menu/items/:id`
+
 - [ ] Pantalla admin: gestión de categorías (crear, reordenar, activar/desactivar)
-- [ ] Pantalla admin: gestión de items (crear, editar, eliminar)
-- [ ] Toggle de disponibilidad de platillo en tiempo real
-- [ ] Subida de foto del platillo a Supabase Storage
+
 
 **Tracking en tiempo real**
 - [ ] `POST /repartidores/ubicacion` → upsert GPS
