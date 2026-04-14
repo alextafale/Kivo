@@ -26,6 +26,7 @@ import {
   GeminiMessage,
   parsePedidoFromResponse,
 } from '../../../../services/geminiService';
+
 import { useCart, ChatbotOrder } from '../../../application/context/CartContext';
 import { supabase } from '../../../config/supabaseConfig';
 import { useAuth } from '../../../application/context/AuthContext';
@@ -34,6 +35,7 @@ const { width } = Dimensions.get('window');
 
 type ChatbotNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chatbot'>;
 type Props = { navigation: ChatbotNavigationProp };
+
 
 // ─── Paleta ───────────────────────────────────────────────────────────────────
 const C = {
