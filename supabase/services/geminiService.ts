@@ -420,9 +420,9 @@ export function parsePedidoFromResponse(
 }
 
 // ─── Qwen — vía Render (backend intermedio) ───────────────────────────────────
+// ─── Qwen — directo a Cloudflare Tunnel ───────────────────────────────────────
 
-const BACKEND_CHAT_URL = 'https://kivo-v1.onrender.com/api/v1/chatbot/chat';
-
+const OLLAMA_URL = 'http://192.168.1.93:11434/api/chat'
 function toQwenHistory(history: GeminiMessage[]): QwenMessage[] {
   return history.map(m => ({
     role: m.role === 'model' ? 'assistant' : 'user',
@@ -444,10 +444,15 @@ export async function askGemini(
     { role: 'user', content: userMessage },
   ];
 
-  const response = await fetch(BACKEND_CHAT_URL, {
+  const response = await fetch(OLLAMA_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({
+      model: 'qwen2.5:7b',
+      messages,
+      stream: false,
+      options: { temperature: 0.3, num_predict: 800, repeat_penalty: 1.2, top_p: 0.85 },
+    }),
   });
 
   if (!response.ok) {
@@ -457,5 +462,5 @@ export async function askGemini(
   }
 
   const data = await response.json();
-  return data.content ?? 'No pude obtener respuesta. Intenta de nuevo.';
+  return data.message?.content ?? 'No pude obtener respuesta. Intenta de nuevo.';
 }
