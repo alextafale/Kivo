@@ -20,13 +20,13 @@ class ChatRequest(BaseModel):
 
 @router.get("/debug")
 async def debug():
-    return {"QWEN_HOST": os.getenv("QWEN_HOST", "NO DEFINIDA")}
+    return {"OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "NO DEFINIDA")}
 
 
 @router.post("/chat")
 async def chat(req: ChatRequest):
-    qwen_host = os.getenv("QWEN_HOST", "http://localhost:11434")
-    url = f"{qwen_host}/api/chat"
+    ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    url = f"{ollama_base_url}/api/chat"
 
     payload = {
         "model": QWEN_MODEL,
@@ -46,9 +46,9 @@ async def chat(req: ChatRequest):
                 json=payload,
                 headers={
                     "Content-Type": "application/json",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        },
-    )
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                },
+            )
             response.raise_for_status()
             data = response.json()
             return {"content": data["message"]["content"]}
