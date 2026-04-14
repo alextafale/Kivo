@@ -13,9 +13,10 @@ import {
   Platform,
   Animated,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import {
@@ -26,52 +27,75 @@ import {
   parsePedidoFromResponse,
 } from '../../../../services/geminiService';
 import { useCart, ChatbotOrder } from '../../../application/context/CartContext';
-import { supabase } from '../../../config/supabaseConfig'; // ajusta path
+import { supabase } from '../../../config/supabaseConfig';
 import { useAuth } from '../../../application/context/AuthContext';
+
+const { width } = Dimensions.get('window');
+
 type ChatbotNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chatbot'>;
 type Props = { navigation: ChatbotNavigationProp };
+
+// ─── Paleta ───────────────────────────────────────────────────────────────────
+const C = {
+  bg: '#0A0F0A',
+  surface: '#111811',
+  card: '#161D16',
+  border: '#1E2B1E',
+  green: '#22c55e',
+  greenDark: '#15803d',
+  greenGlow: '#22c55e22',
+  greenSoft: '#16a34a',
+  textPrimary: '#F0FDF4',
+  textSec: '#6B7280',
+  textMuted: '#374151',
+  userBubble: '#22c55e',
+  botBubble: '#161D16',
+}
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const BackIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2">
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.textPrimary} strokeWidth="2" strokeLinecap="round">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
 
 const SendIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2">
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round">
     <Path d="m22 2-7 20-4-9-9-4Z" />
     <Path d="M22 2 11 13" />
   </Svg>
 );
 
 const MicIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round">
     <Path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
     <Path d="M19 10v2a7 7 0 0 1-14 0v-2" />
     <Path d="M12 19v3" />
   </Svg>
 );
 
-const BotIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="1.8">
-    <Rect x="3" y="8" width="18" height="13" rx="3" />
-    <Path d="M9 11v3M15 11v3M8 8V5a4 4 0 0 1 8 0v3" />
-    <Circle cx="9" cy="13" r="1" fill="#22c55e" />
-    <Circle cx="15" cy="13" r="1" fill="#22c55e" />
+const SparkIcon = () => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round">
+    <Path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z" />
   </Svg>
 );
 
 const CartIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2">
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.5" strokeLinecap="round">
     <Path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
     <Path d="M3 6h18" />
     <Path d="M16 10a4 4 0 0 1-8 0" />
   </Svg>
 );
 
-// ─── Tipos locales ────────────────────────────────────────────────────────────
+const CheckIcon = () => (
+  <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5" strokeLinecap="round">
+    <Path d="M20 6 9 17l-5-5" />
+  </Svg>
+);
+
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
 interface Message {
   id: string;
@@ -85,14 +109,18 @@ interface Message {
 // ─── Typing Indicator ─────────────────────────────────────────────────────────
 
 const TypingIndicator = () => {
-  const dots = [useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current];
+  const dots = [
+    useRef(new Animated.Value(0)).current,
+    useRef(new Animated.Value(0)).current,
+    useRef(new Animated.Value(0)).current,
+  ];
 
   useEffect(() => {
     dots.forEach((dot, i) => {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(dot, { toValue: -6, duration: 350, delay: i * 120, useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0, duration: 350, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: -5, duration: 380, delay: i * 130, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0, duration: 380, useNativeDriver: true }),
         ])
       ).start();
     });
@@ -100,11 +128,16 @@ const TypingIndicator = () => {
 
   return (
     <View style={styles.typingContainer}>
-      <View style={styles.botAvatar}><BotIcon /></View>
+      <View style={styles.botAvatar}>
+        <SparkIcon />
+      </View>
       <View style={styles.typingBubble}>
         <View style={styles.typingDots}>
           {dots.map((dot, i) => (
-            <Animated.View key={i} style={[styles.typingDot, { transform: [{ translateY: dot }] }]} />
+            <Animated.View
+              key={i}
+              style={[styles.typingDot, { transform: [{ translateY: dot }] }]}
+            />
           ))}
         </View>
       </View>
@@ -120,79 +153,130 @@ interface PedidoCardProps {
 }
 
 const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
-  const total = pedido.items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotal = pedido.items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const envio = 12;
+  const total = subtotal + envio;
+
   return (
     <View style={styles.pedidoCard}>
-      <View style={styles.pedidoHeader}>
-        <Text style={styles.pedidoTitle}>🧾 Resumen del Pedido</Text>
-      </View>
-
-      <Text style={styles.pedidoNegocio}>🏪 {pedido.negocio?.nombre}</Text>
-
-      {pedido.items.map((item, i) => (
-        <View key={i} style={styles.pedidoRow}>
-          <Text style={styles.pedidoItemText}>{item.quantity}x {item.name}</Text>
-          <Text style={styles.pedidoItemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
+      {/* Header */}
+      <LinearGradient
+        colors={['#0f2d0f', '#0a1a0a']}
+        style={styles.pedidoCardHeader}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.pedidoHeaderLeft}>
+          <Text style={styles.pedidoHeaderEmoji}>🧾</Text>
+          <View>
+            <Text style={styles.pedidoHeaderTitle}>Resumen del Pedido</Text>
+            <Text style={styles.pedidoHeaderSub}>{pedido.negocio?.nombre}</Text>
+          </View>
         </View>
-      ))}
+        <View style={styles.pedidoStatusBadge}>
+          <CheckIcon />
+          <Text style={styles.pedidoStatusText}>Listo</Text>
+        </View>
+      </LinearGradient>
 
-      <View style={styles.pedidoTotalRow}>
-        <Text style={styles.pedidoTotalLabel}>Total estimado</Text>
-        <Text style={styles.pedidoTotalValue}>${total.toFixed(2)}</Text>
+      {/* Items */}
+      <View style={styles.pedidoItems}>
+        {pedido.items.map((item, i) => (
+          <View key={i} style={styles.pedidoRow}>
+            <View style={styles.pedidoQtyBadge}>
+              <Text style={styles.pedidoQtyText}>{item.quantity}</Text>
+            </View>
+            <Text style={styles.pedidoItemText} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.pedidoItemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
+          </View>
+        ))}
       </View>
 
-      <Text style={styles.pedidoDireccion}>📍 {pedido.direccionEntrega}</Text>
-      {!!pedido.notas && <Text style={styles.pedidoNotas}>📝 {pedido.notas}</Text>}
+      {/* Totales */}
+      <View style={styles.pedidoTotales}>
+        <View style={styles.pedidoTotalRow}>
+          <Text style={styles.pedidoTotalLabel}>Subtotal</Text>
+          <Text style={styles.pedidoTotalNum}>${subtotal.toFixed(2)}</Text>
+        </View>
+        <View style={styles.pedidoTotalRow}>
+          <Text style={styles.pedidoTotalLabel}>Envío</Text>
+          <Text style={styles.pedidoTotalNum}>${envio.toFixed(2)}</Text>
+        </View>
+        <View style={[styles.pedidoTotalRow, styles.pedidoTotalFinal]}>
+          <Text style={styles.pedidoTotalFinalLabel}>Total</Text>
+          <Text style={styles.pedidoTotalFinalNum}>${total.toFixed(2)}</Text>
+        </View>
+      </View>
 
-      <TouchableOpacity onPress={onVerCarrito} activeOpacity={0.88} style={styles.carritoBtn}>
+      {/* Dirección */}
+      <View style={styles.pedidoDireccionRow}>
+        <Text style={styles.pedidoDireccionIcon}>📍</Text>
+        <Text style={styles.pedidoDireccionText} numberOfLines={2}>
+          {pedido.direccionEntrega}
+        </Text>
+      </View>
+
+      {!!pedido.notas && (
+        <View style={styles.pedidoNotasRow}>
+          <Text style={styles.pedidoDireccionIcon}>📝</Text>
+          <Text style={styles.pedidoNotasText}>{pedido.notas}</Text>
+        </View>
+      )}
+
+      {/* CTA */}
+      <TouchableOpacity onPress={onVerCarrito} activeOpacity={0.85} style={styles.carritoBtn}>
         <LinearGradient
-          colors={['#22c55e', '#15803d']}
+          colors={[C.green, C.greenDark]}
           style={styles.carritoBtnGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         >
           <CartIcon />
-          <Text style={styles.carritoBtnText}>Ver mi carrito</Text>
+          <Text style={styles.carritoBtnText}>Confirmar en carrito</Text>
         </LinearGradient>
       </TouchableOpacity>
     </View>
   );
 };
 
-// ─── Chatbot Screen ───────────────────────────────────────────────────────────
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function Chatbot({ navigation }: Props) {
   const { setChatbotOrder } = useCart();
   const { session } = useAuth();
-const [direccionPredeterminada, setDireccionPredeterminada] = useState('');
-const [domicilioId, setDomicilioId] = useState<string>('');
-useEffect(() => {
-  if (!session?.userId) return;
-  supabase
-    .from('domicilios')
-    .select('id, calle, numero_ext, colonia, ciudad')
-    .eq('user_id', session.userId)
-    .eq('es_predeterminado', true)
-    .eq('activo', true)
-    .maybeSingle()
-    .then(({ data }) => {
-      if (data) {
-        setDomicilioId(data.id);
-        setDireccionPredeterminada(
-          `${data.calle} ${data.numero_ext ?? ''}, ${data.colonia}, ${data.ciudad}`.trim()
-        );
-      }
-    });
-}, [session?.userId]);
+
+  const [direccionPredeterminada, setDireccionPredeterminada] = useState('');
+  const [domicilioId, setDomicilioId] = useState<string>('');
+
+  useEffect(() => {
+    if (!session?.userId) return;
+    supabase
+      .from('domicilios')
+      .select('id, calle, numero_ext, colonia, ciudad')
+      .eq('user_id', session.userId)
+      .eq('es_predeterminado', true)
+      .eq('activo', true)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setDomicilioId(data.id);
+          setDireccionPredeterminada(
+            `${data.calle} ${data.numero_ext ?? ''}, ${data.colonia}, ${data.ciudad}`.trim()
+          );
+        }
+      });
+  }, [session?.userId]);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '¡Hola! 👋 Soy tu asistente de Kivu.\n\nPuedo ayudarte a:\n🍕 Ver menús y precios\n📍 Info de negocios\n🛵 Tomar tu pedido\n\n¿Qué se te antoja hoy?',
+      text: '¡Hola! 👋 Soy KivoBot.\n\nPuedo ayudarte a:\n🍕 Ver menús y precios\n📍 Info de negocios\n🛵 Tomar tu pedido\n\n¿Qué se te antoja hoy?',
       sender: 'bot',
       timestamp: new Date(),
-      suggestions: ['Ver restaurantes', 'Hacer un pedido', '¿Cuál es el horario?'],
+      suggestions: ['Ver restaurantes', 'Hacer un pedido', '¿Qué hay de comer?'],
     },
   ]);
+
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
@@ -210,8 +294,6 @@ useEffect(() => {
   const scrollToBottom = () =>
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
 
-  // ─── Procesar respuesta ────────────────────────────────────────────────────
-
   const procesarRespuesta = async (
     responseText: string
   ): Promise<{ displayText: string; pedidoCard?: ChatbotOrder }> => {
@@ -219,10 +301,7 @@ useEffect(() => {
     if (!pedidoJson) return { displayText };
 
     const negocio = negocios.find(n => n.id === pedidoJson.negocioId) ?? null;
-    if (!negocio) {
-      console.warn('Negocio no encontrado para ID:', pedidoJson.negocioId);
-      return { displayText };
-    }
+    if (!negocio) return { displayText };
 
     const chatbotOrder: ChatbotOrder = {
       negocio: {
@@ -233,21 +312,15 @@ useEffect(() => {
         direccion: negocio.direccion,
       },
       items: pedidoJson.items,
-      // Usa dirección del bot si la capturó, si no usa la predeterminada
       direccionEntrega: pedidoJson.direccionEntrega || direccionPredeterminada,
       notas: pedidoJson.notas ?? '',
-      // Pasa los IDs necesarios para guardar el pedido correctamente
       sucursalId: (negocio as any).sucursalId ?? '',
       domicilioId,
     };
 
-    // Guardar en CartContext para que CartScreen pueda mostrar los items
     setChatbotOrder(chatbotOrder);
-
     return { displayText, pedidoCard: chatbotOrder };
   };
-
-  // ─── Enviar mensaje ────────────────────────────────────────────────────────
 
   const handleSend = async (overrideText?: string) => {
     const text = (overrideText || inputText).trim();
@@ -275,9 +348,8 @@ useEffect(() => {
         { role: 'model', parts: [{ text: responseText }] },
       ]);
 
-      // Si hay pedido confirmado, mostrar mensaje de agradecimiento personalizado
       const botText = pedidoCard
-        ? `¡Gracias por tu pedido en ${pedidoCard.negocio?.nombre}! 🎉\n\nRevisa el resumen y ve a tu carrito para confirmar. Cuando estés listo, presiona el botón de tu carrito para finalizar. 🛒`
+        ? `¡Listo! Tu pedido en ${pedidoCard.negocio?.nombre} está confirmado 🎉\n\nRevisa el resumen abajo y ve al carrito para finalizar.`
         : displayText;
 
       const botMsg: Message = {
@@ -298,7 +370,7 @@ useEffect(() => {
         ...prev,
         {
           id: (Date.now() + 1).toString(),
-          text: 'Ups, tuve un problema al conectarme 😅 ¿Puedes intentarlo de nuevo?',
+          text: 'Ups, tuve un problema 😅 ¿Puedes intentarlo de nuevo?',
           sender: 'bot',
           timestamp: new Date(),
         },
@@ -309,8 +381,6 @@ useEffect(() => {
   const formatTime = (d: Date) =>
     d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
 
-  // ─── Render message ────────────────────────────────────────────────────────
-
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.sender === 'user';
 
@@ -318,7 +388,7 @@ useEffect(() => {
       <View style={[styles.messageContainer, isUser ? styles.userRow : styles.botRow]}>
         {!isUser && (
           <View style={styles.botAvatar}>
-            <BotIcon />
+            <SparkIcon />
           </View>
         )}
 
@@ -332,7 +402,6 @@ useEffect(() => {
             </Text>
           </View>
 
-          {/* Pedido card con botón Ver mi carrito */}
           {item.pedidoCard && (
             <PedidoCard
               pedido={item.pedidoCard}
@@ -340,7 +409,6 @@ useEffect(() => {
             />
           )}
 
-          {/* Suggestion chips */}
           {!isUser && !item.pedidoCard && item.suggestions && (
             <View style={styles.chips}>
               {item.suggestions.map((s, i) => (
@@ -355,42 +423,36 @@ useEffect(() => {
     );
   };
 
-  // ─── UI ───────────────────────────────────────────────────────────────────
-
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
 
       {/* Header */}
-      <LinearGradient
-        colors={['#22c55e', '#16a34a']}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <BackIcon />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
-          <View style={styles.headerAvatarWrap}>
-            <BotIcon />
+          <View style={styles.botAvatarHeader}>
+            <SparkIcon />
+            <View style={styles.onlineDot} />
           </View>
           <View>
-            <Text style={styles.headerTitle}>Asistente Kivu</Text>
-            <View style={styles.statusRow}>
-              <View style={[styles.statusDot, loadingNegocios && styles.statusDotLoading]} />
-              <Text style={styles.headerSub}>
-                {loadingNegocios ? 'Cargando negocios...' : `${negocios.length} negocios activos`}
-              </Text>
-            </View>
+            <Text style={styles.headerTitle}>KivoBot</Text>
+            <Text style={styles.headerSub}>
+              {loadingNegocios ? '⏳ Cargando...' : `${negocios.length} negocios disponibles`}
+            </Text>
           </View>
         </View>
 
         <View style={{ width: 40 }} />
-      </LinearGradient>
+      </View>
 
-      {/* Lista de mensajes */}
+      {/* Divider */}
+      <View style={styles.headerDivider} />
+
+      {/* Messages */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -413,7 +475,7 @@ useEffect(() => {
             <TextInput
               style={styles.input}
               placeholder="Escribe tu mensaje..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor="#374151"
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -422,12 +484,17 @@ useEffect(() => {
           </View>
 
           {inputText.trim() !== '' ? (
-            <TouchableOpacity onPress={() => handleSend()} style={styles.sendBtn} activeOpacity={0.85}>
+            <TouchableOpacity
+              onPress={() => handleSend()}
+              style={styles.sendBtn}
+              activeOpacity={0.85}
+              disabled={isTyping}
+            >
               <LinearGradient
-                colors={['#22c55e', '#16a34a']}
+                colors={[C.green, C.greenDark]}
                 style={styles.sendGradient}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                end={{ x: 1, y: 1 }}
               >
                 {isTyping
                   ? <ActivityIndicator size="small" color="#FFF" />
@@ -449,129 +516,262 @@ useEffect(() => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F0F4F0' },
+  container: { flex: 1, backgroundColor: C.bg },
 
   // Header
   header: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: C.surface,
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerAvatarWrap: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  headerDivider: {
+    height: 1,
+    backgroundColor: C.border,
+  },
+  backBtn: {
+    width: 40, height: 40,
+    justifyContent: 'center', alignItems: 'center',
+    borderRadius: 20,
+    backgroundColor: C.card,
+  },
+  headerCenter: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+  },
+  botAvatarHeader: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: C.greenGlow,
+    borderWidth: 1.5, borderColor: C.green + '44',
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
-  statusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#A7F3D0' },
-  statusDotLoading: { backgroundColor: '#FCD34D' },
-  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.85)' },
+  onlineDot: {
+    position: 'absolute', bottom: 2, right: 2,
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: C.green,
+    borderWidth: 2, borderColor: C.surface,
+  },
+  headerTitle: {
+    fontSize: 16, fontWeight: '700',
+    color: C.textPrimary, letterSpacing: 0.3,
+  },
+  headerSub: {
+    fontSize: 11, color: C.textSec,
+    marginTop: 1,
+  },
 
   // Messages
-  list: { paddingHorizontal: 14, paddingVertical: 16, gap: 12 },
-  messageContainer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  list: {
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    gap: 16,
+  },
+  messageContainer: {
+    flexDirection: 'row', alignItems: 'flex-end', gap: 10,
+  },
   userRow: { justifyContent: 'flex-end' },
   botRow: { justifyContent: 'flex-start' },
 
   botAvatar: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 2,
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: C.greenGlow,
+    borderWidth: 1, borderColor: C.green + '33',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 2,
   },
 
-  bubble: { maxWidth: '78%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
-  userBubble: { backgroundColor: '#22c55e', borderBottomRightRadius: 4 },
-  botBubble: {
-    backgroundColor: '#FFF', borderBottomLeftRadius: 4,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+  bubble: {
+    maxWidth: '80%',
+    borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 10,
   },
-  msgText: { fontSize: 15, lineHeight: 21 },
-  userText: { color: '#FFF' },
-  botText: { color: '#1F2937' },
-  msgTime: { fontSize: 10, marginTop: 4 },
-  userTime: { color: 'rgba(255,255,255,0.7)', textAlign: 'right' },
-  botTime: { color: '#9CA3AF' },
+  userBubble: {
+    backgroundColor: C.green,
+    borderBottomRightRadius: 4,
+  },
+  botBubble: {
+    backgroundColor: C.card,
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  msgText: { fontSize: 14.5, lineHeight: 22 },
+  userText: { color: '#fff', fontWeight: '500' },
+  botText: { color: C.textPrimary },
+  msgTime: { fontSize: 10, marginTop: 5 },
+  userTime: { color: 'rgba(255,255,255,0.6)', textAlign: 'right' },
+  botTime: { color: C.textSec },
 
   // Chips
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 8 },
+  chips: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    gap: 8, marginTop: 10,
+  },
   chip: {
-    backgroundColor: '#F0FDF4', borderRadius: 16,
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderWidth: 1, borderColor: '#BBF7D0',
+    backgroundColor: C.card,
+    borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderWidth: 1, borderColor: C.green + '44',
   },
-  chipText: { fontSize: 12, color: '#15803d', fontWeight: '600' },
-
-  // Pedido Card
-  pedidoCard: {
-    backgroundColor: '#FFF', borderRadius: 16,
-    padding: 16, marginTop: 10,
-    borderWidth: 1.5, borderColor: '#BBF7D0',
-    shadowColor: '#22c55e', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 8, elevation: 3,
-    maxWidth: 300,
+  chipText: {
+    fontSize: 12, color: C.green,
+    fontWeight: '600', letterSpacing: 0.2,
   },
-  pedidoHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 10,
-  },
-  pedidoTitle: { fontSize: 15, fontWeight: '800', color: '#1A1A1A' },
-  pedidoNegocio: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 10 },
-  pedidoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-  pedidoItemText: { fontSize: 13, color: '#374151' },
-  pedidoItemPrice: { fontSize: 13, fontWeight: '600', color: '#1A1A1A' },
-  pedidoTotalRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    borderTopWidth: 1, borderTopColor: '#F3F4F6',
-    paddingTop: 8, marginTop: 6, marginBottom: 8,
-  },
-  pedidoTotalLabel: { fontSize: 14, fontWeight: '700', color: '#374151' },
-  pedidoTotalValue: { fontSize: 16, fontWeight: '800', color: '#16a34a' },
-  pedidoDireccion: { fontSize: 12, color: '#6B7280', marginBottom: 4 },
-  pedidoNotas: { fontSize: 12, color: '#6B7280', marginBottom: 10 },
-
-  carritoBtn: { marginTop: 12, borderRadius: 12, overflow: 'hidden' },
-  carritoBtnGradient: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, paddingVertical: 12,
-  },
-  carritoBtnText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
 
   // Typing
   typingContainer: {
     flexDirection: 'row', alignItems: 'flex-end',
-    paddingHorizontal: 14, paddingBottom: 12, gap: 8,
+    paddingHorizontal: 16, paddingBottom: 8, gap: 10,
   },
   typingBubble: {
-    backgroundColor: '#FFF', borderRadius: 18, borderBottomLeftRadius: 4,
+    backgroundColor: C.card,
+    borderRadius: 20, borderBottomLeftRadius: 4,
     paddingHorizontal: 16, paddingVertical: 14,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+    borderWidth: 1, borderColor: C.border,
   },
   typingDots: { flexDirection: 'row', gap: 5 },
-  typingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' },
+  typingDot: {
+    width: 7, height: 7, borderRadius: 4,
+    backgroundColor: C.green,
+  },
+
+  // Pedido Card
+  pedidoCard: {
+    backgroundColor: C.card,
+    borderRadius: 20, marginTop: 10,
+    borderWidth: 1, borderColor: C.border,
+    overflow: 'hidden',
+    maxWidth: width * 0.82,
+  },
+  pedidoCardHeader: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+  },
+  pedidoHeaderLeft: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+  },
+  pedidoHeaderEmoji: { fontSize: 22 },
+  pedidoHeaderTitle: {
+    fontSize: 13, fontWeight: '700',
+    color: C.textPrimary, letterSpacing: 0.2,
+  },
+  pedidoHeaderSub: {
+    fontSize: 11, color: C.green,
+    marginTop: 1, fontWeight: '600',
+  },
+  pedidoStatusBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: C.greenGlow,
+    borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: C.green + '33',
+  },
+  pedidoStatusText: {
+    fontSize: 11, color: C.green, fontWeight: '700',
+  },
+
+  pedidoItems: {
+    paddingHorizontal: 14, paddingTop: 12, gap: 8,
+  },
+  pedidoRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6,
+  },
+  pedidoQtyBadge: {
+    width: 24, height: 24, borderRadius: 8,
+    backgroundColor: C.greenGlow,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: C.green + '33',
+  },
+  pedidoQtyText: {
+    fontSize: 11, fontWeight: '800', color: C.green,
+  },
+  pedidoItemText: {
+    flex: 1, fontSize: 13, color: C.textPrimary,
+  },
+  pedidoItemPrice: {
+    fontSize: 13, fontWeight: '700', color: C.textPrimary,
+  },
+
+  pedidoTotales: {
+    marginHorizontal: 14, marginTop: 12,
+    borderTopWidth: 1, borderTopColor: C.border,
+    paddingTop: 10, gap: 6,
+  },
+  pedidoTotalRow: {
+    flexDirection: 'row', justifyContent: 'space-between',
+  },
+  pedidoTotalLabel: { fontSize: 12, color: C.textSec },
+  pedidoTotalNum: { fontSize: 12, color: C.textPrimary, fontWeight: '600' },
+  pedidoTotalFinal: {
+    marginTop: 4, paddingTop: 8,
+    borderTopWidth: 1, borderTopColor: C.border,
+  },
+  pedidoTotalFinalLabel: {
+    fontSize: 14, fontWeight: '800', color: C.textPrimary,
+  },
+  pedidoTotalFinalNum: {
+    fontSize: 16, fontWeight: '800', color: C.green,
+  },
+
+  pedidoDireccionRow: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    gap: 6, marginHorizontal: 14, marginTop: 10,
+  },
+  pedidoDireccionIcon: { fontSize: 12 },
+  pedidoDireccionText: {
+    flex: 1, fontSize: 11, color: C.textSec, lineHeight: 16,
+  },
+  pedidoNotasRow: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    gap: 6, marginHorizontal: 14, marginTop: 4,
+  },
+  pedidoNotasText: {
+    flex: 1, fontSize: 11, color: C.textSec,
+  },
+
+  carritoBtn: {
+    margin: 14, borderRadius: 14, overflow: 'hidden',
+  },
+  carritoBtnGradient: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 8, paddingVertical: 13,
+  },
+  carritoBtnText: {
+    fontSize: 14, fontWeight: '700', color: '#FFF', letterSpacing: 0.3,
+  },
 
   // Input
   inputBar: {
-    flexDirection: 'row', alignItems: 'flex-end', gap: 8,
-    paddingHorizontal: 14, paddingVertical: 10,
-    backgroundColor: '#FFF',
-    borderTopWidth: 1, borderTopColor: '#F3F4F6',
+    flexDirection: 'row', alignItems: 'flex-end', gap: 10,
+    paddingHorizontal: 16, paddingVertical: 12,
+    backgroundColor: C.surface,
+    borderTopWidth: 1, borderTopColor: C.border,
   },
   inputWrap: {
-    flex: 1, backgroundColor: '#F9FAFB',
-    borderRadius: 22, paddingHorizontal: 16, paddingVertical: 8,
-    maxHeight: 100, borderWidth: 1, borderColor: '#E5E7EB',
+    flex: 1,
+    backgroundColor: C.card,
+    borderRadius: 24,
+    paddingHorizontal: 18, paddingVertical: 10,
+    maxHeight: 100,
+    borderWidth: 1, borderColor: C.border,
   },
-  input: { fontSize: 15, color: '#111', paddingVertical: 2 },
-  sendBtn: { borderRadius: 22, overflow: 'hidden', marginBottom: 2 },
-  sendGradient: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  input: {
+    fontSize: 14.5, color: C.textPrimary,
+    paddingVertical: 0,
+  },
+  sendBtn: {
+    borderRadius: 22, overflow: 'hidden', marginBottom: 2,
+  },
+  sendGradient: {
+    width: 44, height: 44,
+    alignItems: 'center', justifyContent: 'center',
+  },
   micBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center',
-    marginBottom: 2, borderWidth: 1, borderColor: '#BBF7D0',
+    backgroundColor: C.card,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 2,
+    borderWidth: 1, borderColor: C.border,
   },
 });
