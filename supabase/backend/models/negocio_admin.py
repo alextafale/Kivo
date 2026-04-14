@@ -16,3 +16,7 @@ class NegocioAdmin(Base):
     user_id    = Column(UUID(as_uuid=True), ForeignKey("public.profiles.id", ondelete="CASCADE"), nullable=False)
 
     negocio    = relationship("Negocio", back_populates="admins")
+
+    __table_args__ = (
+        {"schema": "public"},
+    )

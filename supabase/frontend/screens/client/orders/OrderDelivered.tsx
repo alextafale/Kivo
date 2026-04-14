@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
-  View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
-  StatusBar, Animated,
+  View, Text, StyleSheet, TouchableOpacity,
+  StatusBar, Animated, Dimensions
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -24,6 +25,12 @@ const CheckIcon = () => (
   </Svg>
 )
 
+const StarIcon = ({ color }: { color: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill={color} stroke={color} strokeWidth="2">
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </Svg>
+);
+
 /**
  * OrderDelivered — Pantalla de pedido entregado
  *
@@ -32,9 +39,11 @@ const CheckIcon = () => (
  * para calificar o volver al inicio.
  */
 export default function OrderDelivered({ navigation, route }: Props) {
-  const { orderNumber, restaurantName, total, deliveryAddress } = route.params
+  console.log("Estas en order delivered");
+  const { id, orderNumber, restaurantName, total, deliveryAddress } = route.params
+  const rating = route.params.rating || 0;
 
-  const scaleAnim  = useRef(new Animated.Value(0)).current
+  const scaleAnim = useRef(new Animated.Value(0)).current
   const opacityAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
@@ -68,6 +77,20 @@ export default function OrderDelivered({ navigation, route }: Props) {
         <Text style={styles.title}>¡Pedido Entregado!</Text>
         <Text style={styles.subtitle}>Esperamos que lo disfrutes</Text>
 
+        {rating > 0 && (
+          <View style={styles.ratingContainer}>
+            <View style={styles.starsRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <StarIcon
+                  key={star}
+                  color={star <= rating ? "#FFB800" : "#D1D5DB"}
+                />
+              ))}
+            </View>
+            <Text style={styles.ratingValueText}>Calificaste con {rating} estrellas</Text>
+          </View>
+        )}
+
         {/* Resumen */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
@@ -95,8 +118,21 @@ export default function OrderDelivered({ navigation, route }: Props) {
 
       </Animated.View>
 
+
       {/* Botones */}
       <View style={styles.footer}>
+
+        {rating === 0 && (
+          <View>
+            <TouchableOpacity
+              style={styles.rateButton}
+              onPress={() => navigation.navigate('RateOrder', { id })}
+            >
+              <Text style={styles.rateButtonText}>Calificar Pedido</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <TouchableOpacity
           style={styles.ordersButton}
           onPress={() => navigation.navigate('Orders')}
@@ -123,24 +159,50 @@ export default function OrderDelivered({ navigation, route }: Props) {
   )
 }
 
+
 const styles = StyleSheet.create({
-  container:          { flex: 1, backgroundColor: '#F9FAFB' },
-  content:            { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  iconContainer:      { width: 120, height: 120, borderRadius: 60, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginBottom: 24, position: 'relative' },
-  iconEmoji:          { position: 'absolute', bottom: -4, right: -4, fontSize: 32 },
-  title:              { fontSize: 26, fontWeight: 'bold', color: '#000', marginBottom: 8, textAlign: 'center' },
-  subtitle:           { fontSize: 16, color: '#6B7280', marginBottom: 32, textAlign: 'center' },
-  summaryCard:        { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
-  summaryRow:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10 },
-  summaryLabel:       { fontSize: 14, color: '#6B7280' },
-  summaryValue:       { fontSize: 14, fontWeight: '600', color: '#000' },
-  summaryTotalLabel:  { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  summaryTotalValue:  { fontSize: 20, fontWeight: 'bold', color: '#000' },
-  divider:            { height: 1, backgroundColor: '#F3F4F6' },
-  footer:             { padding: 20, gap: 12 },
-  ordersButton:       { borderRadius: 16, overflow: 'hidden' },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  iconContainer: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginBottom: 24, position: 'relative' },
+  iconEmoji: { position: 'absolute', bottom: -4, right: -4, fontSize: 32 },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#000', marginBottom: 8, textAlign: 'center' },
+  subtitle: { fontSize: 16, color: '#6B7280', marginBottom: 32, textAlign: 'center' },
+  summaryCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10 },
+  summaryLabel: { fontSize: 14, color: '#6B7280' },
+  summaryValue: { fontSize: 14, fontWeight: '600', color: '#000' },
+  summaryTotalLabel: { fontSize: 16, fontWeight: 'bold', color: '#000' },
+  summaryTotalValue: { fontSize: 20, fontWeight: 'bold', color: '#000' },
+  divider: { height: 1, backgroundColor: '#F3F4F6' },
+  footer: { padding: 20, gap: 12 },
+  rateButton: { borderRadius: 16, overflow: 'hidden', backgroundColor: '#22c55e', paddingVertical: 16, alignItems: 'center' },
+  ordersButton: { borderRadius: 16, overflow: 'hidden' },
   ordersButtonGradient: { paddingVertical: 16, alignItems: 'center' },
-  ordersButtonText:   { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  homeButton:         { paddingVertical: 16, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center' },
-  homeButtonText:     { fontSize: 16, fontWeight: '600', color: '#374151' },
+  ordersButtonText: { fontSize: 16, fontWeight: 'bold', color: '#000' },
+  rateButtonText: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
+  homeButton: { paddingVertical: 16, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center' },
+  homeButtonText: { fontSize: 16, fontWeight: '600', color: '#374151' },
+  ratingContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+    padding: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    // Un sombreado ligero para que resalte
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 6,
+  },
+  ratingValueText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '600',
+  }
 })

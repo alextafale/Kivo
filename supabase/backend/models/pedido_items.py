@@ -15,3 +15,7 @@ class PedidoItem(Base):
     personalizaciones = Column(JSONB, nullable=True)
     subtotal         = Column(Numeric, nullable=False)
     notas            = Column(Text, nullable=True)
+
+    __table_args__ = (
+        {"schema": "public"},
+    )

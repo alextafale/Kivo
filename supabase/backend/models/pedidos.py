@@ -33,3 +33,7 @@ class Pedido(Base):
     motivo_cancelacion   = Column(Text, nullable=True)
     creado_en            = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     actualizado_en       = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+    __table_args__ = (
+        {"schema": "public"},
+    )

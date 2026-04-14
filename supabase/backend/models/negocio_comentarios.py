@@ -18,3 +18,7 @@ class NegocioComentario(Base):
     negocio    = relationship("Negocio", back_populates="comentarios")
     reacciones = relationship("NegocioReaccion", back_populates="comentario",
                               cascade="all, delete-orphan")
+
+    __table_args__ = (
+        {"schema": "public"},
+    )

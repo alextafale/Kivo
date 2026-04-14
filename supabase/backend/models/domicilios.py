@@ -21,3 +21,6 @@ class Domicilio(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
+    __table_args__ = (
+        {"schema": "public"},
+    )

@@ -39,6 +39,7 @@ import OrderTrackingScreen  from '../screens/client/orders/OrderTracking'
 import CartScreen           from '../screens/client/orders/CartScreen'
 import OrderConfirmation    from '../screens/client/orders/OrderConfirmation'
 import OrderDelivered from '../screens/client/orders/OrderDelivered';
+import RateOrder from '../screens/client/orders/RateOrder'
 
 // ─── Negocio ──────────────────────────────────────────────────────────────────
 import BusinessOnboarding   from '../screens/business/onboarding/BusinessOnboarding'
@@ -104,10 +105,15 @@ export type RootStackParamList = {
     totalGeneral: number
   }
   OrderDelivered: {
+    id:                 string;
     orderNumber:        string;
     restaurantName:     string;
     total:              number;
-    deliveryAddress:     string;
+    deliveryAddress:    string;
+    rating?:            number;
+};
+  RateOrder: {
+    id:                 string;
 };
 
   ConfirmPayment: {
@@ -210,6 +216,7 @@ export default function StackNavigation() {
         <Stack.Screen name="Cart"                 component={CartScreen} />
         <Stack.Screen name="OrderConfirmation"    component={OrderConfirmation} />
         <Stack.Screen name="OrderDelivered"       component={OrderDelivered} />
+        <Stack.Screen name="RateOrder"            component={RateOrder} />
 
         {/* ── Negocio ────────────────────────────────────────────────────── */}
         <Stack.Screen name="BusinessDashboard"    component={BusinessDashboard} />

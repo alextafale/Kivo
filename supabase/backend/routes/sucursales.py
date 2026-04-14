@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from db.database import SessionLocal
+from typing import List
 from schemas.sucursal_detalle_schema import SucursalDetalleResponse, CategoriaOrdenUpdate
 from schemas.menu_items import MenuItemFrontendCreate, MenuItemFrontendUpdate
-from services.sucursales import get_sucursal_por_id, add_menu_item, update_menu_item, delete_menu_item, toggle_item_disponibilidad, add_categoria, delete_categoria, reordenar_categorias
+from schemas.reviews import ReviewOut
+from schemas.negocios import NegocioOut
+from services.sucursales import get_sucursal_por_id, add_menu_item, update_menu_item, delete_menu_item, toggle_item_disponibilidad, add_categoria, delete_categoria, reordenar_categorias, get_sucursales_cercanas
 from fastapi import APIRouter, Depends, File, UploadFile, Form
 from core.isBusinessAdmin import require_business_admin
+from services.reviews import get_reviews_by_sucursal_id
 
 router = APIRouter(prefix="/sucursales",tags=["Sucursales"])
 
@@ -16,11 +20,20 @@ def get_db():
     finally:
         db.close()
 
+
+@router.get("/cercanas", response_model=List[NegocioOut])
+def obtener_sucursales_cercanas(latitud: float,longitud: float,radio_metros:int,page:int,limit:int, categoria: str | None = None, db: Session = Depends(get_db)):
+    return get_sucursales_cercanas(db, latitud, longitud, radio_metros, page, limit, categoria)
+
 @router.get("/{id}", response_model=SucursalDetalleResponse)
 def obtener_sucursal_por_id(id: str, db: Session = Depends(get_db)):
     return get_sucursal_por_id(db, id)
 
 
+
+@router.get("/{id}/reviews", response_model=List[ReviewOut])
+def obtener_reviews(id: str, db: Session = Depends(get_db)):
+    return get_reviews_by_sucursal_id(id,db)
 
 @router.post("/{id}/menu")
 def crear_item_menu(

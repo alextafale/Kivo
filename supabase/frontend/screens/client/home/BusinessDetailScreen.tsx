@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, Image, ScrollView, TouchableOpacity,
-  StyleSheet, SafeAreaView, StatusBar, TextInput,
+  StyleSheet, StatusBar, TextInput,
   ActivityIndicator, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -58,6 +60,38 @@ interface ReaccionesData {
   mi_reaccion: string | null;
 }
 
+interface Review {
+  id: string;
+  rating_general: number;
+  comentario: string;
+  imagenes: string[];
+  creado_en: string;
+  user_id: string;
+  es_anonima: boolean;
+}
+
+
+
+const StarIcon = ({ color, size = 14 }: { color: string; size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke={color} strokeWidth="2">
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </Svg>
+);
+
+const RatingStars = ({ rating }: { rating: number }) => {
+  return (
+    <View style={{ flexDirection: 'row', gap: 2 }}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <StarIcon
+          key={star}
+          color={star <= rating ? ORANGE : '#E5E7EB'} // Naranja si está activa, gris claro si no
+          size={14}
+        />
+      ))}
+    </View>
+  );
+};
+
 type BusinessDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BusinessDetail'>;
 type BusinessDetailRouteProp = RouteProp<RootStackParamList, 'BusinessDetail'>;
 type Props = { navigation: BusinessDetailNavigationProp; route: BusinessDetailRouteProp };
@@ -68,13 +102,13 @@ const REACCIONES = [
   { tipo: 'like', emoji: '👍' },
   { tipo: 'love', emoji: '❤️' },
   { tipo: 'haha', emoji: '😂' },
-  { tipo: 'wow',  emoji: '😮' },
-  { tipo: 'sad',  emoji: '😢' },
+  { tipo: 'wow', emoji: '😮' },
+  { tipo: 'sad', emoji: '😢' },
 ];
 
 // ─── Componente de reacciones por comentario ──────────────────────────────────
 
-const ReaccionesRow = ({
+const ReaccionesRow = React.memo(({
   comentarioId,
   negocioId,
   token,
@@ -85,7 +119,7 @@ const ReaccionesRow = ({
 }) => {
   const [data, setData] = useState<ReaccionesData | null>(null);
 
-  const cargar = useCallback(async () => {
+  const cargar = useCallback(async (isMounted = true) => {
     try {
       const headers: any = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -93,11 +127,18 @@ const ReaccionesRow = ({
         `${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios/${comentarioId}/reacciones`,
         { headers }
       );
-      if (res.ok) setData(await res.json());
-    } catch {}
+      if (res.ok && isMounted) {
+        setData(await res.json());
+      }
+    } catch (e) { console.error(e); }
   }, [comentarioId, negocioId, token]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  // Dentro de ReaccionesRow
+  useEffect(() => {
+    let isMounted = true;
+    cargar(isMounted);
+    return () => { isMounted = false; };
+  }, [cargar]);
 
   const toggleReaccion = async (tipo: string) => {
     if (!token) { Alert.alert('Inicia sesión para reaccionar'); return; }
@@ -127,8 +168,8 @@ const ReaccionesRow = ({
           { method: 'POST', headers, body: JSON.stringify({ tipo }) }
         );
       }
-      cargar();
-    } catch {}
+      await cargar();
+    } catch { }
   };
 
   if (!data) return null;
@@ -156,6 +197,52 @@ const ReaccionesRow = ({
       })}
     </View>
   );
+});
+
+const ReviewCard = ({ review }: { review: any }) => {
+  return (
+    <View style={styles.reviewCard}>
+      {/* Encabezado: Usuario y Fecha */}
+      <View style={styles.reviewHeader}>
+        <View style={styles.reviewAvatar}>
+          <Text style={styles.avatarText}>
+            {review.es_anonima ? '?' : 'U'}
+          </Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={styles.nameRow}>
+            <Text style={styles.reviewUserName}>
+              {review.es_anonima ? 'Usuario Anónimo' : 'Cliente Verificado'}
+            </Text>
+            <Text style={styles.reviewDate}>
+              {new Date(review.creado_en).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+            </Text>
+          </View>
+          <RatingStars rating={review.rating_general} />
+        </View>
+      </View>
+
+      {/* Comentario */}
+      {review.comentario && (
+        <Text style={styles.reviewText}>{review.comentario}</Text>
+      )}
+
+      {/* Imágenes de la comida */}
+      {review.imagenes && review.imagenes.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.reviewImagesContainer}
+        >
+          {review.imagenes.map((url: string, index: number) => (
+            <TouchableOpacity key={index} activeOpacity={0.9}>
+              <Image source={{ uri: url }} style={styles.reviewImage} />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
 };
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -165,113 +252,141 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
   const { session } = useAuth();
   const { addItem, increaseQuantity, decreaseQuantity, cart, getTotalItems } = useCart();
 
-  const [business, setBusiness]           = useState<BusinessData | null>(null);
+  const [business, setBusiness] = useState<BusinessData | null>(null);
   const [activeCategory, setActiveCategory] = useState('All');
 
   // ─── Estado comentarios ───────────────────────────────────────────────────
-  const [comentarios, setComentarios]     = useState<Comentario[]>([]);
+  const [comentarios, setComentarios] = useState<Comentario[]>([]);
   const [loadingComentarios, setLoadingComentarios] = useState(false);
-  const [hayMas, setHayMas]               = useState(false);
-  const [pagina, setPagina]               = useState(1);
+  const [hayMas, setHayMas] = useState(false);
+  const [pagina, setPagina] = useState(1);
   const [nuevoComentario, setNuevoComentario] = useState('');
-  const [publicando, setPublicando]       = useState(false);
-  const [negocioId, setNegocioId]         = useState<string | null>(null);
+  const [publicando, setPublicando] = useState(false);
+  const [negocioId, setNegocioId] = useState<string | null>(null);
+  const [userReviews, setUserReviews] = useState<any[]>([]);
 
   // Token del usuario para llamadas autenticadas
   const token = (session as any)?.accessToken ?? null;
 
   // ─── Fetch negocio ────────────────────────────────────────────────────────
   useEffect(() => {
+    setBusiness(null);
+    setComentarios([]);
     const fetchBusiness = async () => {
       try {
-        const res  = await fetch(`${process.env.API_BASE_URL}/sucursales/${sucursal_id}`);
+        const res = await fetch(`${process.env.API_BASE_URL}/sucursales/${sucursal_id}`);
         const data = await res.json();
         console.log('sucursal data:', JSON.stringify(data)); // ← confirma el campo
         setNegocioId(data.negocio_id ?? null);
         setBusiness({
-          id:           data.id,
-          name:         data.nombre,
-          category:     data.categoria,
-          logo:         data.logo_url,
-          coverImage:   data.banner_url,
-          rating:       data.calificacion,
+          id: data.id,
+          name: data.nombre,
+          category: data.categoria,
+          logo: data.logo_url,
+          coverImage: data.banner_url,
+          rating: data.calificacion,
           deliveryTime: data.tiempo_entrega,
-          deliveryFee:  data.costo_envio === 'Gratis' ? 0 : Number(data.costo_envio),
-          description:  data.descripcion,
-          address:      data.direccion,
+          deliveryFee: data.costo_envio === 'Gratis' ? 0 : Number(data.costo_envio),
+          description: data.descripcion,
+          address: data.direccion,
           openingHours: {
             weekdays: data.horarios?.entre_semana ?? '',
             weekends: data.horarios?.fin_semana ?? '',
           },
           menu: data.menu.map((item: any) => ({
-            id:          item.id,
-            name:        item.nombre,
-            price:       item.precio,
-            image:       item.imagen_url,
+            id: item.id,
+            name: item.nombre,
+            price: item.precio,
+            image: item.imagen_url,
             description: item.descripcion,
-            category:    item.categoria,
+            category: item.categoria,
           })),
         });
       } catch (e) {
         console.error(e);
       }
     };
+
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`${process.env.API_BASE_URL}/sucursales/${sucursal_id}/reviews`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        if (res.ok) {
+          const reviews = await res.json()
+          setUserReviews(reviews)
+        } else {
+          console.log('Error al obtener reviews')
+        }
+
+      } catch (error) {
+        console.error(error);
+        console.log('Error al obtener reviews');
+      }
+    }
+
     fetchBusiness();
+    fetchReviews();
   }, [sucursal_id]);
 
   // ─── Fetch comentarios ────────────────────────────────────────────────────
   const cargarComentarios = useCallback(async (nid: string, p: number, reset = false) => {
+    if (loadingComentarios) return;
     setLoadingComentarios(true);
     try {
       console.log("Borrar luego: ", `${process.env.API_BASE_URL}/negocios/${nid}/comentarios?pagina=${p}&por_pagina=10`);
-      const res  = await fetch(`${process.env.API_BASE_URL}/negocios/${nid}/comentarios?pagina=${p}&por_pagina=10`);
+      const res = await fetch(`${process.env.API_BASE_URL}/negocios/${nid}/comentarios?pagina=${p}&por_pagina=10`);
       const data = await res.json();
       setComentarios(prev => reset ? data.items : [...prev, ...data.items]);
       setHayMas(data.hay_mas);
       setPagina(p);
-    } catch {}
+    } catch { }
     finally { setLoadingComentarios(false); }
   }, []);
+
 
   useEffect(() => {
     if (negocioId) cargarComentarios(negocioId, 1, true);
   }, [negocioId, cargarComentarios]);
 
   // ─── Publicar comentario ──────────────────────────────────────────────────
-const publicarComentario = async () => {
-  console.log('📝 token:', token);
-  console.log('📝 negocioId:', negocioId);
-  console.log('📝 contenido:', nuevoComentario.trim());
+  const publicarComentario = async () => {
+    console.log('📝 token:', token);
+    console.log('📝 negocioId:', negocioId);
+    console.log('📝 contenido:', nuevoComentario.trim());
 
-  if (!nuevoComentario.trim()) return;
-  if (!token) { Alert.alert('Inicia sesión para comentar'); return; }
-  if (!negocioId) return;
+    if (!nuevoComentario.trim()) return;
+    if (!token) { Alert.alert('Inicia sesión para comentar'); return; }
+    if (!negocioId) return;
 
-  setPublicando(true);
-  try {
-    const res = await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios`, {
-      method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ contenido: nuevoComentario.trim() }),
-    });
+    setPublicando(true);
+    try {
+      const res = await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ contenido: nuevoComentario.trim() }),
+      });
 
-    console.log('📝 status:', res.status);
-    const body = await res.text();
-    console.log('📝 response body:', body);
+      console.log('📝 status:', res.status);
+      const body = await res.text();
+      console.log('📝 response body:', body);
 
-    if (!res.ok) throw new Error(body);
-    setNuevoComentario('');
-    cargarComentarios(negocioId, 1, true);
-  } catch (e) {
-    console.error('📝 error:', e);
-    Alert.alert('Error', 'No se pudo publicar el comentario.');
-  } finally {
-    setPublicando(false);
-  }
-};
+      if (!res.ok) throw new Error(body);
+      setNuevoComentario('');
+      cargarComentarios(negocioId, 1, true);
+    } catch (e) {
+      console.error('📝 error:', e);
+      Alert.alert('Error', 'No se pudo publicar el comentario.');
+    } finally {
+      setPublicando(false);
+    }
+  };
 
   // ─── Eliminar comentario ──────────────────────────────────────────────────
   const eliminarComentario = (comentarioId: string) => {
@@ -283,7 +398,7 @@ const publicarComentario = async () => {
         onPress: async () => {
           try {
             await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/comentarios/${comentarioId}`, {
-              method:  'DELETE',
+              method: 'DELETE',
               headers: { 'Authorization': `Bearer ${token}` },
             });
             cargarComentarios(negocioId, 1, true);
@@ -309,8 +424,8 @@ const publicarComentario = async () => {
     ? business.menu
     : business.menu.filter(m => m.category === activeCategory);
 
-  const restaurantInCart        = cart.find(r => r.sucursal_id === sucursal_id);
-  const getItemQty              = (id: string) => restaurantInCart?.items.find(i => i.id === id)?.cantidad ?? 0;
+  const restaurantInCart = cart.find(r => r.sucursal_id === sucursal_id);
+  const getItemQty = (id: string) => restaurantInCart?.items.find(i => i.id === id)?.cantidad ?? 0;
   const totalItemsThisRestaurant = restaurantInCart?.items.reduce((a, i) => a + i.cantidad, 0) ?? 0;
   const totalPrecioThisRestaurant = restaurantInCart?.items.reduce((a, i) => a + i.precio_unitario * i.cantidad, 0) ?? 0;
 
@@ -450,6 +565,31 @@ const publicarComentario = async () => {
           <Text style={styles.aboutText}>{business.description}</Text>
         </View>
 
+
+        <View style={styles.divider} />
+
+        {/* ── SECCIÓN DE RESEÑAS (NUEVA) ── */}
+        <View style={styles.section}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={styles.sectionTitle}>Reseñas</Text>
+            {userReviews.length > 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <StarIcon color={ORANGE} size={16} />
+                <Text style={{ fontWeight: '700', color: '#1a1a1a' }}>{business.rating}</Text>
+              </View>
+            )}
+          </View>
+
+          {userReviews.length === 0 ? (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#9CA3AF', fontSize: 14 }}>Aún no hay reseñas de este lugar.</Text>
+            </View>
+          ) : (
+            userReviews.map((rev) => (
+              <ReviewCard key={rev.id} review={rev} />
+            ))
+          )}
+        </View>
         <View style={styles.divider} />
 
         {/* ── Comentarios ── */}
@@ -572,80 +712,92 @@ const publicarComentario = async () => {
 // ─── Estilos ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container:              { flex: 1, backgroundColor: '#fff' },
-  stickyHeader:           { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-  headerActions:          { flexDirection: 'row', gap: 8 },
-  iconBtn:                { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
-  coverWrapper:           { width: '100%', height: 220 },
-  coverImage:             { width: '100%', height: '100%', resizeMode: 'cover' },
-  coverOverlay:           { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.25)' },
-  identityRow:            { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  logo:                   { width: 64, height: 64, borderRadius: 12, borderWidth: 2, borderColor: '#fff', backgroundColor: '#1a5c3a' },
-  identityText:           { marginLeft: 12 },
-  restaurantName:         { fontSize: 22, fontWeight: '700', color: '#1a1a1a', letterSpacing: -0.3 },
-  restaurantCategory:     { fontSize: 14, color: ORANGE, fontWeight: '500', marginTop: 2 },
-  statsRow:               { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
-  statBadge:              { flex: 1, alignItems: 'center', gap: 4 },
-  statValue:              { fontSize: 16, fontWeight: '700', color: '#1a1a1a' },
-  statLabel:              { fontSize: 10, color: '#999', fontWeight: '600', letterSpacing: 0.5 },
-  statDivider:            { width: 1, height: 32, backgroundColor: '#e8e8e8' },
-  divider:                { height: 8, backgroundColor: '#f5f5f5' },
-  section:                { padding: 16 },
-  sectionTitle:           { fontSize: 18, fontWeight: '700', color: '#1a1a1a', marginBottom: 12 },
-  categoryTabsContainer:  { paddingBottom: 12, gap: 8 },
-  categoryTab:            { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, backgroundColor: '#f0f0f0' },
-  categoryTabActive:      { backgroundColor: ORANGE },
-  categoryTabText:        { fontSize: 13, fontWeight: '600', color: '#666' },
-  categoryTabTextActive:  { color: '#fff' },
-  menuCard:               { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14, marginBottom: 12, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3, borderWidth: 1, borderColor: '#f0f0f0' },
-  menuCardImage:          { width: 110, height: 110, resizeMode: 'cover' },
-  menuCardInfo:           { flex: 1, padding: 12, justifyContent: 'space-between' },
-  menuCardName:           { fontSize: 15, fontWeight: '700', color: '#1a1a1a' },
-  menuCardDesc:           { fontSize: 12, color: '#888', marginTop: 4, lineHeight: 17 },
-  menuCardFooter:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
-  menuCardPrice:          { fontSize: 16, fontWeight: '700', color: ORANGE },
-  addButton:              { width: 32, height: 32, borderRadius: 16, backgroundColor: ORANGE, alignItems: 'center', justifyContent: 'center' },
-  qtyControl:             { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  qtyBtn:                 { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: ORANGE, alignItems: 'center', justifyContent: 'center' },
-  qtyText:                { fontSize: 15, fontWeight: '700', color: '#1a1a1a', minWidth: 18, textAlign: 'center' },
-  aboutText:              { fontSize: 14, color: '#555', lineHeight: 22, marginTop: 8 },
+  container: { flex: 1, backgroundColor: '#fff' },
+  stickyHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  iconBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
+  coverWrapper: { width: '100%', height: 220 },
+  coverImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  coverOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.25)' },
+  identityRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  logo: { width: 64, height: 64, borderRadius: 12, borderWidth: 2, borderColor: '#fff', backgroundColor: '#1a5c3a' },
+  identityText: { marginLeft: 12 },
+  restaurantName: { fontSize: 22, fontWeight: '700', color: '#1a1a1a', letterSpacing: -0.3 },
+  restaurantCategory: { fontSize: 14, color: ORANGE, fontWeight: '500', marginTop: 2 },
+  statsRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  statBadge: { flex: 1, alignItems: 'center', gap: 4 },
+  statValue: { fontSize: 16, fontWeight: '700', color: '#1a1a1a' },
+  statLabel: { fontSize: 10, color: '#999', fontWeight: '600', letterSpacing: 0.5 },
+  statDivider: { width: 1, height: 32, backgroundColor: '#e8e8e8' },
+  divider: { height: 8, backgroundColor: '#f5f5f5' },
+  section: { padding: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1a1a1a', marginBottom: 12 },
+  categoryTabsContainer: { paddingBottom: 12, gap: 8 },
+  categoryTab: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, backgroundColor: '#f0f0f0' },
+  categoryTabActive: { backgroundColor: ORANGE },
+  categoryTabText: { fontSize: 13, fontWeight: '600', color: '#666' },
+  categoryTabTextActive: { color: '#fff' },
+  menuCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14, marginBottom: 12, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3, borderWidth: 1, borderColor: '#f0f0f0' },
+  menuCardImage: { width: 110, height: 110, resizeMode: 'cover' },
+  menuCardInfo: { flex: 1, padding: 12, justifyContent: 'space-between' },
+  menuCardName: { fontSize: 15, fontWeight: '700', color: '#1a1a1a' },
+  menuCardDesc: { fontSize: 12, color: '#888', marginTop: 4, lineHeight: 17 },
+  menuCardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  menuCardPrice: { fontSize: 16, fontWeight: '700', color: ORANGE },
+  addButton: { width: 32, height: 32, borderRadius: 16, backgroundColor: ORANGE, alignItems: 'center', justifyContent: 'center' },
+  qtyControl: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  qtyBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: ORANGE, alignItems: 'center', justifyContent: 'center' },
+  qtyText: { fontSize: 15, fontWeight: '700', color: '#1a1a1a', minWidth: 18, textAlign: 'center' },
+  aboutText: { fontSize: 14, color: '#555', lineHeight: 22, marginTop: 8 },
 
   // ── Comentarios ──
-  comentarioInputWrap:    { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginBottom: 16, backgroundColor: '#F9FAFB', borderRadius: 14, padding: 10, borderWidth: 1, borderColor: '#E5E7EB' },
-  comentarioInput:        { flex: 1, fontSize: 14, color: '#111827', maxHeight: 80, paddingVertical: 2 },
-  comentarioSendBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: GREEN, alignItems: 'center', justifyContent: 'center' },
+  comentarioInputWrap: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginBottom: 16, backgroundColor: '#F9FAFB', borderRadius: 14, padding: 10, borderWidth: 1, borderColor: '#E5E7EB' },
+  comentarioInput: { flex: 1, fontSize: 14, color: '#111827', maxHeight: 80, paddingVertical: 2 },
+  comentarioSendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: GREEN, alignItems: 'center', justifyContent: 'center' },
   comentarioSendBtnDisabled: { backgroundColor: '#BBF7D0' },
 
-  sinComentarios:         { alignItems: 'center', paddingVertical: 24, gap: 8 },
-  sinComentariosEmoji:    { fontSize: 36 },
-  sinComentariosText:     { fontSize: 14, color: '#9CA3AF' },
+  sinComentarios: { alignItems: 'center', paddingVertical: 24, gap: 8 },
+  sinComentariosEmoji: { fontSize: 36 },
+  sinComentariosText: { fontSize: 14, color: '#9CA3AF' },
 
-  comentarioCard:         { backgroundColor: '#F9FAFB', borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#F3F4F6' },
-  comentarioHeader:       { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
-  comentarioAvatar:       { width: 30, height: 30, borderRadius: 15, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0', alignItems: 'center', justifyContent: 'center' },
-  comentarioMeta:         { flex: 1 },
-  comentarioUsuario:      { fontSize: 13, fontWeight: '700', color: '#111827' },
-  comentarioFecha:        { fontSize: 11, color: '#9CA3AF', marginTop: 1 },
-  comentarioDeleteBtn:    { padding: 4 },
-  comentarioContenido:    { fontSize: 14, color: '#374151', lineHeight: 20, marginBottom: 10 },
+  comentarioCard: { backgroundColor: '#F9FAFB', borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#F3F4F6' },
+  comentarioHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
+  comentarioAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0', alignItems: 'center', justifyContent: 'center' },
+  comentarioMeta: { flex: 1 },
+  comentarioUsuario: { fontSize: 13, fontWeight: '700', color: '#111827' },
+  comentarioFecha: { fontSize: 11, color: '#9CA3AF', marginTop: 1 },
+  comentarioDeleteBtn: { padding: 4 },
+  comentarioContenido: { fontSize: 14, color: '#374151', lineHeight: 20, marginBottom: 10 },
 
   // ── Reacciones ──
-  reaccionesRow:          { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  reaccionBtn:            { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
-  reaccionBtnActiva:      { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
-  reaccionEmoji:          { fontSize: 14 },
-  reaccionConteo:         { fontSize: 12, color: '#6B7280', fontWeight: '600' },
-  reaccionConteoActivo:   { color: GREEN },
+  reaccionesRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  reaccionBtn: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
+  reaccionBtnActiva: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
+  reaccionEmoji: { fontSize: 14 },
+  reaccionConteo: { fontSize: 12, color: '#6B7280', fontWeight: '600' },
+  reaccionConteoActivo: { color: GREEN },
 
   // ── Ver más ──
-  verMasBtn:              { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
-  verMasText:             { fontSize: 14, color: GREEN, fontWeight: '600' },
+  verMasBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
+  verMasText: { fontSize: 14, color: GREEN, fontWeight: '600' },
 
   // ── CTA carrito ──
-  ctaContainer:           { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16 },
-  ctaButton:              { backgroundColor: GREEN, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, paddingHorizontal: 20, shadowColor: GREEN, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 },
-  ctaBadge:               { width: 26, height: 26, borderRadius: 13, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  ctaBadgeText:           { fontSize: 13, fontWeight: '800', color: GREEN },
-  ctaButtonText:          { fontSize: 15, fontWeight: '700', color: '#fff', flex: 1, textAlign: 'center' },
-  ctaTotal:               { fontSize: 16, fontWeight: '800', color: '#fff' },
+  ctaContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16 },
+  ctaButton: { backgroundColor: GREEN, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, paddingHorizontal: 20, shadowColor: GREEN, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 },
+  ctaBadge: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  ctaBadgeText: { fontSize: 13, fontWeight: '800', color: GREEN },
+  ctaButtonText: { fontSize: 15, fontWeight: '700', color: '#fff', flex: 1, textAlign: 'center' },
+  ctaTotal: { fontSize: 16, fontWeight: '800', color: '#fff' },
+
+  // ── Reviews ──
+  reviewCard: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  reviewHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
+  reviewAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  avatarText: { fontSize: 16, fontWeight: '700', color: '#9CA3AF' },
+  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
+  reviewUserName: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  reviewDate: { fontSize: 12, color: '#9CA3AF' },
+  reviewText: { fontSize: 14, color: '#4B5563', lineHeight: 20, marginBottom: 8 },
+  reviewImagesContainer: { marginTop: 4 },
+  reviewImage: { width: 120, height: 120, borderRadius: 12, marginRight: 10, backgroundColor: '#F3F4F6' },
 });

@@ -13,3 +13,7 @@ class RepartidorUbicacion(Base):
     rumbo         = Column(Numeric, nullable=True)
     velocidad_kmh = Column(Numeric, nullable=True)
     registrado_en = Column(TIMESTAMP(timezone=True), nullable=True)
+
+    __table_args__ = (
+        {"schema": "public"},
+    )

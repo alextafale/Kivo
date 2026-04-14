@@ -10,7 +10,78 @@ from schemas.menu_items import MenuItemFrontendCreate, MenuItemFrontendUpdate
 from schemas.sucursal_detalle_schema import CategoriaOrdenUpdate
 from fastapi import HTTPException,UploadFile
 from core.cloudinary import upload_image
+from sqlalchemy import text
 
+def get_sucursales_cercanas(
+    db: Session,
+    latitud: float,
+    longitud: float,
+    radio_metros: int,
+    page: int,
+    limit: int,
+    categoria: str | None = None
+):
+    offset = (page - 1) * limit
+
+    query = text("""
+        SELECT DISTINCT ON (n.id)
+            n.id,
+            n.slug,
+            n.nombre,
+            n.descripcion,
+            n.logo_url,
+            n.banner_url,
+            n.categoria,
+            n.tags,
+            n.pais,
+            n.activo,
+            n.verificado,
+            n.creado_en,
+            n.actualizado_en,
+
+            s.id AS sucursal_id,
+            s.calificacion::float AS calificacion
+
+        FROM sucursales s
+        JOIN negocios n ON s.negocio_id = n.id
+
+        WHERE 
+            s.activo = true
+            AND n.activo = true
+
+            AND ST_DWithin(
+                s.ubicacion,
+                ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
+                :radio
+            )
+
+            AND (
+                :categoria IS NULL
+                OR :categoria = ''
+                OR LOWER(:categoria) = 'todos'
+                OR LOWER(n.categoria) = LOWER(:categoria)
+            )
+
+        ORDER BY 
+            n.id,
+            ST_Distance(
+                s.ubicacion,
+                ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
+            ) ASC
+
+        LIMIT :limit OFFSET :offset
+    """)
+
+    result = db.execute(query, {
+        "lat": latitud,
+        "lng": longitud,
+        "radio": radio_metros,
+        "limit": limit,
+        "offset": offset,
+        "categoria": categoria
+    })
+
+    return [dict(row._mapping) for row in result]
 
 def get_sucursal_por_id(db: Session, sucursal_id: str):
 

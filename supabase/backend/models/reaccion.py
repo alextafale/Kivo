@@ -20,3 +20,7 @@ class NegocioReaccion(Base):
 
     comentario = relationship("NegocioComentario", back_populates="reacciones")
     usuario = relationship("Profile", back_populates="reacciones")
+
+    __table_args__ = (
+        {"schema": "public"},
+    )

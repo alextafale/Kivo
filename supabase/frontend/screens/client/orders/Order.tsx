@@ -1,19 +1,21 @@
 // screens/client/orders/Order.tsx
 // Igual que el original pero con useOrderRealtime para actualizar estados en tiempo real
-
+import { useEffect } from 'react';
 import { usePedidos } from '../../../application/hooks/usePedidos';
 import { useOrderRealtime } from '../../../application/hooks/useOrderRealTime';
 import { ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar,
+  View, Text, StyleSheet, TouchableOpacity, StatusBar,
   ScrollView, TextInput, Image, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { Order } from '../../../types/order';
+import { useAuth } from '../../../application/context/AuthContext'
 
 type OrdersNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Orders'>;
 type Props = { navigation: OrdersNavigationProp };
@@ -64,18 +66,26 @@ const CloseIcon = () => (
   </Svg>
 );
 
+const StarIcon = () => (
+  <Svg width="12" height="12" viewBox="0 0 24 24" fill="#FFB800" stroke="#FFB800" strokeWidth="2">
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </Svg>
+);
+
+
+
 // ─── Configuración de estado ──────────────────────────────────────────────────
 
 const statusConfig = {
-  pending:    { label: 'Pendiente',   color: '#F59E0B', icon: ClockIcon },
-  confirmed:  { label: 'Confirmado',  color: '#8B5CF6', icon: ClockIcon },
-  preparing:  { label: 'Preparando', color: '#F97316', icon: ClockIcon },
-  ready:      { label: 'Listo',       color: '#06B6D4', icon: CheckCircleIcon },
-  picked_up:  { label: 'Recogido',    color: '#3B82F6', icon: TruckIcon },
-  on_the_way: { label: 'En Camino',   color: '#3B82F6', icon: TruckIcon },
-  delivered:  { label: 'Entregado',   color: '#22c55e', icon: CheckCircleIcon },
-  cancelled:  { label: 'Cancelado',   color: '#EF4444', icon: XCircleIcon },
-  refunded:   { label: 'Reembolsado', color: '#6B7280', icon: XCircleIcon },
+  pending: { label: 'Pendiente', color: '#F59E0B', icon: ClockIcon },
+  confirmed: { label: 'Confirmado', color: '#8B5CF6', icon: ClockIcon },
+  preparing: { label: 'Preparando', color: '#F97316', icon: ClockIcon },
+  ready: { label: 'Listo', color: '#06B6D4', icon: CheckCircleIcon },
+  picked_up: { label: 'Recogido', color: '#3B82F6', icon: TruckIcon },
+  on_the_way: { label: 'En Camino', color: '#3B82F6', icon: TruckIcon },
+  delivered: { label: 'Entregado', color: '#22c55e', icon: CheckCircleIcon },
+  cancelled: { label: 'Cancelado', color: '#EF4444', icon: XCircleIcon },
+  refunded: { label: 'Reembolsado', color: '#6B7280', icon: XCircleIcon },
 };
 
 const filterTabs = ['Todos', 'En Progreso', 'Completados', 'Cancelados'];
@@ -88,11 +98,13 @@ const filterTabs = ['Todos', 'En Progreso', 'Completados', 'Cancelados'];
  */
 function OrderCard({
   order: initialOrder,
+  review,
   navigation,
   formatDate,
   formatTime,
 }: {
-  order: Order
+  order: Order,
+  review: any
   navigation: OrdersNavigationProp
   formatDate: (d: string) => string
   formatTime: (d: string) => string
@@ -100,29 +112,49 @@ function OrderCard({
   // Suscripción realtime por pedido
   const { order } = useOrderRealtime(initialOrder.id, initialOrder)
   if (!order) return null
+  
+
+  const rating = review?.rating_general || 0;
 
   const statusInfo = statusConfig[order.status as keyof typeof statusConfig]
   const StatusIcon = statusInfo?.icon ?? ClockIcon
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.orderCard}
       activeOpacity={order.status === 'delivered' ? 0.7 : 1}
       onPress={() => {
         if (order.status === 'delivered') {
           navigation.navigate('OrderDelivered', {
+            id: order.id,
             orderNumber: order.orderNumber,
             restaurantName: order.restaurantName,
             total: order.total,
             deliveryAddress: order.deliveryAddress,
+            rating: rating
           });
         }
       }}
     >
       <View style={styles.orderHeader}>
-        <Image source={{ uri: order.restaurantImage }} style={styles.restaurantImage} />
+        {order.restaurantImage ? (
+          <Image source={{ uri: order.restaurantImage }} style={styles.restaurantImage} />
+        ) : (
+          <View style={[styles.restaurantImage, { backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' }]}>
+            <Text style={{ fontSize: 20 }}>🍴</Text>
+          </View>
+        )}
         <View style={styles.orderHeaderInfo}>
           <Text style={styles.restaurantName}>{order.restaurantName}</Text>
+          {rating!==0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: 14, color: '#000', fontWeight: 'bold'}}>
+                <StarIcon /> {rating}
+              </Text>
+            </View>
+
+          )}
+
           <Text style={styles.orderNumber}>{order.orderNumber}</Text>
           <View style={styles.orderDateTime}>
             <Text style={styles.orderDate}>{formatDate(order.date)}</Text>
@@ -180,12 +212,41 @@ function OrderCard({
 // ─── Pantalla principal ───────────────────────────────────────────────────────
 
 export default function Orders({ navigation }: Props) {
-   console.log("Estas en orders");
+  console.log("Estas en orders");
+  const { session } = useAuth();
+  const [userReviews, setUserReviews] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('Todos');
   const [dateFilterVisible, setDateFilterVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { pedidos, isLoading } = usePedidos();
+
+  const handleGetReviews = async () => {
+    try {
+      const res = await fetch(`${process.env.API_BASE_URL}/me/reviews`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session?.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      if (res.ok) {
+        const reviews = await res.json()
+        console.log(reviews);
+        setUserReviews(reviews)
+      } else {
+        console.log('Error al obtener reviews')
+      }
+
+    } catch (error) {
+      console.error(error)
+      console.log('Error al obtener reviews')
+    }
+  }
+
+  useEffect(() => {
+    handleGetReviews()
+  }, [])
 
   const filterOrders = () => {
     let filtered = [...(pedidos ?? [])];
@@ -200,7 +261,7 @@ export default function Orders({ navigation }: Props) {
       const statusMap: Record<string, Order['status']> = {
         'En Progreso': 'on_the_way',
         'Completados': 'delivered',
-        'Cancelados':  'cancelled',
+        'Cancelados': 'cancelled',
       };
       const status = statusMap[selectedFilter];
       if (status) filtered = filtered.filter(o => o.status === status);
@@ -210,8 +271,8 @@ export default function Orders({ navigation }: Props) {
       filtered = filtered.filter(o => {
         const d = new Date(o.date);
         return (
-          d.getDate()     === selectedDate.getDate()  &&
-          d.getMonth()    === selectedDate.getMonth() &&
+          d.getDate() === selectedDate.getDate() &&
+          d.getMonth() === selectedDate.getMonth() &&
           d.getFullYear() === selectedDate.getFullYear()
         );
       });
@@ -226,7 +287,7 @@ export default function Orders({ navigation }: Props) {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    if (d.toDateString() === today.toDateString())     return 'Hoy';
+    if (d.toDateString() === today.toDateString()) return 'Hoy';
     if (d.toDateString() === yesterday.toDateString()) return 'Ayer';
     return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
   };
@@ -242,7 +303,10 @@ export default function Orders({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
 
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -298,15 +362,19 @@ export default function Orders({ navigation }: Props) {
           {isLoading ? (
             <ActivityIndicator size="large" color="#22c55e" style={{ marginTop: 40 }} />
           ) : filteredOrders.length > 0 ? (
-            filteredOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                navigation={navigation}
-                formatDate={formatDate}
-                formatTime={formatTime}
-              />
-            ))
+            filteredOrders.map((order) => {
+              const matchingReview = userReviews.find(rev => rev.pedido_id === order.id);
+              return (
+                <OrderCard
+                  key={order.id}
+                  review={matchingReview}
+                  order={order}
+                  navigation={navigation}
+                  formatDate={formatDate}
+                  formatTime={formatTime}
+                />
+              );
+            })
           ) : (
             <View style={styles.emptyState}>
               <View style={styles.emptyStateIcon}>
@@ -346,8 +414,8 @@ export default function Orders({ navigation }: Props) {
               <Text style={styles.modalSubtitle}>Selecciona un rango de fechas</Text>
               <View style={styles.quickFilters}>
                 {[
-                  { label: 'Hoy',           offset: 0 },
-                  { label: 'Ayer',          offset: 1 },
+                  { label: 'Hoy', offset: 0 },
+                  { label: 'Ayer', offset: 1 },
                   { label: 'Última Semana', offset: 7 },
                 ].map(({ label, offset }) => (
                   <TouchableOpacity key={label} style={styles.quickFilterButton} onPress={() => {
@@ -365,8 +433,8 @@ export default function Orders({ navigation }: Props) {
                   return (
                     <TouchableOpacity key={index} style={[styles.dateOption, isSelected && styles.dateOptionSelected]}
                       onPress={() => { setSelectedDate(date); setDateFilterVisible(false); }}>
-                      <Text style={[styles.dateOptionDay,   isSelected && styles.dateOptionTextSelected]}>{date.toLocaleDateString('es-MX', { weekday: 'short' })}</Text>
-                      <Text style={[styles.dateOptionDate,  isSelected && styles.dateOptionTextSelected]}>{date.getDate()}</Text>
+                      <Text style={[styles.dateOptionDay, isSelected && styles.dateOptionTextSelected]}>{date.toLocaleDateString('es-MX', { weekday: 'short' })}</Text>
+                      <Text style={[styles.dateOptionDate, isSelected && styles.dateOptionTextSelected]}>{date.getDate()}</Text>
                       <Text style={[styles.dateOptionMonth, isSelected && styles.dateOptionTextSelected]}>{date.toLocaleDateString('es-MX', { month: 'short' })}</Text>
                     </TouchableOpacity>
                   );

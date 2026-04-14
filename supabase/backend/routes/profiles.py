@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-
+from typing import List
 from db.database import SessionLocal
 from core.dependencies import get_current_user
 from schemas.profiles import ProfileResponse, ProfileUpdate
+from schemas.reviews import ReviewOut
 from services.profiles import get_profile_by_id, update_profile
+from services.reviews import get_reviews_by_user_id
 
 
 router = APIRouter(prefix="/me", tags=["Auth & Profiles"])
@@ -29,6 +31,10 @@ def get_me(
 ):
     """Retorna el perfil del usuario autenticado."""
     return get_profile_by_id(db, _get_user_id(user))
+
+@router.get("/reviews", response_model=List[ReviewOut])
+def obtener_mis_reviews(user = Depends(get_current_user),db: Session = Depends(get_db)):
+    return get_reviews_by_user_id(_get_user_id(user), db)
 
 
 # ── PATCH /me ─────────────────────────────────────────────────────────────────
