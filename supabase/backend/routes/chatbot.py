@@ -25,7 +25,6 @@ async def debug():
 
 @router.post("/chat")
 async def chat(req: ChatRequest):
-    # Leído en cada request con el nombre correcto de la variable
     qwen_host = os.getenv("QWEN_HOST", "http://localhost:11434")
     url = f"{qwen_host}/api/chat"
 
@@ -48,6 +47,7 @@ async def chat(req: ChatRequest):
                 headers={
                     "Content-Type": "application/json",
                     "ngrok-skip-browser-warning": "true",
+                    "User-Agent": "KivoBot/1.0",
                 },
             )
             response.raise_for_status()
