@@ -8,7 +8,7 @@ class ReviewBase(BaseModel):
     pedido_id: UUID
     user_id: UUID
     sucursal_id: UUID
-    repartidor_id: Optional[UUID]
+    repartidor_id: UUID
     rating_comida: int
     rating_entrega: int
     rating_general: int

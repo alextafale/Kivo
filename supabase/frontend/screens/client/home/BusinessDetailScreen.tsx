@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, Image, ScrollView, TouchableOpacity,
   StyleSheet, StatusBar, TextInput,
-  ActivityIndicator, Alert,
+  ActivityIndicator, Alert, Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -199,7 +199,7 @@ const ReaccionesRow = React.memo(({
   );
 });
 
-const ReviewCard = ({ review }: { review: any }) => {
+const ReviewCard = ({ review, onImagePress }: { review: any, onImagePress: (url: string) => void }) => {
   return (
     <View style={styles.reviewCard}>
       {/* Encabezado: Usuario y Fecha */}
@@ -235,7 +235,7 @@ const ReviewCard = ({ review }: { review: any }) => {
           style={styles.reviewImagesContainer}
         >
           {review.imagenes.map((url: string, index: number) => (
-            <TouchableOpacity key={index} activeOpacity={0.9}>
+            <TouchableOpacity key={index} activeOpacity={0.9} onPress={() => onImagePress(url)}>
               <Image source={{ uri: url }} style={styles.reviewImage} />
             </TouchableOpacity>
           ))}
@@ -267,6 +267,14 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
 
   // Token del usuario para llamadas autenticadas
   const token = (session as any)?.accessToken ?? null;
+
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const openImage = (url: string) => {
+    setSelectedImage(url);
+    setIsModalVisible(true);
+  };
 
   // ─── Fetch negocio ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -586,7 +594,7 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
             </View>
           ) : (
             userReviews.map((rev) => (
-              <ReviewCard key={rev.id} review={rev} />
+              <ReviewCard key={rev.id} review={rev} onImagePress={openImage} />
             ))
           )}
         </View>
@@ -705,6 +713,30 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
           </TouchableOpacity>
         </View>
       )}
+      {/* Modal de Imagen en Pantalla Completa */}
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalBackground}>
+          <TouchableOpacity
+            style={styles.closeModalBtn}
+            onPress={() => setIsModalVisible(false)}
+          >
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -800,4 +832,8 @@ const styles = StyleSheet.create({
   reviewText: { fontSize: 14, color: '#4B5563', lineHeight: 20, marginBottom: 8 },
   reviewImagesContainer: { marginTop: 4 },
   reviewImage: { width: 120, height: 120, borderRadius: 12, marginRight: 10, backgroundColor: '#F3F4F6' },
+
+  modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  fullScreenImage: { width: '100%', height: '80%' },
+  closeModalBtn: { position: 'absolute', top: 50, right: 20, zIndex: 20, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: 5 },
 });
