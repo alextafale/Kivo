@@ -16,6 +16,11 @@ class QwenMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: List[QwenMessage]
 
+
+@router.get("/debug")
+async def debug():
+    return {"OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "NO DEFINIDA")}
+
 @router.post("/chat")
 async def chat(req: ChatRequest):
     url = f"{OLLAMA_BASE_URL}/api/chat"
