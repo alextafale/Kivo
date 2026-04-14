@@ -37,19 +37,19 @@ type Props = { navigation: ChatbotNavigationProp };
 
 // ─── Paleta ───────────────────────────────────────────────────────────────────
 const C = {
-  bg: '#0A0F0A',
-  surface: '#111811',
-  card: '#161D16',
-  border: '#1E2B1E',
-  green: '#22c55e',
-  greenDark: '#15803d',
-  greenGlow: '#22c55e22',
-  greenSoft: '#16a34a',
-  textPrimary: '#F0FDF4',
-  textSec: '#6B7280',
-  textMuted: '#374151',
-  userBubble: '#22c55e',
-  botBubble: '#161D16',
+  bg: '#000000',
+  surface: '#000000',
+  card: '#0A0A0A',
+  border: '#1A1A1A',
+  green: '#00FF87',
+  greenDark: '#00CC6A',
+  greenGlow: '#00FF8710',
+  greenSoft: '#00E676',
+  textPrimary: '#FFFFFF',
+  textSec: '#ffffffff',
+  textMuted: '#222222',
+  userBubble: '#ffffffff',
+  botBubble: '#0A0A0A',
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
