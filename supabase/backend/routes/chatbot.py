@@ -6,12 +6,13 @@ from typing import List
 
 router = APIRouter(prefix="/chatbot", tags=["chatbot"])
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 QWEN_MODEL = "qwen2.5:7b"
+
 
 class QwenMessage(BaseModel):
     role: str  # system | user | assistant
     content: str
+
 
 class ChatRequest(BaseModel):
     messages: List[QwenMessage]
@@ -19,11 +20,15 @@ class ChatRequest(BaseModel):
 
 @router.get("/debug")
 async def debug():
-    return {"OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "NO DEFINIDA")}
+    return {"QWEN_HOST": os.getenv("QWEN_HOST", "NO DEFINIDA")}
+
 
 @router.post("/chat")
 async def chat(req: ChatRequest):
-    url = f"{OLLAMA_BASE_URL}/api/chat"
+    # ✅ Leído en cada request con el nombre correcto de la variable
+    qwen_host = os.getenv("QWEN_HOST", "http://localhost:11434")
+    url = f"{qwen_host}/api/chat"
+
     payload = {
         "model": QWEN_MODEL,
         "messages": [m.dict() for m in req.messages],
@@ -36,7 +41,7 @@ async def chat(req: ChatRequest):
         },
     }
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 url,
                 json=payload,
@@ -47,5 +52,13 @@ async def chat(req: ChatRequest):
             return {"content": data["message"]["content"]}
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Ollama tardó demasiado")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Ollama respondió con error: {e.response.status_code}",
+        )
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Error conectando con Ollama: {str(e)}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Error conectando con Ollama: {str(e)}",
+        )
