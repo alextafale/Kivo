@@ -22,8 +22,14 @@ import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useCiudadUsuario } from '../../../application/hooks/useCiudadUsuario';
 import { useNegociosPorCiudad } from '../../../application/hooks/useNegocioPorCiudad';
 import { useCart } from '../../../application/context/CartContext';
+import * as Location from 'expo-location';
 
 const { width } = Dimensions.get('window');
+
+type location = {
+  latitude: number;
+  longitude: number;
+}
 
 // ─── Iconos SVG ──────────────────────────────────────────────────────────────
 
@@ -119,35 +125,101 @@ export default function HomeFeed() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [usarCercanos, setUsarCercanos] = useState(false);
   const { ciudad, isLoading: loadingCiudad } = useCiudadUsuario();
   const [page, setPage] = useState(1);
   const { negocios = [], isLoading: loadingNegocios, error, hasMore } = useNegociosPorCiudad(ciudad, selectedCategory, page, 4);
+  const hasMoreFinal = usarCercanos ? true : hasMore;
   const { getTotalItems } = useCart();
-
+  const [location, setLocation] = useState<location | null>(null);
   const isLoading = loadingCiudad || loadingNegocios;
   const cartCount = getTotalItems();
 
+  const [sucursalesCercanas, setSucursalesCercanas] = useState([]);
+  const [loadingCercanas, setLoadingCercanas] = useState(false);
 
-  const filteredNegocios = (negocios || []).filter(n => {
+  const data = usarCercanos ? sucursalesCercanas : negocios;
+
+  const loadingFinal = usarCercanos
+    ? loadingCercanas
+    : loadingCiudad || loadingNegocios;
+
+
+  const filteredData = (data || []).filter(n => {
     if (searchQuery.trim() === '') return true;
+
     return (
       n.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (n.descripcion ?? '').toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
 
-  useEffect(() => {
-    setPage(1);
-  }, [selectedCategory, ciudad]);
 
+
+  useEffect(() => {
+    const getLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+
+        if (status !== 'granted') {
+          setUsarCercanos(false);
+          return;
+        }
+
+        const loc = await Location.getCurrentPositionAsync({});
+
+        setLocation({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+
+        setUsarCercanos(true);
+
+      } catch (error) {
+        console.log("Error obteniendo ubicación:", error);
+        setUsarCercanos(false);
+      }
+    };
+
+    getLocation();
+  }, []);
+
+  useEffect(() => {
+    if (!usarCercanos) return;
+
+    const fetchCercanas = async () => {
+      try {
+        setLoadingCercanas(true);
+        if (!location) return;
+
+        const uri = `cercanas?latitud=${location.latitude}&longitud=${location.longitude}&radio_metros=100000&page=${page}&limit=4&categoria=${selectedCategory}`;
+
+        const res = await fetch(
+          `${process.env.API_BASE_URL}/sucursales/${uri}`
+        );
+
+        const resData = await res.json();
+
+        setSucursalesCercanas(resData);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingCercanas(false);
+      }
+    };
+
+    fetchCercanas();
+  }, [usarCercanos, location, page, selectedCategory]);
 
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
 
         {/* ── HEADER ── */}
         <View style={styles.header}>
@@ -256,26 +328,30 @@ export default function HomeFeed() {
           {/* ── SECCIÓN HEADER ── */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              {searchQuery ? `Resultados para "${searchQuery}"` : 'Populares cerca de ti'}
+              {searchQuery ? `Resultados para "${searchQuery}"` : usarCercanos
+                ? 'Cerca de ti'
+                : `En ${ciudad ?? 'tu zona'}`}
             </Text>
-            {!isLoading && (
-              <Text style={styles.sectionCount}>{filteredNegocios.length} lugares</Text>
+            {!loadingFinal && (
+              <Text style={styles.sectionCount}>{filteredData.length} lugares</Text>
             )}
           </View>
 
           {/* ── ESTADOS ── */}
-          {isLoading && (
+          {loadingFinal && (
             <View style={styles.centerMessage}>
               <ActivityIndicator size="large" color="#22c55e" />
-              <Text style={styles.loadingText}>Buscando en {ciudad ?? '...'}...</Text>
+              <Text style={styles.loadingText}>{usarCercanos
+                ? 'Buscando lugares cercanos...'
+                : `Buscando en ${ciudad ?? '...'}`}</Text>
             </View>
           )}
-          {!isLoading && error && (
+          {!loadingFinal && error && (
             <View style={styles.centerMessage}>
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
-          {!isLoading && !error && !ciudad && (
+          {!loadingFinal && !error && !ciudad && (
             <View style={styles.centerMessage}>
               <Text style={{ fontSize: 40 }}>📍</Text>
               <Text style={styles.emptyText}>
@@ -289,7 +365,7 @@ export default function HomeFeed() {
               </TouchableOpacity>
             </View>
           )}
-          {!isLoading && !error && ciudad && filteredNegocios.length === 0 && (
+          {!loadingFinal && !error && ciudad && filteredData.length === 0 && (
             <View style={styles.centerMessage}>
               <Text style={{ fontSize: 40 }}>🔍</Text>
               <Text style={styles.emptyText}>
@@ -299,9 +375,9 @@ export default function HomeFeed() {
           )}
 
           {/* ── CARDS DE NEGOCIOS ── */}
-          {!isLoading && filteredNegocios.length > 0 && (
+          {!loadingFinal && filteredData.length > 0 && (
             <View style={styles.cardsContainer}>
-              {filteredNegocios.map(negocio => (
+              {filteredData.map(negocio => (
                 <TouchableOpacity
                   key={negocio.id}
                   style={styles.card}
@@ -348,12 +424,12 @@ export default function HomeFeed() {
           )}
 
           {/* ── PAGINACIÓN ── */}
-          {filteredNegocios.length > 0 && hasMore && (
+          {filteredData.length > 0 && hasMoreFinal && (
             <View style={styles.paginationContainer}>
               <TouchableOpacity
                 style={styles.loadMoreBtn}
                 onPress={() => setPage(prev => prev + 1)}
-                disabled={isLoading}
+                disabled={loadingFinal}
               >
                 {loadingNegocios ? (
                   <ActivityIndicator color="#FFF" />
@@ -364,7 +440,7 @@ export default function HomeFeed() {
             </View>
           )}
 
-          {!hasMore && filteredNegocios.length > 0 && (
+          {!hasMoreFinal && filteredData.length > 0 && (
             <Text style={styles.endMessage}>Has llegado al final de la lista</Text>
           )}
         </ScrollView>
