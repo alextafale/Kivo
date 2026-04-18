@@ -5,7 +5,7 @@ import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import { Platform } from 'react-native'
 
-const BASE_URL = 'https://kivo-v1.onrender.com/api/v1'
+// const BASE_URL = 'https://kivo-v1.onrender.com/api/v1'
 
 // Configura cómo se muestran las notificaciones cuando la app está en foreground
 Notifications.setNotificationHandler({
@@ -67,7 +67,7 @@ export async function registerForPushNotificationsAsync(
 
   // Registrar en el backend
   try {
-    await fetch(`${BASE_URL}/users/push-token`, {
+    await fetch(`${process.env.API_BASE_URL}/users/push-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ export async function registerForPushNotificationsAsync(
  */
 export async function unregisterPushToken(authToken: string): Promise<void> {
   try {
-    await fetch(`${BASE_URL}/users/push-token`, {
+    await fetch(`${process.env.API_BASE_URL}/users/push-token`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${authToken}` },
     })

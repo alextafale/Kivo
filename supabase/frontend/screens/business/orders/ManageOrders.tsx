@@ -42,28 +42,28 @@ interface PedidoNegocio {
 // ─── Configuración visual por estado ─────────────────────────────────────────
 
 const ESTADO_CONFIG: Record<PedidoEstado, { label: string; color: string; bg: string }> = {
-  pending:    { label: 'Pendiente',   color: '#F59E0B', bg: '#FEF3C7' },
-  confirmed:  { label: 'Confirmado',  color: '#8B5CF6', bg: '#EDE9FE' },
-  preparing:  { label: 'Preparando', color: '#F97316', bg: '#FFF7ED' },
-  ready:      { label: 'Listo',       color: '#06B6D4', bg: '#ECFEFF' },
-  picked_up:  { label: 'Recogido',    color: '#3B82F6', bg: '#EFF6FF' },
-  on_the_way: { label: 'En camino',   color: '#3B82F6', bg: '#EFF6FF' },
-  delivered:  { label: 'Entregado',   color: '#22c55e', bg: '#F0FDF4' },
-  cancelled:  { label: 'Cancelado',   color: '#EF4444', bg: '#FEF2F2' },
+  pending: { label: 'Pendiente', color: '#F59E0B', bg: '#FEF3C7' },
+  confirmed: { label: 'Confirmado', color: '#8B5CF6', bg: '#EDE9FE' },
+  preparing: { label: 'Preparando', color: '#F97316', bg: '#FFF7ED' },
+  ready: { label: 'Listo', color: '#06B6D4', bg: '#ECFEFF' },
+  picked_up: { label: 'Recogido', color: '#3B82F6', bg: '#EFF6FF' },
+  on_the_way: { label: 'En camino', color: '#3B82F6', bg: '#EFF6FF' },
+  delivered: { label: 'Entregado', color: '#22c55e', bg: '#F0FDF4' },
+  cancelled: { label: 'Cancelado', color: '#EF4444', bg: '#FEF2F2' },
 }
 
 // Botones de acción según estado actual
 const ACCIONES: Record<PedidoEstado, { label: string; next: PedidoEstado; color: string }[]> = {
-  pending:    [{ label: '✅ Aceptar',     next: 'confirmed', color: '#22c55e' },
-               { label: '❌ Cancelar',    next: 'cancelled', color: '#EF4444' }],
-  confirmed:  [{ label: '👨‍🍳 Preparando', next: 'preparing', color: '#F97316' },
-               { label: '❌ Cancelar',    next: 'cancelled', color: '#EF4444' }],
-  preparing:  [{ label: '📦 Listo',       next: 'ready',     color: '#06B6D4' }],
-  ready:      [{ label: '🛵 Recogido',    next: 'picked_up', color: '#3B82F6' }],
-  picked_up:  [{ label: '🗺️ En camino',   next: 'on_the_way', color: '#3B82F6' }],
+  pending: [{ label: '✅ Aceptar', next: 'confirmed', color: '#22c55e' },
+  { label: '❌ Cancelar', next: 'cancelled', color: '#EF4444' }],
+  confirmed: [{ label: '👨‍🍳 Preparando', next: 'preparing', color: '#F97316' },
+  { label: '❌ Cancelar', next: 'cancelled', color: '#EF4444' }],
+  preparing: [{ label: '📦 Listo', next: 'ready', color: '#06B6D4' }],
+  ready: [{ label: '🛵 Recogido', next: 'picked_up', color: '#3B82F6' }],
+  picked_up: [{ label: '🗺️ En camino', next: 'on_the_way', color: '#3B82F6' }],
   on_the_way: [],
-  delivered:  [],
-  cancelled:  [],
+  delivered: [],
+  cancelled: [],
 }
 
 // ─── Iconos ───────────────────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ export default function ManageOrders({ navigation }: Props) {
         try {
           const err = await response.json()
           detail = err.detail ?? err.message ?? detail
-        } catch (_) {}
+        } catch (_) { }
         Alert.alert('Error al actualizar', detail)
         return
       }

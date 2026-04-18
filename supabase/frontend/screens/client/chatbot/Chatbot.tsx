@@ -22,6 +22,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation';
 import {
   askGemini,
   cargarNegocios,
+  cargarSugerenciasPersonalizadas,
   Negocio,
   GeminiMessage,
   parsePedidoFromResponse,
@@ -292,6 +293,18 @@ export default function Chatbot({ navigation }: Props) {
       setLoadingNegocios(false);
     });
   }, []);
+
+  // Cargar sugerencias personalizadas basadas en historial de pedidos
+  useEffect(() => {
+    if (!session?.userId) return;
+    cargarSugerenciasPersonalizadas(session.userId).then(sugerencias => {
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === '1' ? { ...msg, suggestions: sugerencias } : msg
+        )
+      );
+    });
+  }, [session?.userId]);
 
   const scrollToBottom = () =>
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
