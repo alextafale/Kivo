@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, func
 from fastapi import HTTPException
 from models.pedidos import Pedido
 from models.pedido_items import PedidoItem
@@ -127,7 +127,7 @@ async def change_estado_pedido(db: Session, pedido_id: str, user_id: str, body):
     # timestamps
     campo = TIMESTAMP_POR_ESTADO.get(nuevo_estado)
     if campo:
-        setattr(pedido, campo, db.func.now())
+        setattr(pedido, campo, func.now())
 
     if nuevo_estado == "cancelled":
         pedido.motivo_cancelacion = body.motivo_cancelacion
