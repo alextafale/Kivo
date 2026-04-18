@@ -16,6 +16,7 @@ from routes.repartidores import router as repartidores_router
 from routes.comentarios import router as comentarios_router
 from routes.chatbot import router as chatbot_router
 from routes.reviews import router as reviews_router
+from routes.quejas  import router as quejas_router
 
 app = FastAPI()
 register_exception_handlers(app)
@@ -38,6 +39,7 @@ app.include_router(repartidores_router, prefix="/api/v1")
 app.include_router(comentarios_router, prefix="/api/v1")
 app.include_router(chatbot_router, prefix="/api/v1")
 app.include_router(reviews_router, prefix="/api/v1")
+app.include_router(quejas_router,  prefix="/api/v1")
 
 @app.get("/")
 def read_root():
