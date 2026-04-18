@@ -156,10 +156,13 @@ export default function ManageOrders({ navigation }: Props) {
 
   const cambiarEstado = async (pedidoId: string, nuevoEstado: PedidoEstado) => {
     setUpdatingId(pedidoId)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        Alert.alert('Error', 'Sesión expirada. Vuelve a iniciar sesión.')
+        return
+      }
+
       const response = await fetch(`${BASE_URL}/pedidos/${pedidoId}/estado`, {
         method: 'PATCH',
         headers: {
@@ -170,8 +173,12 @@ export default function ManageOrders({ navigation }: Props) {
       })
 
       if (!response.ok) {
-        const err = await response.json()
-        Alert.alert('Error', err.detail ?? 'No se pudo actualizar el estado')
+        let detail = `Error ${response.status}`
+        try {
+          const err = await response.json()
+          detail = err.detail ?? err.message ?? detail
+        } catch (_) {}
+        Alert.alert('Error al actualizar', detail)
         return
       }
 
@@ -179,11 +186,10 @@ export default function ManageOrders({ navigation }: Props) {
       setPedidos((prev) =>
         prev
           .map((p) => p.id === pedidoId ? { ...p, status: nuevoEstado } : p)
-          // Quitar pedidos terminados de la lista activa
           .filter((p) => !['delivered', 'cancelled'].includes(p.status))
       )
-    } catch (e) {
-      Alert.alert('Error', 'Problema de conexión')
+    } catch (e: any) {
+      Alert.alert('Error de conexión', e?.message ?? 'No se pudo conectar con el servidor')
     } finally {
       setUpdatingId(null)
     }
