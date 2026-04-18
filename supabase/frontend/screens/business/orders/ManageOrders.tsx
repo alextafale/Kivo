@@ -12,7 +12,7 @@ import { supabase } from '../../../config/supabaseConfig'
 import { useAuth } from '../../../application/context/AuthContext'
 
 
-const BASE_URL = 'https://kivo-v1.onrender.com/api/v1'
+// const BASE_URL = 'https://kivo-v1.onrender.com/api/v1'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ManageOrders'>
@@ -42,28 +42,28 @@ interface PedidoNegocio {
 // ─── Configuración visual por estado ─────────────────────────────────────────
 
 const ESTADO_CONFIG: Record<PedidoEstado, { label: string; color: string; bg: string }> = {
-  pending:    { label: 'Pendiente',   color: '#F59E0B', bg: '#FEF3C7' },
-  confirmed:  { label: 'Confirmado',  color: '#8B5CF6', bg: '#EDE9FE' },
-  preparing:  { label: 'Preparando', color: '#F97316', bg: '#FFF7ED' },
-  ready:      { label: 'Listo',       color: '#06B6D4', bg: '#ECFEFF' },
-  picked_up:  { label: 'Recogido',    color: '#3B82F6', bg: '#EFF6FF' },
-  on_the_way: { label: 'En camino',   color: '#3B82F6', bg: '#EFF6FF' },
-  delivered:  { label: 'Entregado',   color: '#22c55e', bg: '#F0FDF4' },
-  cancelled:  { label: 'Cancelado',   color: '#EF4444', bg: '#FEF2F2' },
+  pending: { label: 'Pendiente', color: '#F59E0B', bg: '#FEF3C7' },
+  confirmed: { label: 'Confirmado', color: '#8B5CF6', bg: '#EDE9FE' },
+  preparing: { label: 'Preparando', color: '#F97316', bg: '#FFF7ED' },
+  ready: { label: 'Listo', color: '#06B6D4', bg: '#ECFEFF' },
+  picked_up: { label: 'Recogido', color: '#3B82F6', bg: '#EFF6FF' },
+  on_the_way: { label: 'En camino', color: '#3B82F6', bg: '#EFF6FF' },
+  delivered: { label: 'Entregado', color: '#22c55e', bg: '#F0FDF4' },
+  cancelled: { label: 'Cancelado', color: '#EF4444', bg: '#FEF2F2' },
 }
 
 // Botones de acción según estado actual
 const ACCIONES: Record<PedidoEstado, { label: string; next: PedidoEstado; color: string }[]> = {
-  pending:    [{ label: '✅ Aceptar',     next: 'confirmed', color: '#22c55e' },
-               { label: '❌ Cancelar',    next: 'cancelled', color: '#EF4444' }],
-  confirmed:  [{ label: '👨‍🍳 Preparando', next: 'preparing', color: '#F97316' },
-               { label: '❌ Cancelar',    next: 'cancelled', color: '#EF4444' }],
-  preparing:  [{ label: '📦 Listo',       next: 'ready',     color: '#06B6D4' }],
-  ready:      [{ label: '🛵 Recogido',    next: 'picked_up', color: '#3B82F6' }],
-  picked_up:  [{ label: '🗺️ En camino',   next: 'on_the_way', color: '#3B82F6' }],
+  pending: [{ label: '✅ Aceptar', next: 'confirmed', color: '#22c55e' },
+  { label: '❌ Cancelar', next: 'cancelled', color: '#EF4444' }],
+  confirmed: [{ label: '👨‍🍳 Preparando', next: 'preparing', color: '#F97316' },
+  { label: '❌ Cancelar', next: 'cancelled', color: '#EF4444' }],
+  preparing: [{ label: '📦 Listo', next: 'ready', color: '#06B6D4' }],
+  ready: [{ label: '🛵 Recogido', next: 'picked_up', color: '#3B82F6' }],
+  picked_up: [{ label: '🗺️ En camino', next: 'on_the_way', color: '#3B82F6' }],
   on_the_way: [],
-  delivered:  [],
-  cancelled:  [],
+  delivered: [],
+  cancelled: [],
 }
 
 // ─── Iconos ───────────────────────────────────────────────────────────────────
@@ -84,32 +84,23 @@ const RefreshIcon = () => (
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function ManageOrders({ navigation }: Props) {
-  const { adminAccess } = useAuth()
+  const { adminAccess, session } = useAuth()
   const negocioId = adminAccess?.negocioId ?? null
   const [pedidos, setPedidos] = useState<PedidoNegocio[]>([])
   const [isLoading, setIsLoading] = useState(!negocioId)
   const [refreshing, setRefreshing] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
-  // Obtener el negocio del usuario autenticado
-
 
   const fetchPedidos = useCallback(async () => {
-    if (!negocioId) {
+    if (!negocioId || !session?.accessToken) {
       setIsLoading(false)
       setRefreshing(false)
       return
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        setIsLoading(false)
-        setRefreshing(false)
-        return
-      }
-
-      const response = await fetch(`${BASE_URL}/negocios/${negocioId}/pedidos`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+      const response = await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/pedidos`, {
+        headers: { Authorization: `Bearer ${session.accessToken}` },
       })
 
       if (response.ok) {
@@ -155,16 +146,15 @@ export default function ManageOrders({ navigation }: Props) {
   }, [negocioId, fetchPedidos])
 
   const cambiarEstado = async (pedidoId: string, nuevoEstado: PedidoEstado) => {
+    if (!session?.accessToken) return
     setUpdatingId(pedidoId)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
 
     try {
-      const response = await fetch(`${BASE_URL}/pedidos/${pedidoId}/estado`, {
+      const response = await fetch(`${process.env.API_BASE_URL}/pedidos/${pedidoId}/estado`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.accessToken}`,
         },
         body: JSON.stringify({ estado: nuevoEstado }),
       })
