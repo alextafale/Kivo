@@ -435,6 +435,97 @@ export function parsePedidoFromResponse(
   }
 }
 
+// ─── Chat: Persistencia ──────────────────────────────────────────────────────
+
+export interface MensajeGuardado {
+  id: string;
+  role: 'user' | 'bot';
+  content: string;
+  suggestions: string[] | null;
+  pedido_card: any | null;
+  created_at: string;
+}
+
+export interface SesionResumen {
+  id: string;
+  preview: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function crearSesionChat(userId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('chat_sesiones')
+      .insert({ user_id: userId })
+      .select('id')
+      .single();
+    if (error) throw error;
+    return data.id as string;
+  } catch (e) {
+    console.error('Error creando sesión de chat:', e);
+    return null;
+  }
+}
+
+export async function guardarMensaje(
+  sesionId: string,
+  role: 'user' | 'bot',
+  content: string,
+  suggestions?: string[],
+  pedidoCard?: any,
+): Promise<void> {
+  try {
+    await supabase.from('chat_mensajes').insert({
+      sesion_id: sesionId,
+      role,
+      content,
+      suggestions: suggestions ?? null,
+      pedido_card: pedidoCard ?? null,
+    });
+    if (role === 'bot') {
+      await supabase
+        .from('chat_sesiones')
+        .update({ preview: content.slice(0, 120), updated_at: new Date().toISOString() })
+        .eq('id', sesionId);
+    }
+  } catch (e) {
+    console.error('Error guardando mensaje:', e);
+  }
+}
+
+export async function cargarMensajesSesion(sesionId: string): Promise<MensajeGuardado[]> {
+  try {
+    const { data, error } = await supabase
+      .from('chat_mensajes')
+      .select('id, role, content, suggestions, pedido_card, created_at')
+      .eq('sesion_id', sesionId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as MensajeGuardado[];
+  } catch (e) {
+    console.error('Error cargando mensajes:', e);
+    return [];
+  }
+}
+
+export async function cargarSesionesPrevias(userId: string): Promise<SesionResumen[]> {
+  try {
+    const { data, error } = await supabase
+      .from('chat_sesiones')
+      .select('id, preview, created_at, updated_at')
+      .eq('user_id', userId)
+      .not('preview', 'is', null)
+      .order('updated_at', { ascending: false })
+      .limit(30);
+    if (error) throw error;
+    return (data ?? []) as SesionResumen[];
+  } catch (e) {
+    console.error('Error cargando sesiones previas:', e);
+    return [];
+  }
+}
+
 // ─── Qwen — vía Render (backend intermedio) ───────────────────────────────────
 // ─── Qwen — directo a Cloudflare Tunnel ───────────────────────────────────────
 

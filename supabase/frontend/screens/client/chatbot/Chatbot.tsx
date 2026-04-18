@@ -17,12 +17,16 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle, Rect, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import {
   askGemini,
   cargarNegocios,
   cargarSugerenciasPersonalizadas,
+  crearSesionChat,
+  guardarMensaje,
+  cargarMensajesSesion,
   Negocio,
   GeminiMessage,
   parsePedidoFromResponse,
@@ -35,7 +39,8 @@ import { useAuth } from '../../../application/context/AuthContext';
 const { width } = Dimensions.get('window');
 
 type ChatbotNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chatbot'>;
-type Props = { navigation: ChatbotNavigationProp };
+type ChatbotRouteProp = RouteProp<RootStackParamList, 'Chatbot'>;
+type Props = { navigation: ChatbotNavigationProp; route: ChatbotRouteProp };
 
 
 // ─── Paleta ───────────────────────────────────────────────────────────────────
@@ -98,7 +103,15 @@ const CheckIcon = () => (
   </Svg>
 );
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+const HistoryIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round">
+    <Path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+    <Path d="M3 3v5h5" />
+    <Path d="M12 7v5l4 2" />
+  </Svg>
+);
+
+// ─── Tipos ───────────────────────────────────────────────────────────────────────────────
 
 interface Message {
   id: string;
@@ -244,9 +257,10 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-export default function Chatbot({ navigation }: Props) {
+export default function Chatbot({ navigation, route }: Props) {
   const { setChatbotOrder } = useCart();
   const { session } = useAuth();
+  const sesionIdRef = useRef<string | null>(route?.params?.sesionId ?? null);
 
   const [direccionPredeterminada, setDireccionPredeterminada] = useState('');
   const [domicilioId, setDomicilioId] = useState<string>('');
@@ -306,6 +320,38 @@ export default function Chatbot({ navigation }: Props) {
     });
   }, [session?.userId]);
 
+  // Inicializar sesión de chat o cargar historial
+  useEffect(() => {
+    if (!session?.userId) return;
+    const init = async () => {
+      const idFromRoute = route?.params?.sesionId;
+      if (idFromRoute) {
+        // Cargar conversación guardada
+        sesionIdRef.current = idFromRoute;
+        const guardados = await cargarMensajesSesion(idFromRoute);
+        if (guardados.length > 0) {
+          setMessages(guardados.map(m => ({
+            id: m.id,
+            text: m.content,
+            sender: m.role as 'user' | 'bot',
+            timestamp: new Date(m.created_at),
+            suggestions: m.suggestions ?? undefined,
+            pedidoCard: m.pedido_card ?? undefined,
+          })));
+          setGeminiHistory(guardados.map(m => ({
+            role: (m.role === 'bot' ? 'model' : 'user') as 'user' | 'model',
+            parts: [{ text: m.content }],
+          })));
+        }
+      } else {
+        // Nueva sesión
+        const newId = await crearSesionChat(session.userId);
+        sesionIdRef.current = newId;
+      }
+    };
+    init();
+  }, [session?.userId]);
+
   const scrollToBottom = () =>
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
 
@@ -353,6 +399,9 @@ export default function Chatbot({ navigation }: Props) {
     setIsTyping(true);
     scrollToBottom();
 
+    // Guardar mensaje del usuario (fire-and-forget)
+    if (sesionIdRef.current) guardarMensaje(sesionIdRef.current, 'user', text);
+
     try {
       const responseText = await askGemini(text, geminiHistory, negocios, direccionPredeterminada);
       const { displayText, pedidoCard } = await procesarRespuesta(responseText);
@@ -379,6 +428,11 @@ export default function Chatbot({ navigation }: Props) {
       setIsTyping(false);
       setMessages(prev => [...prev, botMsg]);
       scrollToBottom();
+
+      // Guardar mensaje del bot (fire-and-forget)
+      if (sesionIdRef.current) {
+        guardarMensaje(sesionIdRef.current, 'bot', botText, botMsg.suggestions, pedidoCard ?? undefined);
+      }
     } catch {
       setIsTyping(false);
       setMessages(prev => [
@@ -461,7 +515,9 @@ export default function Chatbot({ navigation }: Props) {
           </View>
         </View>
 
-        <View style={{ width: 40 }} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('ChatHistorial')}>
+          <HistoryIcon />
+        </TouchableOpacity>
       </View>
 
       {/* Divider */}
