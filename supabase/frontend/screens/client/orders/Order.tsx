@@ -201,9 +201,22 @@ function OrderCard({
       )}
 
       {order.status === 'delivered' && (
-        <TouchableOpacity style={styles.reorderButton}>
-          <Text style={styles.reorderButtonText}>Volver a Pedir</Text>
-        </TouchableOpacity>
+        <View>
+          <TouchableOpacity style={styles.reorderButton}>
+            <Text style={styles.reorderButtonText}>Volver a Pedir</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.reportProblemBtn}
+            onPress={() => navigation.navigate('ReportarProblema', {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              restaurantName: order.restaurantName,
+              total: order.total,
+            })}
+          >
+            <Text style={styles.reportProblemText}>⚠️ Reportar un problema</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </TouchableOpacity>
   )
@@ -497,6 +510,8 @@ const styles = StyleSheet.create({
   trackButtonText: { fontSize: 15, fontWeight: 'bold', color: '#000' },
   reorderButton: { marginTop: 12, paddingVertical: 12, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center' },
   reorderButtonText: { fontSize: 15, fontWeight: '600', color: '#374151' },
+  reportProblemBtn: { marginTop: 8, paddingVertical: 10, alignItems: 'center' },
+  reportProblemText: { fontSize: 13, color: '#F97316', fontWeight: '600' },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40 },
   emptyStateIcon: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   emptyStateTitle: { fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 8 },

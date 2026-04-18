@@ -148,6 +148,18 @@ export default function OrderDelivered({ navigation, route }: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={styles.reportButton}
+          onPress={() => navigation.navigate('ReportarProblema', {
+            orderId: id,
+            orderNumber: orderNumber,
+            restaurantName: restaurantName,
+            total: total,
+          })}
+        >
+          <Text style={styles.reportButtonText}>⚠️ Reportar un problema</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={styles.homeButton}
           onPress={() => navigation.navigate('HomeFeed')}
         >
@@ -182,6 +194,8 @@ const styles = StyleSheet.create({
   rateButtonText: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
   homeButton: { paddingVertical: 16, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center' },
   homeButtonText: { fontSize: 16, fontWeight: '600', color: '#374151' },
+  reportButton: { paddingVertical: 14, alignItems: 'center' },
+  reportButtonText: { fontSize: 14, color: '#F97316', fontWeight: '600' },
   ratingContainer: {
     alignItems: 'center',
     marginVertical: 16,

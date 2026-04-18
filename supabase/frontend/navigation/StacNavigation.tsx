@@ -40,6 +40,7 @@ import CartScreen           from '../screens/client/orders/CartScreen'
 import OrderConfirmation    from '../screens/client/orders/OrderConfirmation'
 import OrderDelivered from '../screens/client/orders/OrderDelivered';
 import RateOrder from '../screens/client/orders/RateOrder'
+import ReportarProblema from '../screens/client/orders/ReportarProblema'
 
 // ─── Negocio ──────────────────────────────────────────────────────────────────
 import BusinessOnboarding   from '../screens/business/onboarding/BusinessOnboarding'
@@ -114,7 +115,13 @@ export type RootStackParamList = {
 };
   RateOrder: {
     id:                 string;
-};
+  };
+  ReportarProblema: {
+    orderId:         string;
+    orderNumber:     string;
+    restaurantName:  string;
+    total:           number;
+  };
 
   ConfirmPayment: {
     items: OrderItem[]
@@ -217,6 +224,7 @@ export default function StackNavigation() {
         <Stack.Screen name="OrderConfirmation"    component={OrderConfirmation} />
         <Stack.Screen name="OrderDelivered"       component={OrderDelivered} />
         <Stack.Screen name="RateOrder"            component={RateOrder} />
+        <Stack.Screen name="ReportarProblema"     component={ReportarProblema} />
 
         {/* ── Negocio ────────────────────────────────────────────────────── */}
         <Stack.Screen name="BusinessDashboard"    component={BusinessDashboard} />
