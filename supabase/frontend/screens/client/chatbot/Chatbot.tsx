@@ -35,6 +35,7 @@ import {
 import { useCart, ChatbotOrder } from '../../../application/context/CartContext';
 import { supabase } from '../../../config/supabaseConfig';
 import { useAuth } from '../../../application/context/AuthContext';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -42,8 +43,7 @@ type ChatbotNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chat
 type ChatbotRouteProp = RouteProp<RootStackParamList, 'Chatbot'>;
 type Props = { navigation: ChatbotNavigationProp; route: ChatbotRouteProp };
 
-
-// ─── Paleta ───────────────────────────────────────────────────────────────────
+// ─── Paleta Fallback (para estilos estáticos) ─────────────────────────────────
 const C = {
   bg: '#000000',
   surface: '#000000',
@@ -54,16 +54,16 @@ const C = {
   greenGlow: '#00FF8710',
   greenSoft: '#00E676',
   textPrimary: '#FFFFFF',
-  textSec: '#ffffffff',
-  textMuted: '#222222',
-  userBubble: '#ffffffff',
+  textSec: '#aaaaaa',
+  textMuted: '#333333',
+  userBubble: '#FFFFFF',
   botBubble: '#0A0A0A',
-}
+};
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.textPrimary} strokeWidth="2" strokeLinecap="round">
+const BackIcon = ({ color }: { color: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
@@ -75,16 +75,16 @@ const SendIcon = () => (
   </Svg>
 );
 
-const MicIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round">
+const MicIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
     <Path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
     <Path d="M19 10v2a7 7 0 0 1-14 0v-2" />
     <Path d="M12 19v3" />
   </Svg>
 );
 
-const SparkIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round">
+const SparkIcon = ({ color }: { color: string }) => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
     <Path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z" />
   </Svg>
 );
@@ -97,14 +97,14 @@ const CartIcon = () => (
   </Svg>
 );
 
-const CheckIcon = () => (
-  <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5" strokeLinecap="round">
+const CheckIcon = ({ color }: { color: string }) => (
+  <Svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
     <Path d="M20 6 9 17l-5-5" />
   </Svg>
 );
 
-const HistoryIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round">
+const HistoryIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
     <Path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
     <Path d="M3 3v5h5" />
     <Path d="M12 7v5l4 2" />
@@ -125,6 +125,7 @@ interface Message {
 // ─── Typing Indicator ─────────────────────────────────────────────────────────
 
 const TypingIndicator = () => {
+  const { colors } = useTheme();
   const dots = [
     useRef(new Animated.Value(0)).current,
     useRef(new Animated.Value(0)).current,
@@ -143,16 +144,16 @@ const TypingIndicator = () => {
   }, []);
 
   return (
-    <View style={styles.typingContainer}>
-      <View style={styles.botAvatar}>
-        <SparkIcon />
+    <View style={[styles.typingContainer]}>
+      <View style={[styles.botAvatar, { backgroundColor: colors.greenGlow, borderColor: colors.green + '33' }]}>
+        <SparkIcon color={colors.green} />
       </View>
-      <View style={styles.typingBubble}>
+      <View style={[styles.typingBubble, { backgroundColor: colors.botBubble, borderColor: colors.border }]}>
         <View style={styles.typingDots}>
           {dots.map((dot, i) => (
             <Animated.View
               key={i}
-              style={[styles.typingDot, { transform: [{ translateY: dot }] }]}
+              style={[styles.typingDot, { backgroundColor: colors.green, transform: [{ translateY: dot }] }]}
             />
           ))}
         </View>
@@ -169,12 +170,13 @@ interface PedidoCardProps {
 }
 
 const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
+  const { colors } = useTheme();
   const subtotal = pedido.items.reduce((s, i) => s + i.price * i.quantity, 0);
   const envio = 12;
   const total = subtotal + envio;
 
   return (
-    <View style={styles.pedidoCard}>
+    <View style={[styles.pedidoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       {/* Header */}
       <LinearGradient
         colors={['#0f2d0f', '#0a1a0a']}
@@ -186,12 +188,12 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
           <Text style={styles.pedidoHeaderEmoji}>🧾</Text>
           <View>
             <Text style={styles.pedidoHeaderTitle}>Resumen del Pedido</Text>
-            <Text style={styles.pedidoHeaderSub}>{pedido.negocio?.nombre}</Text>
+            <Text style={[styles.pedidoHeaderSub, { color: colors.green }]}>{pedido.negocio?.nombre}</Text>
           </View>
         </View>
-        <View style={styles.pedidoStatusBadge}>
-          <CheckIcon />
-          <Text style={styles.pedidoStatusText}>Listo</Text>
+        <View style={[styles.pedidoStatusBadge, { backgroundColor: colors.greenGlow, borderColor: colors.green + '33' }]}>
+          <CheckIcon color={colors.green} />
+          <Text style={[styles.pedidoStatusText, { color: colors.green }]}>Listo</Text>
         </View>
       </LinearGradient>
 
@@ -199,35 +201,35 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
       <View style={styles.pedidoItems}>
         {pedido.items.map((item, i) => (
           <View key={i} style={styles.pedidoRow}>
-            <View style={styles.pedidoQtyBadge}>
-              <Text style={styles.pedidoQtyText}>{item.quantity}</Text>
+            <View style={[styles.pedidoQtyBadge, { backgroundColor: colors.greenGlow, borderColor: colors.green + '33' }]}>
+              <Text style={[styles.pedidoQtyText, { color: colors.green }]}>{item.quantity}</Text>
             </View>
-            <Text style={styles.pedidoItemText} numberOfLines={1}>{item.name}</Text>
-            <Text style={styles.pedidoItemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
+            <Text style={[styles.pedidoItemText, { color: colors.textPrimary }]} numberOfLines={1}>{item.name}</Text>
+            <Text style={[styles.pedidoItemPrice, { color: colors.textPrimary }]}>${(item.price * item.quantity).toFixed(2)}</Text>
           </View>
         ))}
       </View>
 
       {/* Totales */}
-      <View style={styles.pedidoTotales}>
+      <View style={[styles.pedidoTotales, { borderTopColor: colors.border }]}>
         <View style={styles.pedidoTotalRow}>
-          <Text style={styles.pedidoTotalLabel}>Subtotal</Text>
-          <Text style={styles.pedidoTotalNum}>${subtotal.toFixed(2)}</Text>
+          <Text style={[styles.pedidoTotalLabel, { color: colors.textSec }]}>Subtotal</Text>
+          <Text style={[styles.pedidoTotalNum, { color: colors.textPrimary }]}>${subtotal.toFixed(2)}</Text>
         </View>
         <View style={styles.pedidoTotalRow}>
-          <Text style={styles.pedidoTotalLabel}>Envío</Text>
-          <Text style={styles.pedidoTotalNum}>${envio.toFixed(2)}</Text>
+          <Text style={[styles.pedidoTotalLabel, { color: colors.textSec }]}>Envío</Text>
+          <Text style={[styles.pedidoTotalNum, { color: colors.textPrimary }]}>${envio.toFixed(2)}</Text>
         </View>
-        <View style={[styles.pedidoTotalRow, styles.pedidoTotalFinal]}>
-          <Text style={styles.pedidoTotalFinalLabel}>Total</Text>
-          <Text style={styles.pedidoTotalFinalNum}>${total.toFixed(2)}</Text>
+        <View style={[styles.pedidoTotalRow, styles.pedidoTotalFinal, { borderTopColor: colors.border }]}>
+          <Text style={[styles.pedidoTotalFinalLabel, { color: colors.textPrimary }]}>Total</Text>
+          <Text style={[styles.pedidoTotalFinalNum, { color: colors.green }]}>${total.toFixed(2)}</Text>
         </View>
       </View>
 
       {/* Dirección */}
       <View style={styles.pedidoDireccionRow}>
         <Text style={styles.pedidoDireccionIcon}>📍</Text>
-        <Text style={styles.pedidoDireccionText} numberOfLines={2}>
+        <Text style={[styles.pedidoDireccionText, { color: colors.textSec }]} numberOfLines={2}>
           {pedido.direccionEntrega}
         </Text>
       </View>
@@ -235,14 +237,14 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
       {!!pedido.notas && (
         <View style={styles.pedidoNotasRow}>
           <Text style={styles.pedidoDireccionIcon}>📝</Text>
-          <Text style={styles.pedidoNotasText}>{pedido.notas}</Text>
+          <Text style={[styles.pedidoNotasText, { color: colors.textSec }]}>{pedido.notas}</Text>
         </View>
       )}
 
       {/* CTA */}
       <TouchableOpacity onPress={onVerCarrito} activeOpacity={0.85} style={styles.carritoBtn}>
         <LinearGradient
-          colors={[C.green, C.greenDark]}
+          colors={[colors.green, colors.greenDark]}
           style={styles.carritoBtnGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -258,6 +260,7 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function Chatbot({ navigation, route }: Props) {
+  const { colors, isDark } = useTheme();
   const { setChatbotOrder } = useCart();
   const { session } = useAuth();
   const sesionIdRef = useRef<string | null>(route?.params?.sesionId ?? null);
@@ -456,17 +459,22 @@ export default function Chatbot({ navigation, route }: Props) {
     return (
       <View style={[styles.messageContainer, isUser ? styles.userRow : styles.botRow]}>
         {!isUser && (
-          <View style={styles.botAvatar}>
-            <SparkIcon />
+          <View style={[styles.botAvatar, { backgroundColor: colors.greenGlow, borderColor: colors.green + '33' }]}>
+            <SparkIcon color={colors.green} />
           </View>
         )}
 
         <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
-          <View style={[styles.bubble, isUser ? styles.userBubble : styles.botBubble]}>
-            <Text style={[styles.msgText, isUser ? styles.userText : styles.botText]}>
+          <View style={[
+            styles.bubble,
+            isUser
+              ? { backgroundColor: colors.userBubble, borderBottomRightRadius: 4 }
+              : { backgroundColor: colors.botBubble, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: colors.border },
+          ]}>
+            <Text style={[styles.msgText, { color: isUser ? '#fff' : colors.textPrimary }]}>
               {item.text}
             </Text>
-            <Text style={[styles.msgTime, isUser ? styles.userTime : styles.botTime]}>
+            <Text style={[styles.msgTime, { color: isUser ? 'rgba(255,255,255,0.6)' : colors.textSec, textAlign: isUser ? 'right' : 'left' }]}>
               {formatTime(item.timestamp)}
             </Text>
           </View>
@@ -481,8 +489,8 @@ export default function Chatbot({ navigation, route }: Props) {
           {!isUser && !item.pedidoCard && item.suggestions && (
             <View style={styles.chips}>
               {item.suggestions.map((s, i) => (
-                <TouchableOpacity key={i} style={styles.chip} onPress={() => handleSend(s)}>
-                  <Text style={styles.chipText}>{s}</Text>
+                <TouchableOpacity key={i} style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.green + '44' }]} onPress={() => handleSend(s)}>
+                  <Text style={[styles.chipText, { color: colors.green }]}>{s}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -493,35 +501,35 @@ export default function Chatbot({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.bg} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <BackIcon />
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
+          <BackIcon color={colors.textPrimary} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
-          <View style={styles.botAvatarHeader}>
-            <SparkIcon />
-            <View style={styles.onlineDot} />
+          <View style={[styles.botAvatarHeader, { backgroundColor: colors.greenGlow, borderColor: colors.green + '44' }]}>
+            <SparkIcon color={colors.green} />
+            <View style={[styles.onlineDot, { backgroundColor: colors.green, borderColor: colors.surface }]} />
           </View>
           <View>
-            <Text style={styles.headerTitle}>KivoBot</Text>
-            <Text style={styles.headerSub}>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>KivoBot</Text>
+            <Text style={[styles.headerSub, { color: colors.textSec }]}>
               {loadingNegocios ? '⏳ Cargando...' : `${negocios.length} negocios disponibles`}
             </Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('ChatHistorial')}>
-          <HistoryIcon />
+        <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.card }]} onPress={() => navigation.navigate('ChatHistorial')}>
+          <HistoryIcon color={colors.green} />
         </TouchableOpacity>
       </View>
 
       {/* Divider */}
-      <View style={styles.headerDivider} />
+      <View style={[styles.headerDivider, { backgroundColor: colors.border }]} />
 
       {/* Messages */}
       <FlatList
@@ -541,12 +549,12 @@ export default function Chatbot({ navigation, route }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <View style={styles.inputBar}>
-          <View style={styles.inputWrap}>
+        <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+          <View style={[styles.inputWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.textPrimary }]}
               placeholder="Escribe tu mensaje..."
-              placeholderTextColor="#374151"
+              placeholderTextColor={colors.placeholderText}
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -562,7 +570,7 @@ export default function Chatbot({ navigation, route }: Props) {
               disabled={isTyping}
             >
               <LinearGradient
-                colors={[C.green, C.greenDark]}
+                colors={[colors.green, colors.greenDark]}
                 style={styles.sendGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -574,8 +582,8 @@ export default function Chatbot({ navigation, route }: Props) {
               </LinearGradient>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.micBtn}>
-              <MicIcon />
+            <TouchableOpacity style={[styles.micBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <MicIcon color={colors.green} />
             </TouchableOpacity>
           )}
         </View>

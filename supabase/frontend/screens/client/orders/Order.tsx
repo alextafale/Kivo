@@ -15,7 +15,8 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { Order } from '../../../types/order';
-import { useAuth } from '../../../application/context/AuthContext'
+import { useAuth } from '../../../application/context/AuthContext';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 type OrdersNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Orders'>;
 type Props = { navigation: OrdersNavigationProp };
@@ -111,8 +112,9 @@ function OrderCard({
 }) {
   // Suscripción realtime por pedido
   const { order } = useOrderRealtime(initialOrder.id, initialOrder)
+  const { isDark, colors } = useTheme();
   if (!order) return null
-  
+
 
   const rating = review?.rating_general || 0;
 
@@ -121,7 +123,7 @@ function OrderCard({
 
   return (
     <TouchableOpacity
-      style={styles.orderCard}
+      style={[styles.orderCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
       activeOpacity={order.status === 'delivered' ? 0.7 : 1}
       onPress={() => {
         if (order.status === 'delivered') {
@@ -140,35 +142,35 @@ function OrderCard({
         {order.restaurantImage ? (
           <Image source={{ uri: order.restaurantImage }} style={styles.restaurantImage} />
         ) : (
-          <View style={[styles.restaurantImage, { backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' }]}>
+          <View style={[styles.restaurantImage, { backgroundColor: colors.border, justifyContent: 'center', alignItems: 'center' }]}>
             <Text style={{ fontSize: 20 }}>🍴</Text>
           </View>
         )}
         <View style={styles.orderHeaderInfo}>
-          <Text style={styles.restaurantName}>{order.restaurantName}</Text>
-          {rating!==0 && (
+          <Text style={[styles.restaurantName, { color: colors.titleText }]}>{order.restaurantName}</Text>
+          {rating !== 0 && (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 14, color: '#000', fontWeight: 'bold'}}>
+              <Text style={{ fontSize: 14, color: colors.titleText, fontWeight: 'bold' }}>
                 <StarIcon /> {rating}
               </Text>
             </View>
 
           )}
 
-          <Text style={styles.orderNumber}>{order.orderNumber}</Text>
+          <Text style={[styles.orderNumber, { color: colors.labelText }]}>{order.orderNumber}</Text>
           <View style={styles.orderDateTime}>
-            <Text style={styles.orderDate}>{formatDate(order.date)}</Text>
-            <Text style={styles.orderTimeSeparator}>•</Text>
-            <Text style={styles.orderTime}>{formatTime(order.date)}</Text>
+            <Text style={[styles.orderDate, { color: colors.labelText }]}>{formatDate(order.date)}</Text>
+            <Text style={[styles.orderTimeSeparator, { color: colors.rowDivider }]}>•</Text>
+            <Text style={[styles.orderTime, { color: colors.labelText }]}>{formatTime(order.date)}</Text>
           </View>
         </View>
       </View>
 
-      <View style={styles.orderDivider} />
+      <View style={[styles.orderDivider, { backgroundColor: colors.rowDivider }]} />
 
       <View style={styles.orderItems}>
         {(order.items ?? []).map((item, index) => (
-          <Text key={index} style={styles.orderItemText}>
+          <Text key={index} style={[styles.orderItemText, { color: colors.labelText }]}>
             {item.quantity}x {item.name}
           </Text>
         ))}
@@ -181,7 +183,7 @@ function OrderCard({
             {statusInfo?.label ?? order.status}
           </Text>
         </View>
-        <Text style={styles.orderTotal}>${order.total}</Text>
+        <Text style={[styles.orderTotal, { color: colors.titleText }]}>${order.total}</Text>
       </View>
 
       {(order.status === 'on_the_way' || order.status === 'picked_up') && (
@@ -202,8 +204,8 @@ function OrderCard({
 
       {(order.status === 'delivered'  && rating === 0) && (
         <View>
-          <TouchableOpacity style={styles.reorderButton}>
-            <Text style={styles.reorderButtonText}>Volver a Pedir</Text>
+          <TouchableOpacity style={[styles.reorderButton, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <Text style={[styles.reorderButtonText, { color: colors.titleText }]}>Volver a Pedir</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.reportProblemBtn}
@@ -226,6 +228,7 @@ function OrderCard({
 export default function Orders({ navigation }: Props) {
   console.log("Estas en orders");
   const { session } = useAuth();
+  const { isDark, colors } = useTheme();
   const [userReviews, setUserReviews] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('Todos');
@@ -313,28 +316,28 @@ export default function Orders({ navigation }: Props) {
   const filteredOrders = filterOrders();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
 
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.cardBg }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <BackIcon />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Mis Pedidos</Text>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>Mis Pedidos</Text>
           <View style={styles.backButton} />
         </View>
 
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
+        <View style={[styles.searchContainer, { backgroundColor: colors.cardBg, borderBottomColor: colors.border }]}>
+          <View style={[styles.searchBar, { backgroundColor: colors.searchBg }]}>
             <SearchIcon />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: colors.titleText }]}
               placeholder="Buscar por restaurante..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.labelText}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -358,11 +361,11 @@ export default function Orders({ navigation }: Props) {
           </View>
         )}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterTabsContainer} contentContainerStyle={styles.filterTabsContent}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.filterTabsContainer, { backgroundColor: colors.cardBg, borderBottomColor: colors.border }]} contentContainerStyle={styles.filterTabsContent}>
           {filterTabs.map((tab) => (
             <TouchableOpacity
               key={tab}
-              style={[styles.filterTab, selectedFilter === tab && styles.filterTabActive]}
+              style={[styles.filterTab, { backgroundColor: colors.searchBg }, selectedFilter === tab && styles.filterTabActive]}
               onPress={() => setSelectedFilter(tab)}
             >
               <Text style={[styles.filterTabText, selectedFilter === tab && styles.filterTabTextActive]}>{tab}</Text>
@@ -389,14 +392,14 @@ export default function Orders({ navigation }: Props) {
             })
           ) : (
             <View style={styles.emptyState}>
-              <View style={styles.emptyStateIcon}>
-                <Svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5">
+              <View style={[styles.emptyStateIcon, { backgroundColor: colors.border }]}>
+                <Svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke={colors.labelText} strokeWidth="1.5">
                   <Path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
                   <Path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
                 </Svg>
               </View>
-              <Text style={styles.emptyStateTitle}>No hay pedidos</Text>
-              <Text style={styles.emptyStateText}>
+              <Text style={[styles.emptyStateTitle, { color: colors.titleText }]}>No hay pedidos</Text>
+              <Text style={[styles.emptyStateText, { color: colors.labelText }]}>
                 {searchQuery || selectedDate
                   ? 'No se encontraron pedidos con los filtros seleccionados'
                   : 'Aún no has realizado ningún pedido'}

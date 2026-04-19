@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   View, Text, StyleSheet, StatusBar,
   ScrollView, TouchableOpacity, Image, ActivityIndicator,
-  Animated, Alert,
+  Animated, Alert, Switch,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -13,6 +13,7 @@ import { useAuth } from '../../../application/context/AuthContext'
 import { useDriverPhoto } from '../../../application/hooks/useDriverPhoto'
 import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/RepartidorRepositoryImpl'
 import type { RepartidorInfo } from '../../../domain/ports/repositories/lRepartidorRepository'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'DriverProfile'>
@@ -65,11 +66,12 @@ const ESTADO_LABEL: Record<string, { label: string; color: string; bg: string }>
   busy:      { label: 'Ocupado',    color: '#D97706', bg: '#FEF3C7' },
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Component ──────────────────────────────────────────────────────────────
 export default function DriverProfile({ navigation, route }: Props) {
   console.log("Estas en DriverProfile")
   const { session, logout } = useAuth()
   const { isUploading, pickAndUpload } = useDriverPhoto()
+  const { isDark, toggleTheme, colors } = useTheme()
 
   // Toma el repartidor que pasó el Dashboard como parámetro de navegación
   const [repartidor, setRepartidor] = useState<RepartidorInfo>(route.params.repartidor)
@@ -109,8 +111,8 @@ export default function DriverProfile({ navigation, route }: Props) {
     : '—'
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
 
@@ -119,10 +121,10 @@ export default function DriverProfile({ navigation, route }: Props) {
           opacity: headerAnim,
           transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
         }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.backBtnBg }]}>
             <BackIcon />
           </TouchableOpacity>
-          <Text style={styles.topHeaderTitle}>Mi Perfil</Text>
+          <Text style={[styles.topHeaderTitle, { color: colors.titleText }]}>Mi Perfil</Text>
           <View style={{ width: 40 }} />
         </Animated.View>
 
@@ -171,93 +173,103 @@ export default function DriverProfile({ navigation, route }: Props) {
           </View>
         </Animated.View>
 
-        {/* ── ESTADÍSTICAS ─────────────────────────────────────────────────── */}
+        {/* ── ESTADÍSTICAS ───────────────────────────────────────────────────────── */}
         <Animated.View style={{ opacity: cardAnim }}>
-          <Text style={styles.sectionLabel}>ESTADÍSTICAS</Text>
+          <Text style={[styles.sectionLabel, { color: colors.labelText }]}>ESTADÍSTICAS</Text>
           <View style={styles.statsRow}>
 
-            <View style={styles.statCard}>
-              <View style={styles.statIconWrap}>
+            <View style={[styles.statCard, { backgroundColor: colors.cardBg }]}>
+              <View style={[styles.statIconWrap, { backgroundColor: colors.iconBg }]}>
                 <PackageIcon />
               </View>
-              <Text style={styles.statValue}>{repartidor.total_entregas}</Text>
-              <Text style={styles.statLabel}>Entregas</Text>
+              <Text style={[styles.statValue, { color: colors.titleText }]}>{repartidor.total_entregas}</Text>
+              <Text style={[styles.statLabel, { color: colors.labelText }]}>Entregas</Text>
             </View>
 
-            <View style={[styles.statCard, styles.statCardHighlight]}>
+            <View style={[styles.statCard, styles.statCardHighlight, { backgroundColor: colors.cardBg }]}>
               <View style={[styles.statIconWrap, { backgroundColor: '#FEF3C7' }]}>
                 <StarIcon />
               </View>
-              <Text style={styles.statValue}>
+              <Text style={[styles.statValue, { color: colors.titleText }]}>
                 {repartidor.calificacion?.toFixed(1) ?? '—'}
               </Text>
-              <Text style={styles.statLabel}>Calificación</Text>
+              <Text style={[styles.statLabel, { color: colors.labelText }]}>Calificación</Text>
             </View>
 
-            <View style={styles.statCard}>
-              <View style={styles.statIconWrap}>
+            <View style={[styles.statCard, { backgroundColor: colors.cardBg }]}>
+              <View style={[styles.statIconWrap, { backgroundColor: colors.iconBg }]}>
                 <BikeIcon />
               </View>
-              <Text style={styles.statValue}>{vehiculoLabel}</Text>
-              <Text style={styles.statLabel}>Vehículo</Text>
+              <Text style={[styles.statValue, { color: colors.titleText }]}>{vehiculoLabel}</Text>
+              <Text style={[styles.statLabel, { color: colors.labelText }]}>Vehículo</Text>
             </View>
 
           </View>
         </Animated.View>
 
-        {/* ── INFO DE CUENTA ───────────────────────────────────────────────── */}
-        <Animated.View style={{ opacity: cardAnim }}>
-          <Text style={styles.sectionLabel}>CUENTA</Text>
-          <View style={styles.card}>
+        {/* ── INFO DE CUENTA ────────────────────────────────────────────────── */}
+        <Animated.View style={{ opacity: cardAnim, marginTop: 20 }}>
+          <Text style={[styles.sectionLabel, { color: colors.labelText }]}>CUENTA</Text>
+          <View style={[styles.card, { backgroundColor: colors.cardBg }]}>
 
             <View style={styles.infoRow}>
-              <View style={styles.infoIconWrap}>
+              <View style={[styles.infoIconWrap, { backgroundColor: colors.iconBg }]}>
                 <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
                   <Rect x="2" y="4" width="20" height="16" rx="2" /><Path d="m2 7 10 7 10-7" />
                 </Svg>
               </View>
               <View style={styles.infoTextBlock}>
-                <Text style={styles.infoLabel}>Correo</Text>
-                <Text style={styles.infoValue} numberOfLines={1}>{session?.email ?? '—'}</Text>
+                <Text style={[styles.infoLabel, { color: colors.labelText }]}>Correo</Text>
+                <Text style={[styles.infoValue, { color: colors.titleText }]} numberOfLines={1}>{session?.email ?? '—'}</Text>
               </View>
             </View>
 
-            <View style={styles.rowDivider} />
+            <View style={[styles.rowDivider, { backgroundColor: colors.rowDivider }]} />
 
             <View style={styles.infoRow}>
-              <View style={styles.infoIconWrap}>
+              <View style={[styles.infoIconWrap, { backgroundColor: colors.iconBg }]}>
                 <BikeIcon />
               </View>
               <View style={styles.infoTextBlock}>
-                <Text style={styles.infoLabel}>Vehículo</Text>
-                <Text style={styles.infoValue}>{vehiculoLabel}</Text>
-              </View>
-            </View>
-
-            <View style={styles.rowDivider} />
-
-            <View style={styles.infoRow}>
-              <View style={styles.infoIconWrap}>
-                <PackageIcon />
-              </View>
-              <View style={styles.infoTextBlock}>
-                <Text style={styles.infoLabel}>Total de entregas</Text>
-                <Text style={styles.infoValue}>{repartidor.total_entregas}</Text>
+                <Text style={[styles.infoLabel, { color: colors.labelText }]}>Vehículo</Text>
+                <Text style={[styles.infoValue, { color: colors.titleText }]}>{vehiculoLabel}</Text>
               </View>
             </View>
 
           </View>
         </Animated.View>
 
-        {/* ── CERRAR SESIÓN ────────────────────────────────────────────────── */}
+        {/* ── APARIENCIA ──────────────────────────────────────────────────────────────── */}
         <View style={styles.sectionPadded}>
-          <TouchableOpacity style={styles.signOutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <Text style={[styles.sectionLabel, { color: colors.labelText }]}>APARIENCIA</Text>
+          <View style={[styles.card, { backgroundColor: colors.cardBg }]}>
+            <View style={[styles.infoRow, { justifyContent: 'space-between' }]}>
+              <View style={styles.infoTextBlock}>
+                <Text style={[styles.infoValue, { color: colors.titleText }]}>
+                  {isDark ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}
+                </Text>
+                <Text style={[styles.infoLabel, { color: colors.labelText }]}>Cambiar apariencia de la app</Text>
+              </View>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: '#CBD5E1', true: '#22c55e' }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor="#CBD5E1"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* ── CERRAR SESIÓN ──────────────────────────────────────────────────────────────── */}
+        <View style={styles.sectionPadded}>
+          <TouchableOpacity style={[styles.signOutBtn, { backgroundColor: colors.signOutBg, borderColor: colors.signOutBorder }]} onPress={handleLogout} activeOpacity={0.8}>
             <LogoutIcon />
             <Text style={styles.signOutText}>Cerrar Sesión</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.versionText}>Pidelo Delivery  •  v1.0.0</Text>
+        <Text style={[styles.versionText, { color: colors.labelText }]}>Pidelo Delivery  •  v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   )

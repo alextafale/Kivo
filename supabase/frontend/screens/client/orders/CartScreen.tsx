@@ -15,14 +15,15 @@ import { guardarPedido } from '../../../../services/geminiService';
 import {
   generarTicketPDF, compartirTicketPDF, enviarResumenWhatsApp, TicketData,
 } from '../../../../services/ticketService';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 type CartNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 type Props = { navigation: CartNavigationProp };
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+const BackIcon = ({ color = "#000" }: { color?: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
@@ -41,29 +42,30 @@ const TrashIcon = () => (
 
 const CartItemRow = ({ item, sucursal_id }: { item: CartItem; sucursal_id: string }) => {
   const { increaseQuantity, decreaseQuantity } = useCart();
+  const { colors } = useTheme();
   return (
     <View style={styles.itemRow}>
       {item.imagen ? (
         <Image source={{ uri: item.imagen }} style={styles.itemImage} />
       ) : (
-        <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
+        <View style={[styles.itemImage, styles.itemImagePlaceholder, { backgroundColor: colors.border }]}>
           <Text style={{ fontSize: 20 }}>🍽️</Text>
         </View>
       )}
       <View style={styles.itemInfo}>
-        <Text style={styles.itemName}>{item.nombre}</Text>
-        {item.notas && <Text style={styles.itemNotes}>{item.notas}</Text>}
+        <Text style={[styles.itemName, { color: colors.titleText }]}>{item.nombre}</Text>
+        {item.notas && <Text style={[styles.itemNotes, { color: colors.labelText }]}>{item.notas}</Text>}
         <View style={styles.itemFooter}>
-          <View style={styles.quantityControls}>
+          <View style={[styles.quantityControls, { backgroundColor: colors.searchBg }]}>
             <TouchableOpacity style={styles.quantityBtn} onPress={() => decreaseQuantity(sucursal_id, item.id)}>
               <Text style={styles.quantityBtnText}>−</Text>
             </TouchableOpacity>
-            <Text style={styles.quantityText}>{item.cantidad}</Text>
+            <Text style={[styles.quantityText, { color: colors.titleText }]}>{item.cantidad}</Text>
             <TouchableOpacity style={styles.quantityBtn} onPress={() => increaseQuantity(sucursal_id, item.id)}>
               <Text style={styles.quantityBtnText}>+</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.itemPrice}>${(item.precio_unitario * item.cantidad).toFixed(2)}</Text>
+          <Text style={[styles.itemPrice, { color: colors.titleText }]}>${(item.precio_unitario * item.cantidad).toFixed(2)}</Text>
         </View>
       </View>
     </View>
@@ -74,19 +76,20 @@ const CartItemRow = ({ item, sucursal_id }: { item: CartItem; sucursal_id: strin
 
 const RestaurantCard = ({ restaurant }: { restaurant: CartRestaurant }) => {
   const { clearRestaurant } = useCart();
+  const { isDark, colors } = useTheme();
   const subtotal = restaurant.items.reduce((t, i) => t + i.precio_unitario * i.cantidad, 0);
   return (
-    <View style={styles.restaurantCard}>
+    <View style={[styles.restaurantCard, { backgroundColor: colors.cardBg }]}>
       <View style={styles.restaurantHeader}>
         {restaurant.logo ? (
           <Image source={{ uri: restaurant.logo }} style={styles.restaurantLogo} />
         ) : (
-          <View style={[styles.restaurantLogo, styles.restaurantLogoPlaceholder]}>
+          <View style={[styles.restaurantLogo, styles.restaurantLogoPlaceholder, { backgroundColor: colors.border }]}>
             <Text style={{ fontSize: 18 }}>🍽️</Text>
           </View>
         )}
         <View style={styles.restaurantInfo}>
-          <Text style={styles.restaurantName}>{restaurant.nombre}</Text>
+          <Text style={[styles.restaurantName, { color: colors.titleText }]}>{restaurant.nombre}</Text>
           <View style={styles.restaurantMeta}>
             <ClockIcon />
             <Text style={styles.restaurantTime}>{restaurant.tiempo_entrega} min</Text>
@@ -99,9 +102,9 @@ const RestaurantCard = ({ restaurant }: { restaurant: CartRestaurant }) => {
       {restaurant.items.map(item => (
         <CartItemRow key={item.id} item={item} sucursal_id={restaurant.sucursal_id} />
       ))}
-      <View style={styles.restaurantSubtotal}>
-        <Text style={styles.subtotalLabel}>Subtotal</Text>
-        <Text style={styles.subtotalValue}>${subtotal.toFixed(2)}</Text>
+      <View style={[styles.restaurantSubtotal, { borderTopColor: colors.rowDivider }]}>
+        <Text style={[styles.subtotalLabel, { color: colors.labelText }]}>Subtotal</Text>
+        <Text style={[styles.subtotalValue, { color: colors.titleText }]}>${subtotal.toFixed(2)}</Text>
       </View>
     </View>
   );
@@ -114,6 +117,7 @@ export default function CartScreen({ navigation }: Props) {
   const { cart, clearCart, clearChatbotOrder, getSubtotal, getTotalItems, chatbotOrder } = useCart();
   const { session } = useAuth();
   const { profile } = useProfile();
+  const { isDark, colors } = useTheme();
   const [confirming, setConfirming] = useState(false);
 
   const subtotal  = getSubtotal();
@@ -237,18 +241,18 @@ export default function CartScreen({ navigation }: Props) {
 
   if (cart.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+        <View style={[styles.header, { backgroundColor: colors.cardBg, borderBottomColor: colors.rowDivider }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <BackIcon />
+            <BackIcon color={colors.titleText} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Mi Carrito</Text>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>Mi Carrito</Text>
           <View style={styles.backButton} />
         </View>
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateIcon}>🛒</Text>
-          <Text style={styles.emptyStateTitle}>Tu carrito está vacío</Text>
-          <Text style={styles.emptyStateText}>Agrega items desde un restaurante o usa el chatbot</Text>
+          <Text style={[styles.emptyStateTitle, { color: colors.titleText }]}>Tu carrito está vacío</Text>
+          <Text style={[styles.emptyStateText, { color: colors.labelText }]}>Agrega items desde un restaurante o usa el chatbot</Text>
           <TouchableOpacity style={styles.emptyStateButton} onPress={() => navigation.navigate('HomeFeed')}>
             <LinearGradient
               colors={['#22c55e', '#16a34a']}
@@ -268,22 +272,22 @@ export default function CartScreen({ navigation }: Props) {
     : `Checkout · $${total.toFixed(2)}`;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.cardBg, borderBottomColor: colors.rowDivider }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <BackIcon />
+          <BackIcon color={colors.titleText} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mi Carrito</Text>
+        <Text style={[styles.headerTitle, { color: colors.titleText }]}>Mi Carrito</Text>
         <TouchableOpacity onPress={clearCart} style={styles.clearButton}>
           <Text style={styles.clearButtonText}>Limpiar</Text>
         </TouchableOpacity>
       </View>
 
       {chatbotOrder && (
-        <View style={styles.chatbotBanner}>
-          <Text style={styles.chatbotBannerText}>
+        <View style={[styles.chatbotBanner, { backgroundColor: isDark ? 'rgba(34,197,94,0.1)' : '#F0FDF4', borderBottomColor: isDark ? 'transparent' : '#BBF7D0' }]}>
+          <Text style={[styles.chatbotBannerText, { color: isDark ? colors.green : '#15803d' }]}>
             🤖 Pedido del chatbot — confirma para generar tu ticket PDF
           </Text>
         </View>
@@ -294,26 +298,26 @@ export default function CartScreen({ navigation }: Props) {
           <RestaurantCard key={restaurant.sucursal_id} restaurant={restaurant} />
         ))}
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Resumen</Text>
+        <View style={[styles.summaryCard, { backgroundColor: colors.cardBg }]}>
+          <Text style={[styles.summaryTitle, { color: colors.titleText }]}>Resumen</Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal ({getTotalItems()} items)</Text>
-            <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.labelText }]}>Subtotal ({getTotalItems()} items)</Text>
+            <Text style={[styles.summaryValue, { color: colors.titleText }]}>${subtotal.toFixed(2)}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Costo de envío</Text>
-            <Text style={styles.summaryValue}>${costoEnvio.toFixed(2)}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.labelText }]}>Costo de envío</Text>
+            <Text style={[styles.summaryValue, { color: colors.titleText }]}>${costoEnvio.toFixed(2)}</Text>
           </View>
-          <View style={styles.summaryDivider} />
+          <View style={[styles.summaryDivider, { backgroundColor: colors.rowDivider }]} />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryTotalLabel}>Total</Text>
+            <Text style={[styles.summaryTotalLabel, { color: colors.titleText }]}>Total</Text>
             <Text style={styles.summaryTotalValue}>${total.toFixed(2)}</Text>
           </View>
         </View>
 
         {chatbotOrder && (
-          <View style={styles.ticketNote}>
-            <Text style={styles.ticketNoteText}>
+          <View style={[styles.ticketNote, { backgroundColor: isDark ? 'rgba(56,130,246,0.1)' : '#EFF6FF', borderColor: isDark ? 'rgba(56,130,246,0.3)' : '#BFDBFE' }]}>
+            <Text style={[styles.ticketNoteText, { color: isDark ? '#60A5FA' : '#1D4ED8' }]}>
               📄 Al confirmar se generará un PDF y se enviará un resumen por WhatsApp a tu número registrado.
             </Text>
           </View>
@@ -321,7 +325,7 @@ export default function CartScreen({ navigation }: Props) {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      <View style={styles.checkoutContainer}>
+      <View style={[styles.checkoutContainer, { backgroundColor: colors.cardBg, borderTopColor: colors.rowDivider }]}>
         <TouchableOpacity
           style={[styles.checkoutButton, confirming && styles.checkoutButtonDisabled]}
           onPress={handleCheckout}

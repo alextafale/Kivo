@@ -17,6 +17,7 @@ import { useAdminNegocio } from '../../../application/hooks/useAdminNegocio';
 import { useAdminSucursal } from '../../../application/hooks/useAdminSucursal';
 import type { HorarioDia } from '../../../domain/entities/Negocio';
 import { useAdminMetricas } from '../../../application/hooks/useAdminMetricas';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 type Props = { navigation: SettingsScreenNavigationProp };
@@ -151,6 +152,7 @@ const mapStyles = StyleSheet.create({
 export default function SettingsScreen({ navigation }: Props) {
   const [activeTab, setActiveTab] = useState<TabName>('Settings');
   console.log('Estas en settings business');
+  const { isDark, toggleTheme, colors } = useTheme();
 
   // IDs dinámicos desde AuthContext
   const { adminAccess, session, logout } = useAuth();
@@ -398,15 +400,15 @@ export default function SettingsScreen({ navigation }: Props) {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#0A0A0A' : '#F2F7F2' }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <View style={[styles.header, { backgroundColor: isDark ? '#0A0A0A' : 'transparent' }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF' }]}>
             <BackIcon />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Business Profile</Text>
+          <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#111827' }]}>Business Profile</Text>
           <TouchableOpacity>
             <Text style={styles.previewLink}>Preview</Text>
           </TouchableOpacity>
@@ -613,6 +615,30 @@ export default function SettingsScreen({ navigation }: Props) {
               editable={false} // El slug suele ser automático, no manual
               placeholder="auto-generado"
             />
+          </View>
+        </View>
+
+        {/* Apariencia */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#111827' }]}>Appearance</Text>
+          <View style={[styles.whiteCard, { backgroundColor: isDark ? '#111111' : '#FFFFFF' }]}>
+            <View style={[styles.scheduleRow, { justifyContent: 'space-between' }]}>
+              <View>
+                <Text style={[styles.timeText, { color: isDark ? '#FFFFFF' : '#374151' }]}>
+                  {isDark ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}
+                </Text>
+                <Text style={{ fontSize: 11, color: isDark ? '#888888' : '#9CA3AF', marginTop: 2 }}>
+                  Cambiar apariencia de la app
+                </Text>
+              </View>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: '#CBD5E1', true: '#22c55e' }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor="#CBD5E1"
+              />
+            </View>
           </View>
         </View>
 

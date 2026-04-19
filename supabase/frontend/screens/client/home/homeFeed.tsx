@@ -23,6 +23,7 @@ import { useCiudadUsuario } from '../../../application/hooks/useCiudadUsuario';
 import { useNegociosPorCiudad } from '../../../application/hooks/useNegocioPorCiudad';
 import { useCart } from '../../../application/context/CartContext';
 import * as Location from 'expo-location';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -33,8 +34,8 @@ type location = {
 
 // ─── Iconos SVG ──────────────────────────────────────────────────────────────
 
-const SearchIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+const SearchIcon = ({ color = "#9CA3AF" }: { color?: string }) => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Circle cx="11" cy="11" r="8" />
     <Path d="m21 21-4.35-4.35" />
   </Svg>
@@ -53,31 +54,31 @@ const PinIcon = () => (
   </Svg>
 );
 
-const HomeIcon = ({ active }: { active?: boolean }) => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill={active ? '#22c55e' : 'none'} stroke={active ? '#22c55e' : '#9CA3AF'} strokeWidth="2">
+const HomeIcon = ({ active, color = "#9CA3AF" }: { active?: boolean, color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill={active ? '#22c55e' : 'none'} stroke={active ? '#22c55e' : color} strokeWidth="2">
     <Path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
     <Path d="M9 22V12h6v10" />
   </Svg>
 );
 
-const OrdersIcon = ({ active }: { active?: boolean }) => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#22c55e' : '#9CA3AF'} strokeWidth="2">
+const OrdersIcon = ({ active, color = "#9CA3AF" }: { active?: boolean, color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#22c55e' : color} strokeWidth="2">
     <Path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
     <Rect x="9" y="3" width="6" height="4" rx="1" />
     <Path d="M9 12h6M9 16h4" />
   </Svg>
 );
 
-const CartIcon = ({ active }: { active?: boolean }) => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#22c55e' : '#9CA3AF'} strokeWidth="2">
+const CartIcon = ({ active, color = "#9CA3AF" }: { active?: boolean, color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#22c55e' : color} strokeWidth="2">
     <Path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
     <Path d="M3 6h18" />
     <Path d="M16 10a4 4 0 0 1-8 0" />
   </Svg>
 );
 
-const ProfileIcon = ({ active }: { active?: boolean }) => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#22c55e' : '#9CA3AF'} strokeWidth="2">
+const ProfileIcon = ({ active, color = "#9CA3AF" }: { active?: boolean, color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#22c55e' : color} strokeWidth="2">
     <Path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
     <Circle cx="12" cy="7" r="4" />
   </Svg>
@@ -134,6 +135,7 @@ export default function HomeFeed() {
   const [location, setLocation] = useState<location | null>(null);
   const isLoading = loadingCiudad || loadingNegocios;
   const cartCount = getTotalItems();
+  const { isDark, colors } = useTheme();
 
   const [sucursalesCercanas, setSucursalesCercanas] = useState([]);
   const [loadingCercanas, setLoadingCercanas] = useState(false);
@@ -213,8 +215,8 @@ export default function HomeFeed() {
 
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -222,12 +224,12 @@ export default function HomeFeed() {
       >
 
         {/* ── HEADER ── */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.cardBg }]}>
           <View>
-            <Text style={styles.logoText}>Kivo</Text>
+            <Text style={[styles.logoText, { color: colors.titleText }]}>Kivo</Text>
             <View style={styles.locationRow}>
               <PinIcon />
-              <Text style={styles.locationText} numberOfLines={1}>
+              <Text style={[styles.locationText, { color: colors.labelText }]} numberOfLines={1}>
                 {loadingCiudad ? 'Buscando...' : ciudad ?? 'Sin domicilio'}
               </Text>
             </View>
@@ -243,12 +245,12 @@ export default function HomeFeed() {
 
         {/* ── SEARCH BAR — toca para abrir chatbot ── */}
         <TouchableOpacity
-          style={styles.searchBar}
+          style={[styles.searchBar, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
           onPress={() => navigation.navigate('Chatbot')}
           activeOpacity={0.85}
         >
-          <SearchIcon />
-          <Text style={styles.searchPlaceholder}>
+          <SearchIcon color={colors.labelText} />
+          <Text style={[styles.searchPlaceholder, { color: colors.labelText }]}>
             {searchQuery || 'Pregunta al asistente o busca...'}
           </Text>
           <LinearGradient
@@ -261,12 +263,12 @@ export default function HomeFeed() {
         </TouchableOpacity>
 
         {/* ── SEARCH INPUT cuando escribe ── */}
-        <View style={styles.realSearchWrap}>
-          <SearchIcon />
+        <View style={[styles.realSearchWrap, { backgroundColor: colors.searchBg }]}>
+          <SearchIcon color={colors.labelText} />
           <TextInput
-            style={styles.realSearchInput}
+            style={[styles.realSearchInput, { color: colors.titleText }]}
             placeholder="Filtrar por nombre..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.labelText}
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
@@ -310,6 +312,7 @@ export default function HomeFeed() {
                 key={cat.label}
                 style={[
                   styles.categoryChip,
+                  { backgroundColor: colors.cardBg, borderColor: colors.border },
                   selectedCategory === cat.label && styles.categoryChipActive,
                 ]}
                 onPress={() => setSelectedCategory(cat.label)}
@@ -317,6 +320,7 @@ export default function HomeFeed() {
                 <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
                 <Text style={[
                   styles.categoryText,
+                  { color: colors.titleText },
                   selectedCategory === cat.label && styles.categoryTextActive,
                 ]}>
                   {cat.label}
@@ -327,13 +331,13 @@ export default function HomeFeed() {
 
           {/* ── SECCIÓN HEADER ── */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>
               {searchQuery ? `Resultados para "${searchQuery}"` : usarCercanos
                 ? 'Cerca de ti'
                 : `En ${ciudad ?? 'tu zona'}`}
             </Text>
             {!loadingFinal && (
-              <Text style={styles.sectionCount}>{filteredData.length} lugares</Text>
+              <Text style={[styles.sectionCount, { color: colors.labelText }]}>{filteredData.length} lugares</Text>
             )}
           </View>
 
@@ -341,7 +345,7 @@ export default function HomeFeed() {
           {loadingFinal && (
             <View style={styles.centerMessage}>
               <ActivityIndicator size="large" color="#22c55e" />
-              <Text style={styles.loadingText}>{usarCercanos
+              <Text style={[styles.loadingText, { color: colors.labelText }]}>{usarCercanos
                 ? 'Buscando lugares cercanos...'
                 : `Buscando en ${ciudad ?? '...'}`}</Text>
             </View>
@@ -354,7 +358,7 @@ export default function HomeFeed() {
           {!loadingFinal && !error && !ciudad && (
             <View style={styles.centerMessage}>
               <Text style={{ fontSize: 40 }}>📍</Text>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: colors.labelText }]}>
                 Agrega un domicilio para ver los negocios disponibles.
               </Text>
               <TouchableOpacity
@@ -368,7 +372,7 @@ export default function HomeFeed() {
           {!loadingFinal && !error && ciudad && filteredData.length === 0 && (
             <View style={styles.centerMessage}>
               <Text style={{ fontSize: 40 }}>🔍</Text>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: colors.labelText }]}>
                 {searchQuery ? `Sin resultados para "${searchQuery}"` : `Sin negocios en ${ciudad} para esta categoría`}
               </Text>
             </View>
@@ -380,7 +384,7 @@ export default function HomeFeed() {
               {filteredData.map(negocio => (
                 <TouchableOpacity
                   key={negocio.id}
-                  style={styles.card}
+                  style={[styles.card, { backgroundColor: colors.cardBg }]}
                   activeOpacity={0.92}
                   onPress={() => navigation.navigate('BusinessDetail', { sucursal_id: negocio.sucursal_id })}
                 >
@@ -389,32 +393,32 @@ export default function HomeFeed() {
                     {negocio.banner_url ? (
                       <Image source={{ uri: negocio.banner_url }} style={styles.cardImage} />
                     ) : (
-                      <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
+                      <View style={[styles.cardImage, styles.cardImagePlaceholder, { backgroundColor: colors.border }]}>
                         <Text style={{ fontSize: 40 }}>🍽️</Text>
                       </View>
                     )}
                     {negocio.calificacion != null && (
-                      <View style={styles.ratingBadge}>
+                      <View style={[styles.ratingBadge, { backgroundColor: isDark ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.95)' }]}>
                         <StarIcon />
-                        <Text style={styles.ratingText}>{negocio.calificacion}</Text>
+                        <Text style={[styles.ratingText, { color: colors.titleText }]}>{negocio.calificacion}</Text>
                       </View>
                     )}
                   </View>
 
                   {/* Content */}
                   <View style={styles.cardContent}>
-                    <Text style={styles.cardName} numberOfLines={1}>{negocio.nombre}</Text>
-                    <Text style={styles.cardDesc} numberOfLines={2}>{negocio.descripcion ?? ''}</Text>
+                    <Text style={[styles.cardName, { color: colors.titleText }]} numberOfLines={1}>{negocio.nombre}</Text>
+                    <Text style={[styles.cardDesc, { color: colors.labelText }]} numberOfLines={2}>{negocio.descripcion ?? ''}</Text>
 
                     <View style={styles.cardMeta}>
                       <View style={styles.cardMetaItem}>
                         <ClockIcon />
-                        <Text style={styles.cardMetaText}>25-35 min</Text>
+                        <Text style={[styles.cardMetaText, { color: colors.labelText }]}>25-35 min</Text>
                       </View>
                       <View style={styles.cardMetaDot} />
                       <View style={styles.cardMetaItem}>
                         <DeliveryIcon />
-                        <Text style={styles.cardMetaText}>$12 envío</Text>
+                        <Text style={[styles.cardMetaText, { color: colors.labelText }]}>$12 envío</Text>
                       </View>
                     </View>
                   </View>
@@ -441,22 +445,22 @@ export default function HomeFeed() {
           )}
 
           {!hasMoreFinal && filteredData.length > 0 && (
-            <Text style={styles.endMessage}>Has llegado al final de la lista</Text>
+            <Text style={[styles.endMessage, { color: colors.labelText }]}>Has llegado al final de la lista</Text>
           )}
         </ScrollView>
 
         {/* ── BOTTOM NAV ── */}
-        <View style={styles.bottomNav}>
+        <View style={[styles.bottomNav, { backgroundColor: colors.cardBg, borderTopColor: colors.border }]}>
           {/* Home */}
           <TouchableOpacity style={styles.navItem}>
             <HomeIcon active />
-            <Text style={[styles.navText, styles.navTextActive]}>Inicio</Text>
+            <Text style={[styles.navText, { color: colors.labelText }, styles.navTextActive]}>Inicio</Text>
           </TouchableOpacity>
 
           {/* Orders */}
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Orders')}>
-            <OrdersIcon />
-            <Text style={styles.navText}>Pedidos</Text>
+            <OrdersIcon color={colors.labelText} />
+            <Text style={[styles.navText, { color: colors.labelText }]}>Pedidos</Text>
           </TouchableOpacity>
 
           {/* CHATBOT — botón central elevado */}
@@ -479,20 +483,20 @@ export default function HomeFeed() {
           {/* Carrito con badge */}
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Cart')}>
             <View style={styles.navCartWrap}>
-              <CartIcon />
+              <CartIcon color={colors.labelText} />
               {cartCount > 0 && (
                 <View style={styles.cartBadge}>
                   <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
                 </View>
               )}
             </View>
-            <Text style={styles.navText}>Carrito</Text>
+            <Text style={[styles.navText, { color: colors.labelText }]}>Carrito</Text>
           </TouchableOpacity>
 
           {/* Profile */}
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-            <ProfileIcon />
-            <Text style={styles.navText}>Perfil</Text>
+            <ProfileIcon color={colors.labelText} />
+            <Text style={[styles.navText, { color: colors.labelText }]}>Perfil</Text>
           </TouchableOpacity>
         </View>
 

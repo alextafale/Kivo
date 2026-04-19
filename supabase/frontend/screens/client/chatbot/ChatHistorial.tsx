@@ -16,12 +16,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { cargarSesionesPrevias, SesionResumen } from '../../../../services/geminiService';
 import { useAuth } from '../../../application/context/AuthContext';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ChatHistorial'>;
 };
 
-// ─── Paleta (igual que Chatbot) ───────────────────────────────────────────────
+// Colores base para referencia en StyleSheet
+const GREEN = '#00FF87';
+const DARK_GREEN = '#00CC6A';
+
+// ─── Paleta Fallback (para estilos estáticos) ─────────────────────────────────
 const C = {
   bg: '#000000',
   card: '#0A0A0A',
@@ -34,34 +39,34 @@ const C = {
   textMuted: '#333333',
 };
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+// ─── Icons (reciben color como prop) ─────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.textPrimary} strokeWidth="2" strokeLinecap="round">
+const BackIcon = ({ color }: { color: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
 
-const ChatBubbleIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round">
+const ChatBubbleIcon = ({ color }: { color: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
     <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </Svg>
 );
 
-const ChevronIcon = () => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.textSec} strokeWidth="2.5" strokeLinecap="round">
+const ChevronIcon = ({ color }: { color: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
     <Path d="M9 18l6-6-6-6" />
   </Svg>
 );
 
-const EmptyIcon = () => (
-  <Svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="1.2" strokeLinecap="round">
+const EmptyIcon = ({ color }: { color: string }) => (
+  <Svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.2" strokeLinecap="round">
     <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </Svg>
 );
 
-const PlusIcon = () => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.5" strokeLinecap="round">
+const PlusIcon = ({ color }: { color: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
     <Path d="M12 5v14M5 12h14" />
   </Svg>
 );
@@ -83,10 +88,11 @@ function tiempoRelativo(dateStr: string): string {
   return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+// ─── Screen ────────────────────────────────────────────────────────────────────
 
 export default function ChatHistorial({ navigation }: Props) {
   const { session } = useAuth();
+  const { colors, isDark } = useTheme();
   const [sesiones, setSesiones] = useState<SesionResumen[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -111,54 +117,54 @@ export default function ChatHistorial({ navigation }: Props) {
 
   const renderItem = ({ item }: { item: SesionResumen }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card]}
       onPress={() => abrirSesion(item.id)}
       activeOpacity={0.7}
     >
-      <View style={styles.cardIconWrap}>
-        <ChatBubbleIcon />
+      <View style={[styles.cardIconWrap, { backgroundColor: colors.greenGlow, borderColor: colors.green + '33' }]}>
+        <ChatBubbleIcon color={colors.green} />
       </View>
       <View style={styles.cardBody}>
-        <Text style={styles.cardTime}>{tiempoRelativo(item.updated_at)}</Text>
-        <Text style={styles.cardPreview} numberOfLines={2}>
+        <Text style={[styles.cardTime, { color: colors.green }]}>{tiempoRelativo(item.updated_at)}</Text>
+        <Text style={[styles.cardPreview, { color: colors.textPrimary }]} numberOfLines={2}>
           {item.preview ?? 'Sin mensajes'}
         </Text>
       </View>
-      <ChevronIcon />
+      <ChevronIcon color={colors.textSec} />
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.bg} />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <BackIcon />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
+          <BackIcon color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Historial de chats</Text>
-        <TouchableOpacity style={styles.newBtn} onPress={nuevaConversacion}>
-          <PlusIcon />
-          <Text style={styles.newBtnText}>Nuevo</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Historial de chats</Text>
+        <TouchableOpacity style={[styles.newBtn, { borderColor: colors.green + '55', backgroundColor: colors.greenGlow }]} onPress={nuevaConversacion}>
+          <PlusIcon color={colors.green} />
+          <Text style={[styles.newBtnText, { color: colors.green }]}>Nuevo</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
       {/* Content */}
       {loading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={C.green} size="large" />
+          <ActivityIndicator color={colors.green} size="large" />
         </View>
       ) : sesiones.length === 0 ? (
         <View style={styles.centered}>
-          <EmptyIcon />
-          <Text style={styles.emptyTitle}>Sin conversaciones</Text>
-          <Text style={styles.emptySubtitle}>
+          <EmptyIcon color={colors.textMuted} />
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Sin conversaciones</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSec }]}>
             Tus chats con KivoBot aparecerán aquí
           </Text>
-          <TouchableOpacity style={styles.emptyBtn} onPress={nuevaConversacion}>
-            <Text style={styles.emptyBtnText}>Iniciar conversación</Text>
+          <TouchableOpacity style={[styles.emptyBtn, { borderColor: colors.green, backgroundColor: colors.greenGlow }]} onPress={nuevaConversacion}>
+            <Text style={[styles.emptyBtnText, { color: colors.green }]}>Iniciar conversación</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -168,12 +174,12 @@ export default function ChatHistorial({ navigation }: Props) {
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: colors.border }]} />}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={C.green}
+              tintColor={colors.green}
             />
           }
         />

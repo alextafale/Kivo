@@ -3,15 +3,16 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   StatusBar, ScrollView, Image, Modal, TextInput,
   Alert, Animated, Dimensions, KeyboardAvoidingView, Platform,
-  ActivityIndicator,
+  ActivityIndicator, Switch,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
-import { useAuth } from '../../../application/context/AuthContext'      // ← sesión real
-import { useProfile } from '../../../application/hooks/useProfile'     // ← perfil real
+import { useAuth } from '../../../application/context/AuthContext'
+import { useProfile } from '../../../application/hooks/useProfile'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'> }
 const { width } = Dimensions.get('window')
@@ -48,22 +49,24 @@ const CloseIcon = () => (
   </Svg>
 )
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Component ──────────────────────────────────────────────────────────────
 export default function Profile({ navigation }: Props) {
-  const { session, logout }                           = useAuth()
-  const { profile, isLoading, updateProfile }         = useProfile()   // ← datos reales
+  console.log("-> Renderizando Profile de Cliente (con toggle theme)")
+  const { session, logout } = useAuth()
+  const { profile, isLoading, updateProfile } = useProfile()   // ← datos reales
+  const { isDark, toggleTheme, colors } = useTheme()
 
-  const [editModalVisible, setEditModalVisible]       = useState(false)
-  const [editField, setEditField]                     = useState<'nombre' | 'apellido' | 'telefono' | ''>('')
-  const [editValue, setEditValue]                     = useState('')
+  const [editModalVisible, setEditModalVisible] = useState(false)
+  const [editField, setEditField] = useState<'nombre' | 'apellido' | 'telefono' | ''>('')
+  const [editValue, setEditValue] = useState('')
 
   const headerAnim = useRef(new Animated.Value(0)).current
-  const cardAnim   = useRef(new Animated.Value(0)).current
+  const cardAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
     Animated.stagger(120, [
       Animated.timing(headerAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.timing(cardAnim,   { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(cardAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
     ]).start()
   }, [])
 
@@ -104,22 +107,22 @@ export default function Profile({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
-          {/* ── TOP HEADER ─────────────────────────────────────── */}
+          {/* ── TOP HEADER ────────────────────────────────────── */}
           <Animated.View style={[styles.topHeader, {
             opacity: headerAnim,
             transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
           }]}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-              <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5">
+            <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.backBtnBg }]}>
+              <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={colors.titleText} strokeWidth="2.5">
                 <Path d="M19 12H5M12 19l-7-7 7-7" />
               </Svg>
             </TouchableOpacity>
-            <Text style={styles.topHeaderTitle}>Mi Perfil</Text>
+            <Text style={[styles.topHeaderTitle, { color: colors.titleText }]}>Mi Perfil</Text>
             <View style={{ width: 40 }} />
           </Animated.View>
 
@@ -152,51 +155,51 @@ export default function Profile({ navigation }: Props) {
                     <EditPenIcon />
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.heroName}>{displayName}</Text>
-                <Text style={styles.heroSub}>{session?.email}</Text>
+                <Text style={[styles.heroName, { color: colors.titleText }]}>{displayName}</Text>
+                <Text style={[styles.heroSub, { color: colors.subtitleText }]}>{session?.email}</Text>
               </View>
             </Animated.View>
           )}
 
-          {/* ── INFORMACIÓN PERSONAL ────────────────────────────── */}
+          {/* ── INFORMACIÓN PERSONAL ────────────────────────── */}
           {!isLoading && profile && (
             <View style={styles.sectionContainer}>
-              <Text style={styles.sectionLabel}>INFORMACIÓN PERSONAL</Text>
-              <View style={styles.card}>
+              <Text style={[styles.sectionLabel, { color: colors.labelText }]}>INFORMACIÓN PERSONAL</Text>
+              <View style={[styles.card, { backgroundColor: colors.cardBg }]}>
 
                 {/* Nombre */}
                 <TouchableOpacity style={styles.infoRow}
                   onPress={() => openEdit('nombre', profile.nombre ?? '')} activeOpacity={0.7}>
-                  <View style={styles.infoIconWrap}><EmailIcon /></View>
+                  <View style={[styles.infoIconWrap, { backgroundColor: colors.iconBg }]}><EmailIcon /></View>
                   <View style={styles.infoTextBlock}>
-                    <Text style={styles.infoLabel}>Nombre</Text>
-                    <Text style={styles.infoValue}>{profile.nombre || '—'}</Text>
+                    <Text style={[styles.infoLabel, { color: colors.labelText }]}>Nombre</Text>
+                    <Text style={[styles.infoValue, { color: colors.titleText }]}>{profile.nombre || '—'}</Text>
                   </View>
                   <View style={styles.editBadge}><EditPenIcon /></View>
                 </TouchableOpacity>
 
-                <View style={styles.rowDivider} />
+                <View style={[styles.rowDivider, { backgroundColor: colors.rowDivider }]} />
 
                 {/* Apellido */}
                 <TouchableOpacity style={styles.infoRow}
                   onPress={() => openEdit('apellido', profile.apellido ?? '')} activeOpacity={0.7}>
-                  <View style={styles.infoIconWrap}><EmailIcon /></View>
+                  <View style={[styles.infoIconWrap, { backgroundColor: colors.iconBg }]}><EmailIcon /></View>
                   <View style={styles.infoTextBlock}>
-                    <Text style={styles.infoLabel}>Apellido</Text>
-                    <Text style={styles.infoValue}>{profile.apellido || '—'}</Text>
+                    <Text style={[styles.infoLabel, { color: colors.labelText }]}>Apellido</Text>
+                    <Text style={[styles.infoValue, { color: colors.titleText }]}>{profile.apellido || '—'}</Text>
                   </View>
                   <View style={styles.editBadge}><EditPenIcon /></View>
                 </TouchableOpacity>
 
-                <View style={styles.rowDivider} />
+                <View style={[styles.rowDivider, { backgroundColor: colors.rowDivider }]} />
 
                 {/* Teléfono */}
                 <TouchableOpacity style={styles.infoRow}
                   onPress={() => openEdit('telefono', profile.telefono ?? '')} activeOpacity={0.7}>
-                  <View style={styles.infoIconWrap}><PhoneIcon /></View>
+                  <View style={[styles.infoIconWrap, { backgroundColor: colors.iconBg }]}><PhoneIcon /></View>
                   <View style={styles.infoTextBlock}>
-                    <Text style={styles.infoLabel}>Teléfono</Text>
-                    <Text style={styles.infoValue}>{profile.telefono || '—'}</Text>
+                    <Text style={[styles.infoLabel, { color: colors.labelText }]}>Teléfono</Text>
+                    <Text style={[styles.infoValue, { color: colors.titleText }]}>{profile.telefono || '—'}</Text>
                   </View>
                   <View style={styles.editBadge}><EditPenIcon /></View>
                 </TouchableOpacity>
@@ -205,50 +208,70 @@ export default function Profile({ navigation }: Props) {
             </View>
           )}
 
-          {/* ── ACCIONES RÁPIDAS ─────────────────────────────────── */}
+          {/* ── ACCIONES RÁPIDAS ─────────────────────────────── */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionLabel}>ACCIONES RÁPIDAS</Text>
-            <View style={styles.card}>
+            <Text style={[styles.sectionLabel, { color: colors.labelText }]}>ACCIONES RÁPIDAS</Text>
+            <View style={[styles.card, { backgroundColor: colors.cardBg }]}>
               {[
-                { title: 'Mis Pedidos',       sub: 'Rastrea y reordena comidas', route: 'Orders' },
-                { title: 'Direcciones',        sub: 'Casa, oficina y más',        route: 'DeliveryAddresses' },
-                { title: 'Métodos de Pago',    sub: 'Tarjetas guardadas',         route: 'PaymentsMethod' },
-                { title: 'Ayuda & Soporte',    sub: 'Servicio al cliente 24/7',   route: 'Chatbot' },
+                { title: 'Mis Pedidos', sub: 'Rastrea y reordena comidas', route: 'Orders' },
+                { title: 'Direcciones', sub: 'Casa, oficina y más', route: 'DeliveryAddresses' },
+                { title: 'Métodos de Pago', sub: 'Tarjetas guardadas', route: 'PaymentsMethod' },
+                { title: 'Ayuda & Soporte', sub: 'Servicio al cliente 24/7', route: 'Chatbot' },
               ].map((item, i, arr) => (
                 <View key={item.title}>
                   <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}
                     onPress={() => navigation.navigate(item.route as any)}>
                     <View style={styles.actionTextBlock}>
-                      <Text style={styles.actionTitle}>{item.title}</Text>
-                      <Text style={styles.actionSub}>{item.sub}</Text>
+                      <Text style={[styles.actionTitle, { color: colors.titleText }]}>{item.title}</Text>
+                      <Text style={[styles.actionSub, { color: colors.labelText }]}>{item.sub}</Text>
                     </View>
                     <ChevronRightIcon />
                   </TouchableOpacity>
-                  {i < arr.length - 1 && <View style={styles.rowDivider} />}
+                  {i < arr.length - 1 && <View style={[styles.rowDivider, { backgroundColor: colors.rowDivider }]} />}
                 </View>
               ))}
+
+              {/* Separador antes del toggle */}
+              <View style={[styles.rowDivider, { backgroundColor: colors.rowDivider }]} />
+
+              {/* Toggle de Apariencia */}
+              <View style={styles.actionRow}>
+                <View style={styles.actionTextBlock}>
+                  <Text style={[styles.actionTitle, { color: colors.titleText }]}>
+                    {isDark ? ' Modo Oscuro' : ' Modo Claro'}
+                  </Text>
+                  <Text style={[styles.actionSub, { color: colors.labelText }]}>Cambiar apariencia de la app</Text>
+                </View>
+                <Switch
+                  value={isDark}
+                  onValueChange={toggleTheme}
+                  trackColor={{ false: '#CBD5E1', true: '#22c55e' }}
+                  thumbColor="#FFFFFF"
+                  ios_backgroundColor="#CBD5E1"
+                />
+              </View>
             </View>
           </View>
 
           {/* ── CERRAR SESIÓN ────────────────────────────────────── */}
           <View style={[styles.sectionContainer, { marginTop: 8 }]}>
-            <TouchableOpacity style={styles.signOutBtn} onPress={handleLogout} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.signOutBtn, { backgroundColor: colors.signOutBg, borderColor: colors.signOutBorder }]} onPress={handleLogout} activeOpacity={0.8}>
               <SignOutIcon />
               <Text style={styles.signOutText}>Cerrar Sesión</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.versionText}>Pidelo Delivery App  •  v1.0.0</Text>
+          <Text style={[styles.versionText, { color: colors.labelText }]}>Pidelo Delivery App  •  v1.0.0</Text>
         </ScrollView>
 
         {/* ── EDIT MODAL ──────────────────────────────────────────── */}
         <Modal visible={editModalVisible} animationType="slide" transparent onRequestClose={() => setEditModalVisible(false)}>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={styles.modalOverlay}>
-              <View style={styles.modalSheet}>
+              <View style={[styles.modalSheet, { backgroundColor: colors.modalBg }]}>
                 <View style={styles.modalHandle} />
                 <View style={styles.modalHead}>
-                  <Text style={styles.modalTitle}>
+                  <Text style={[styles.modalTitle, { color: colors.titleText }]}>
                     Editar {fieldLabels[editField as keyof typeof fieldLabels] ?? editField}
                   </Text>
                   <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.modalCloseBtn}>
@@ -257,7 +280,7 @@ export default function Profile({ navigation }: Props) {
                 </View>
                 <View style={styles.modalBody}>
                   <TextInput
-                    style={styles.modalInput}
+                    style={[styles.modalInput, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }]}
                     value={editValue}
                     onChangeText={setEditValue}
                     placeholder={`Ingresa tu ${(fieldLabels[editField as keyof typeof fieldLabels] ?? '').toLowerCase()}`}
@@ -267,8 +290,8 @@ export default function Profile({ navigation }: Props) {
                   />
                 </View>
                 <View style={styles.modalFooter}>
-                  <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditModalVisible(false)}>
-                    <Text style={styles.cancelBtnText}>Cancelar</Text>
+                  <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.cancelBtnBg }]} onPress={() => setEditModalVisible(false)}>
+                    <Text style={[styles.cancelBtnText, { color: colors.subtitleText }]}>Cancelar</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={isLoading}>
                     <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.saveBtnGradient}

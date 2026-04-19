@@ -3,15 +3,18 @@ import { AuthProvider } from './supabase/frontend/application/context/AuthContex
 import { DomiciliosProvider } from './supabase/frontend/application/context/DomiciliosContext'
 import StackNavigation from './supabase/frontend/navigation/StacNavigation'
 import { CartProvider } from './supabase/frontend/application/context/CartContext'
+import { ThemeProvider } from './supabase/frontend/application/context/ThemeContext'
 
 export default function App() {
   return (
-    <AuthProvider>
-      <DomiciliosProvider>
-        <CartProvider>
-          <StackNavigation />
-        </CartProvider>
-      </DomiciliosProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <DomiciliosProvider>
+          <CartProvider>
+            <StackNavigation />
+          </CartProvider>
+        </DomiciliosProvider>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
