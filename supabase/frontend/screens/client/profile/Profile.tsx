@@ -5,6 +5,8 @@ import {
   Alert, Animated, Dimensions, KeyboardAvoidingView, Platform,
   ActivityIndicator, Switch,
 } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg'
@@ -53,11 +55,15 @@ const CloseIcon = () => (
 export default function Profile({ navigation }: Props) {
   console.log("-> Renderizando Profile de Cliente (con toggle theme)")
   const { session, logout } = useAuth()
-  const { profile, isLoading, updateProfile } = useProfile()   // ← datos reales
+  const { profile, isLoading, updateProfile, uploadProfileAvatar } = useProfile()
   const { isDark, toggleTheme, colors } = useTheme()
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
 
+  const [alergias, setAlergias] = useState('');
+
+  // Estados visuales y de UI
   const [editModalVisible, setEditModalVisible] = useState(false)
-  const [editField, setEditField] = useState<'nombre' | 'apellido' | 'telefono' | ''>('')
+  const [editField, setEditField] = useState<'nombre' | 'apellido' | 'telefono' | 'alergias' | null>(null)
   const [editValue, setEditValue] = useState('')
 
   const headerAnim = useRef(new Animated.Value(0)).current
@@ -68,16 +74,67 @@ export default function Profile({ navigation }: Props) {
       Animated.timing(headerAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.timing(cardAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
     ]).start()
+
+    AsyncStorage.getItem('KIVO_ALERGIAS').then(val => {
+      if (val) setAlergias(val);
+    })
   }, [])
 
-  const openEdit = (field: 'nombre' | 'apellido' | 'telefono', currentValue: string) => {
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para cambiar tu foto.')
+      return
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.75,
+    })
+
+    if (result.canceled || !result.assets[0]) return
+
+    const asset = result.assets[0]
+    const mimeType = asset.mimeType ?? 'image/jpeg'
+
+    setIsUploadingPhoto(true)
+    try {
+      await uploadProfileAvatar(asset.uri, mimeType)
+    } catch (error: any) {
+      console.error("[Profile.tsx] Falló al subir foto:", error?.message || error)
+      Alert.alert('Error', 'No se pudo actualizar tu foto de perfil')
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
+
+  const openEdit = (field: 'nombre' | 'apellido' | 'telefono' | 'alergias', currentValue: string) => {
     setEditField(field)
     setEditValue(currentValue)
     setEditModalVisible(true)
   }
 
   const handleSave = async () => {
-    if (!editField || !editValue.trim()) return
+    if (!editField) return;
+    
+    // Si editField no requiere backend (o está vacío)
+    if (editField === 'alergias') {
+      try {
+        await AsyncStorage.setItem('KIVO_ALERGIAS', editValue.trim())
+        setAlergias(editValue.trim())
+        setEditModalVisible(false)
+        Alert.alert('✓ Actualizado', 'Información dietética guardada.')
+        return
+      } catch (e: any) {
+        Alert.alert('Error', 'No se pudieron guardar las alergias')
+        return
+      }
+    }
+
+    if (!editValue.trim()) return;
+
     try {
       await updateProfile({ [editField]: editValue.trim() })   // ← PATCH /me real
       setEditModalVisible(false)
@@ -100,7 +157,7 @@ export default function Profile({ navigation }: Props) {
     ])
   }
 
-  const fieldLabels = { nombre: 'Nombre', apellido: 'Apellido', telefono: 'Teléfono' }
+  const fieldLabels = { nombre: 'Nombre', apellido: 'Apellido', telefono: 'Teléfono', alergias: 'Alergias/Restricciones' }
 
   // Nombre para mostrar en el hero
   const displayName = [profile?.nombre, profile?.apellido].filter(Boolean).join(' ') || session?.email || '—'
@@ -150,8 +207,13 @@ export default function Profile({ navigation }: Props) {
                       }
                       style={styles.avatar}
                     />
+                    {isUploadingPhoto && (
+                      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 52, justifyContent: 'center', alignItems: 'center' }]}>
+                        <ActivityIndicator color="#fff" />
+                      </View>
+                    )}
                   </View>
-                  <TouchableOpacity style={styles.editAvatarBtn}>
+                  <TouchableOpacity style={styles.editAvatarBtn} onPress={handlePickImage} disabled={isUploadingPhoto}>
                     <EditPenIcon />
                   </TouchableOpacity>
                 </View>
@@ -200,6 +262,19 @@ export default function Profile({ navigation }: Props) {
                   <View style={styles.infoTextBlock}>
                     <Text style={[styles.infoLabel, { color: colors.labelText }]}>Teléfono</Text>
                     <Text style={[styles.infoValue, { color: colors.titleText }]}>{profile.telefono || '—'}</Text>
+                  </View>
+                  <View style={styles.editBadge}><EditPenIcon /></View>
+                </TouchableOpacity>
+
+                <View style={[styles.rowDivider, { backgroundColor: colors.rowDivider }]} />
+
+                {/* Alergias / Dieta */}
+                <TouchableOpacity style={styles.infoRow}
+                  onPress={() => openEdit('alergias', alergias)} activeOpacity={0.7}>
+                  <View style={[styles.infoIconWrap, { backgroundColor: colors.iconBg }]}><Text style={{fontSize: 16}}>⚕️</Text></View>
+                  <View style={styles.infoTextBlock}>
+                    <Text style={[styles.infoLabel, { color: colors.labelText }]}>Alergias y Dieta IA</Text>
+                    <Text style={[styles.infoValue, { color: colors.titleText }]}>{alergias || 'Sin restricciones'}</Text>
                   </View>
                   <View style={styles.editBadge}><EditPenIcon /></View>
                 </TouchableOpacity>

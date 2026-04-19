@@ -16,6 +16,8 @@ import {
   generarTicketPDF, compartirTicketPDF, enviarResumenWhatsApp, TicketData,
 } from '../../../../services/ticketService';
 import { useTheme } from '../../../application/context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { checkAllergies } from '../../../../services/geminiService';
 
 type CartNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 type Props = { navigation: CartNavigationProp };
@@ -119,10 +121,41 @@ export default function CartScreen({ navigation }: Props) {
   const { profile } = useProfile();
   const { isDark, colors } = useTheme();
   const [confirming, setConfirming] = useState(false);
+  const [isCheckingAlergias, setIsCheckingAlergias] = useState(false);
 
   const subtotal  = getSubtotal();
   const costoEnvio = cart.length * 12;
   const total     = subtotal + costoEnvio;
+
+  const handleCheckAlergias = async () => {
+    if (cart.length === 0) return;
+    setIsCheckingAlergias(true);
+    try {
+      const storedAlergias = await AsyncStorage.getItem('KIVO_ALERGIAS');
+      if (!storedAlergias || storedAlergias.trim() === '') {
+        Alert.alert('Configura primero', 'Ve a tu Perfil y configura tus Alergias y Dieta IA antes de poder escanear alimentos.');
+        return;
+      }
+      
+      const allItems = cart.flatMap(rest => rest.items).map(item => ({
+        name: item.nombre,
+        quantity: item.cantidad,
+        price: item.precio_unitario,
+        original_id: item.id // optional, but mapping to OrderItem structure
+      }));
+      const res = await checkAllergies(storedAlergias, allItems as any);
+      
+      if (res === 'SEGURO' || res.toLowerCase() === 'seguro') {
+        Alert.alert('✅ Asesor AI', 'Los alimentos coinciden que son SEGUROS para ti según tus alergias/restricciones registradas.');
+      } else {
+        Alert.alert('⚠️ Advertencia Dietética', res);
+      }
+    } catch (e) {
+      Alert.alert('Error', 'No se pudo conectar al Asesor Médico.');
+    } finally {
+      setIsCheckingAlergias(false);
+    }
+  };
 
   // ─── Confirmar pedido del chatbot ─────────────────────────────────────────
 
@@ -315,6 +348,20 @@ export default function CartScreen({ navigation }: Props) {
           </View>
         </View>
 
+        {cart.length > 0 && (
+          <TouchableOpacity 
+            style={[styles.aiDietBtn, isCheckingAlergias && { opacity: 0.7 }]} 
+            onPress={handleCheckAlergias}
+            disabled={isCheckingAlergias}
+          >
+            {isCheckingAlergias ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.aiDietBtnText}>⚕️ Analizar con IA Dieta / Alergias</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
         {chatbotOrder && (
           <View style={[styles.ticketNote, { backgroundColor: isDark ? 'rgba(56,130,246,0.1)' : '#EFF6FF', borderColor: isDark ? 'rgba(56,130,246,0.3)' : '#BFDBFE' }]}>
             <Text style={[styles.ticketNoteText, { color: isDark ? '#60A5FA' : '#1D4ED8' }]}>
@@ -394,6 +441,22 @@ const styles = StyleSheet.create({
   summaryTotalValue:          { fontSize: 16, fontWeight: 'bold', color: '#22c55e' },
   ticketNote:                 { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#BFDBFE' },
   ticketNoteText:             { fontSize: 12, color: '#1D4ED8', lineHeight: 18 },
+  aiDietBtn: {
+    backgroundColor: '#0891b2',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
+  },
+  aiDietBtnText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
   checkoutContainer:          { padding: 16, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
   checkoutButton:             { borderRadius: 16, overflow: 'hidden' },
   checkoutButtonDisabled:     { opacity: 0.7 },

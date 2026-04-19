@@ -12,6 +12,7 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useCart } from '../../../application/context/CartContext';
 import { useAuth } from '../../../application/context/AuthContext';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 const GREEN = '#22c55e';
 const ORANGE = '#FF6B00';
@@ -200,21 +201,22 @@ const ReaccionesRow = React.memo(({
 });
 
 const ReviewCard = ({ review, onImagePress }: { review: any, onImagePress: (url: string) => void }) => {
+  const { colors } = useTheme();
   return (
-    <View style={styles.reviewCard}>
+    <View style={[styles.reviewCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
       {/* Encabezado: Usuario y Fecha */}
       <View style={styles.reviewHeader}>
-        <View style={styles.reviewAvatar}>
-          <Text style={styles.avatarText}>
+        <View style={[styles.reviewAvatar, { backgroundColor: colors.iconBg, borderColor: colors.border }]}>
+          <Text style={[styles.avatarText, { color: colors.titleText }]}>
             {review.es_anonima ? '?' : 'U'}
           </Text>
         </View>
         <View style={{ flex: 1 }}>
           <View style={styles.nameRow}>
-            <Text style={styles.reviewUserName}>
+            <Text style={[styles.reviewUserName, { color: colors.titleText }]}>
               {review.es_anonima ? 'Usuario Anónimo' : 'Cliente Verificado'}
             </Text>
-            <Text style={styles.reviewDate}>
+            <Text style={[styles.reviewDate, { color: colors.labelText }]}>
               {new Date(review.creado_en).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
             </Text>
           </View>
@@ -224,7 +226,7 @@ const ReviewCard = ({ review, onImagePress }: { review: any, onImagePress: (url:
 
       {/* Comentario */}
       {review.comentario && (
-        <Text style={styles.reviewText}>{review.comentario}</Text>
+        <Text style={[styles.reviewText, { color: colors.titleText }]}>{review.comentario}</Text>
       )}
 
       {/* Imágenes de la comida */}
@@ -251,6 +253,7 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
   const { sucursal_id } = route.params;
   const { session } = useAuth();
   const { addItem, increaseQuantity, decreaseQuantity, cart, getTotalItems } = useCart();
+  const { isDark, colors } = useTheme();
 
   const [business, setBusiness] = useState<BusinessData | null>(null);
   const [activeCategory, setActiveCategory] = useState('All');
@@ -454,8 +457,8 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
 
@@ -484,7 +487,7 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
         <View style={styles.identityRow}>
           <Image source={{ uri: business.logo }} style={styles.logo} />
           <View style={styles.identityText}>
-            <Text style={styles.restaurantName}>{business.name}</Text>
+            <Text style={[styles.restaurantName, { color: colors.titleText }]}>{business.name}</Text>
             <Text style={styles.restaurantCategory}>{business.category}</Text>
           </View>
         </View>
@@ -512,11 +515,11 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.pageBg }]} />
 
         {/* ── Menú ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Menú</Text>
+          <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Menú</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryTabsContainer}>
             {categories.map(cat => (
               <TouchableOpacity
@@ -534,12 +537,12 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
           {filteredMenu.map(item => {
             const qty = getItemQty(item.id);
             return (
-              <View key={item.id} style={styles.menuCard}>
+              <View key={item.id} style={[styles.menuCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                 <Image source={{ uri: item.image }} style={styles.menuCardImage} />
                 <View style={styles.menuCardInfo}>
-                  <Text style={styles.menuCardName}>{item.name}</Text>
+                  <Text style={[styles.menuCardName, { color: colors.titleText }]}>{item.name}</Text>
                   {item.description && (
-                    <Text style={styles.menuCardDesc} numberOfLines={2}>{item.description}</Text>
+                    <Text style={[styles.menuCardDesc, { color: colors.labelText }]} numberOfLines={2}>{item.description}</Text>
                   )}
                   <View style={styles.menuCardFooter}>
                     <Text style={styles.menuCardPrice}>${item.price.toFixed(2)}</Text>
@@ -565,21 +568,21 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
           })}
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.pageBg }]} />
 
         {/* ── Acerca de ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Acerca de</Text>
-          <Text style={styles.aboutText}>{business.description}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Acerca de</Text>
+          <Text style={[styles.aboutText, { color: colors.labelText }]}>{business.description}</Text>
         </View>
 
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.pageBg }]} />
 
         {/* ── SECCIÓN DE RESEÑAS (NUEVA) ── */}
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={styles.sectionTitle}>Reseñas</Text>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Reseñas</Text>
             {userReviews.length > 0 && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <StarIcon color={ORANGE} size={16} />
@@ -598,11 +601,11 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
             ))
           )}
         </View>
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.pageBg }]} />
 
         {/* ── Comentarios ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Comentarios</Text>
+          <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Comentarios</Text>
 
           {/* Input para nuevo comentario */}
           <View style={styles.comentarioInputWrap}>
@@ -641,7 +644,7 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
             </View>
           ) : (
             comentarios.map(c => (
-              <View key={c.id} style={styles.comentarioCard}>
+              <View key={c.id} style={[styles.comentarioCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                 {/* Cabecera del comentario */}
                 <View style={styles.comentarioHeader}>
                   <View style={styles.comentarioAvatar}>

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import * as SecureStore from 'expo-secure-store'
 import { AuthRepositoryImpl } from '../../infraestructure/repositories/AuthRepositoryImpl'
 import { AdminProfileRepositoryImpl } from '../../infraestructure/repositories/AdminProfileRepositoryImpl'
+import { supabase } from '../../config/supabaseConfig'
 import type { AuthSession } from '../../domain/entities/User'
 import type { AdminProfile } from '../../domain/ports/repositories/lAdminProfileRepository'
 import type { BusinessRegisterData, DriverRegisterData, OAuthProvider } from '../../domain/ports/repositories/lAuthRepository'
@@ -81,6 +82,22 @@ const restore = async () => {
   }
 }
     restore()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, spSession) => {
+      if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+        const active = await authRepo.getSession()
+        if (active && !active.requiresMfa) {
+          setSession(active)
+          await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(active))
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setSession(null)
+      }
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
   }, [loadAdminAccess])
 
   // ─── Login ────────────────────────────────────────────────────────────────

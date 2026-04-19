@@ -24,6 +24,8 @@ import { useNegociosPorCiudad } from '../../../application/hooks/useNegocioPorCi
 import { useCart } from '../../../application/context/CartContext';
 import * as Location from 'expo-location';
 import { useTheme } from '../../../application/context/ThemeContext';
+import { useProfile } from '../../../application/hooks/useProfile';
+import { semanticSearch } from '../../../../services/geminiService';
 
 const { width } = Dimensions.get('window');
 
@@ -125,7 +127,6 @@ const CATEGORIES = [
 export default function HomeFeed() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [selectedCategory, setSelectedCategory] = useState('Todos');
-  const [searchQuery, setSearchQuery] = useState('');
   const [usarCercanos, setUsarCercanos] = useState(false);
   const { ciudad, isLoading: loadingCiudad } = useCiudadUsuario();
   const [page, setPage] = useState(1);
@@ -136,6 +137,11 @@ export default function HomeFeed() {
   const isLoading = loadingCiudad || loadingNegocios;
   const cartCount = getTotalItems();
   const { isDark, colors } = useTheme();
+  const { profile } = useProfile();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [semanticResultIds, setSemanticResultIds] = useState<string[] | null>(null);
+  const [isAIThinking, setIsAIThinking] = useState(false);
 
   const [sucursalesCercanas, setSucursalesCercanas] = useState([]);
   const [loadingCercanas, setLoadingCercanas] = useState(false);
@@ -146,8 +152,22 @@ export default function HomeFeed() {
     ? loadingCercanas
     : loadingCiudad || loadingNegocios;
 
+  const handleSemanticSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSemanticResultIds(null);
+      return;
+    }
+    setIsAIThinking(true);
+    setSemanticResultIds(null);
+    const resultIds = await semanticSearch(searchQuery, data);
+    setSemanticResultIds(resultIds);
+    setIsAIThinking(false);
+  };
 
-  const filteredData = (data || []).filter(n => {
+  const filteredData = (data || []).filter((n: any) => {
+    if (semanticResultIds) {
+      return semanticResultIds.includes(n.id);
+    }
     if (searchQuery.trim() === '') return true;
 
     return (
@@ -237,7 +257,11 @@ export default function HomeFeed() {
 
           <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.avatarWrap}>
             <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100' }}
+              source={
+                profile?.avatar_url
+                  ? { uri: profile.avatar_url }
+                  : { uri: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profile?.nombre ?? 'Cliente') + '&background=22c55e&color=fff' }
+              }
               style={styles.avatar}
             />
           </TouchableOpacity>
@@ -267,12 +291,27 @@ export default function HomeFeed() {
           <SearchIcon color={colors.labelText} />
           <TextInput
             style={[styles.realSearchInput, { color: colors.titleText }]}
-            placeholder="Filtrar por nombre..."
+            placeholder="Comida rápida, antojos..."
             placeholderTextColor={colors.labelText}
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (text.trim() === '') setSemanticResultIds(null);
+            }}
             returnKeyType="search"
+            onSubmitEditing={handleSemanticSearch}
           />
+          <TouchableOpacity 
+            style={[styles.aiButton, isAIThinking && styles.aiButtonDisabled]} 
+            onPress={handleSemanticSearch}
+            disabled={isAIThinking}
+          >
+            {isAIThinking ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.aiButtonText}>IA ✨</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
@@ -332,9 +371,13 @@ export default function HomeFeed() {
           {/* ── SECCIÓN HEADER ── */}
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.titleText }]}>
-              {searchQuery ? `Resultados para "${searchQuery}"` : usarCercanos
-                ? 'Cerca de ti'
-                : `En ${ciudad ?? 'tu zona'}`}
+              {semanticResultIds !== null 
+                ? `IA: Resultados para "${searchQuery}" ✨` 
+                : searchQuery
+                  ? `Resultados para "${searchQuery}"`
+                  : usarCercanos
+                    ? 'Cerca de ti'
+                    : `En ${ciudad ?? 'tu zona'}`}
             </Text>
             {!loadingFinal && (
               <Text style={[styles.sectionCount, { color: colors.labelText }]}>{filteredData.length} lugares</Text>
@@ -573,6 +616,22 @@ const styles = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8,
   },
   realSearchInput: { flex: 1, fontSize: 14, color: '#111827', paddingVertical: 2 },
+  aiButton: {
+    backgroundColor: '#16a34a',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  aiButtonDisabled: {
+    backgroundColor: '#15803d',
+    opacity: 0.8,
+  },
+  aiButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
 
   // Chatbot banner
   chatbotBanner: { marginHorizontal: 16, borderRadius: 16, overflow: 'hidden' },

@@ -574,3 +574,85 @@ export async function askGemini(
   const data = await response.json();
   return data.message?.content ?? 'No pude obtener respuesta. Intenta de nuevo.';
 }
+
+// ─── Búsqueda Semántica Dinámica (Fase 1) ───────────────────────────────────
+
+export async function semanticSearch(userQuery: string, negocios: Negocio[]): Promise<string[]> {
+  const systemPrompt = `Eres un motor de búsqueda semántica para la app local Kivo. 
+El usuario escribirá un antojo o necesidad. Tu deber es seleccionar cuáles de los siguientes restaurantes son ideales.
+Devuelve ÚNICAMENTE un array JSON válido con los IDs (strings) de los restaurantes seleccionados. 
+REGLAS:
+- No escribas explicaciones ni etiquetas markdown.
+- Si no hay ninguno bueno, devuelve [].
+- Solo devuelve un máximo de 5 IDs.
+
+RESTAURANTES DISPONIBLES:
+${negocios.map(n => `- ID: "${n.id}" | Nombre: ${n.nombre} | Categoría: ${n.categoria} | Tags/Menú: ${n.menu?.map(m => m.nombre).join(', ') ?? 'N/A'}`).join('\n')}
+`;
+
+  try {
+    const response = await fetch(OLLAMA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'qwen2.5:7b',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userQuery }
+        ],
+        stream: false,
+        options: { temperature: 0.1, num_predict: 200 },
+      }),
+    });
+
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    let content = data.message?.content?.trim() || '';
+    
+    // Limpiar posibles bloques markdown de gpt/qwen
+    content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    const result = JSON.parse(content);
+    if (Array.isArray(result)) return result.map(String);
+    return [];
+  } catch (error) {
+    console.error('Error en búsqueda semántica:', error);
+    return [];
+  }
+}
+
+// ─── Verificación de Alergias (Fase 2) ──────────────────────────────────────
+
+export async function checkAllergies(allergies: string, items: OrderItem[]): Promise<string> {
+  const systemPrompt = `Eres un asesor de salud estricto. El usuario tiene las siguientes alergias o condiciones médicas/dietéticas: "${allergies}".
+A continuación, se presenta lo que intenta pedir:
+${items.map(i => `- ${i.quantity}x ${i.name}`).join('\n')}
+
+IMPORTANTE: 
+Evalúa los componentes comunes de estos platillos.
+Si crees que hay un riesgo de alergia (o choque con la dieta), responde con una advertencia corta y directa en máximo 2 oraciones.
+Si crees que los alimentos son seguros, devuelve ÚNICAMENTE la palabra "SEGURO". No digas nada más.`;
+
+  try {
+    const response = await fetch(OLLAMA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'qwen2.5:7b',
+        messages: [{ role: 'system', content: systemPrompt }],
+        stream: false,
+        options: { temperature: 0.2, num_predict: 150 },
+      }),
+    });
+
+    if (!response.ok) return "No pudimos validar las alergias. Revisa con el restaurante directo.";
+    
+    const data = await response.json();
+    let content = data.message?.content?.trim() || '';
+    return content;
+  } catch (error) {
+    console.error('Error en alergias:', error);
+    return "Error de red al validar alergias.";
+  }
+}

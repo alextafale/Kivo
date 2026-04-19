@@ -3,6 +3,7 @@ import { ProfileRepositoryImpl } from '../../infraestructure/repositories/Profil
 import { useAuth } from '../context/AuthContext'
 import type { User } from '../../domain/entities/User'
 
+// Evitar advertencias forzando a la implementación concreta
 const profileRepo = new ProfileRepositoryImpl()
 
 export const useProfile = () => {
@@ -48,5 +49,23 @@ export const useProfile = () => {
     }
   }
 
-  return { profile, isLoading, error, fetchProfile, updateProfile }
+  // Sube una imagen a Supabase Storage y actualiza el perfil con la nueva URL
+  const uploadProfileAvatar = async (localUri: string, mimeType: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      // 1. Sube al bucket (saltando FastAPI para el binario)
+      const publicUrl = await profileRepo.uploadAvatar(localUri, mimeType)
+      
+      // 2. Notifica el cambio al backend (PATCH /me) y actualiza el estado local
+      await updateProfile({ avatar_url: publicUrl })
+    } catch (e: any) {
+      setError(e.message ?? 'Error al subir foto')
+      throw e
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return { profile, isLoading, error, fetchProfile, updateProfile, uploadProfileAvatar }
 }
