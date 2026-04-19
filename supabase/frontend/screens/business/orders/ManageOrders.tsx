@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  SafeAreaView, StatusBar, ActivityIndicator, RefreshControl, Alert,
+  StatusBar, ActivityIndicator, RefreshControl, Alert,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import Svg, { Path, Circle } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView, 
+  View, Text, StyleSheet, ScrollView,
   StatusBar, ActivityIndicator, TouchableOpacity,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
@@ -64,55 +65,152 @@ export default function OrderDetail({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
+      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <BackIcon />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Detalle del Pedido</Text>
-        <View style={styles.backBtn} />
+
+        <Text style={styles.headerTitle}>Detalles de pedido</Text>
+
+        <View style={{ width: 40 }} />
       </View>
 
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#22c55e" />
+          <ActivityIndicator size="large" color="#16a34a" />
         </View>
       ) : (
-        <ScrollView style={styles.list}>
+        <ScrollView contentContainerStyle={styles.list}>
           {items.map((item) => (
             <View key={item.id} style={styles.card}>
-              <View style={styles.itemRow}>
-                <View style={styles.infoCol}>
-                  <Text style={styles.itemName}>{item.cantidad}x {item.nombre}</Text>
-                  {item.notas && <Text style={styles.notas}>Nota: {item.notas}</Text>}
+
+              {/* TOP */}
+              <View style={styles.rowTop}>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{item.cantidad}</Text>
                 </View>
-                <Text style={styles.price}>${Number(item.subtotal).toFixed(2)}</Text>
+
+                <Text style={styles.itemName}>{item.nombre}</Text>
               </View>
+
+              {/* NOTAS */}
+              {item.notas && (
+                <View style={styles.noteBox}>
+                  <Text style={styles.noteText}>{item.notas}</Text>
+                </View>
+              )}
+
+              {/* FOOTER */}
+              <View style={styles.footer}>
+                <Text style={styles.unitPrice}>
+                  ${Number(item.precio_unitario).toFixed(2)} c/u
+                </Text>
+
+                <Text style={styles.price}>
+                  ${Number(item.subtotal).toFixed(2)}
+                </Text>
+              </View>
+
             </View>
           ))}
         </ScrollView>
       )}
     </SafeAreaView>
+
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+  },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
-  list: { padding: 16 },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+  },
+  list: {
+    padding: 16,
+  },
   card: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12,
-    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+
+    elevation: 2,
   },
-  itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  infoCol: { flex: 1 },
-  itemName: { fontSize: 16, fontWeight: '600', color: '#111827' },
-  price: { fontSize: 16, fontWeight: 'bold', color: '#22c55e' },
-  notas: { fontSize: 12, color: '#92400E', marginTop: 4, fontStyle: 'italic' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  rowTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  badge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginRight: 10,
+  },
+  badgeText: {
+    color: '#166534',
+    fontWeight: '700',
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    flex: 1,
+  },
+  noteBox: {
+    backgroundColor: '#FEF3C7',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  noteText: {
+    fontSize: 13,
+    color: '#92400E',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  unitPrice: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  price: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#16a34a',
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 })

@@ -122,8 +122,7 @@ export default function OrderDelivered({ navigation, route }: Props) {
       {/* Botones */}
       <View style={styles.footer}>
 
-        {rating === 0 && (
-          <>
+        {rating === 0 ? (
             <View>
               <TouchableOpacity
                 style={styles.rateButton}
@@ -132,33 +131,23 @@ export default function OrderDelivered({ navigation, route }: Props) {
                 <Text style={styles.rateButtonText}>Calificar Pedido</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.reportButton}
-              onPress={() => navigation.navigate('ReportarProblema', {
-                orderId: id,
-                orderNumber: orderNumber,
-                restaurantName: restaurantName,
-                total: total,
-              })}
+        ) : (
+          <TouchableOpacity
+            style={styles.ordersButton}
+            onPress={() => navigation.navigate('Orders')}
+          >
+            <LinearGradient
+              colors={['#22c55e', '#16a34a']}
+              style={styles.ordersButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.reportButtonText}>⚠️ Reportar un problema</Text>
-            </TouchableOpacity>
-          </>
+              <Text style={styles.ordersButtonText}>Ver Mis Pedidos</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         )}
 
-        <TouchableOpacity
-          style={styles.ordersButton}
-          onPress={() => navigation.navigate('Orders')}
-        >
-          <LinearGradient
-            colors={['#22c55e', '#16a34a']}
-            style={styles.ordersButtonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Text style={styles.ordersButtonText}>Ver Mis Pedidos</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+
 
 
         <TouchableOpacity

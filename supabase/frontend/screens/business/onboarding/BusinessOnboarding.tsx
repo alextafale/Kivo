@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import {
-  View, Text, StyleSheet, SafeAreaView, StatusBar,
+  View, Text, StyleSheet, StatusBar,
   ScrollView, TextInput, TouchableOpacity,
   ActivityIndicator, Alert, Switch, Modal, FlatList,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Location from 'expo-location';
 import Svg, { Path, Circle } from 'react-native-svg'

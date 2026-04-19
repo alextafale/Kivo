@@ -122,7 +122,6 @@ export type RootStackParamList = {
   ReportarProblema: {
     orderId: string;
     orderNumber: string;
-    restaurantName: string;
     total: number;
   };
 

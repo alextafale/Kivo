@@ -91,7 +91,7 @@ type Paso = 'confirmar' | 'cargando_contexto' | 'contexto' | 'procesando' | 'res
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 
 export default function ReportarProblema({ navigation, route }: Props) {
-  const { orderId, orderNumber, restaurantName, total } = route.params
+  const { orderId, orderNumber, total } = route.params
   const { session } = useAuth()
 
   const [paso, setPaso] = useState<Paso>('confirmar')
@@ -180,10 +180,6 @@ export default function ReportarProblema({ navigation, route }: Props) {
             {/* Resumen del pedido */}
             <View style={styles.summaryCard}>
               <Text style={styles.sectionLabel}>Tu pedido</Text>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryKey}>Restaurante</Text>
-                <Text style={styles.summaryVal}>{restaurantName}</Text>
-              </View>
               <View style={styles.divider} />
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryKey}>Número</Text>

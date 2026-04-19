@@ -210,7 +210,6 @@ function OrderCard({
             onPress={() => navigation.navigate('ReportarProblema', {
               orderId: order.id,
               orderNumber: order.orderNumber,
-              restaurantName: order.restaurantName,
               total: order.total,
             })}
           >

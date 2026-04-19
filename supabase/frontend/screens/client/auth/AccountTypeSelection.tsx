@@ -100,12 +100,8 @@ export default function AccountTypeSelection({ navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <BackIcon />
-        </TouchableOpacity>
-      </View>
+      {/* Header Separador*/}
+      <View style={styles.header}/>
 
       {/* Content */}
       <View style={styles.content}>

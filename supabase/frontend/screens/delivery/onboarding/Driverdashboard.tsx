@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  View, Text, StyleSheet, SafeAreaView, StatusBar,
+  View, Text, StyleSheet, StatusBar,
   ScrollView, TouchableOpacity, RefreshControl,
   ActivityIndicator, Alert, Image, Animated,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -94,13 +95,31 @@ export default function DriverDashboard({ navigation }: Props) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current
   const slideAnim = React.useRef(new Animated.Value(16)).current
 
+
+
   const fetchRepartidor = useCallback(async () => {
     if (!session?.userId) { setFetchError('Sin sesión'); return }
     try {
+
       const info = await repartidorRepo.getMyInfo(session.userId)
       setFetchError(null)
       setRepartidor(info)
       setFotoUri(info.foto_url ?? null)   // ← sincroniza foto
+
+
+      if (info.estado === 'busy') {
+        console.log('entrando al busy')
+        try {
+          await repartidorRepo.updateEstado(session.userId, 'available');
+          setRepartidor(prev => prev ? { ...prev, estado: 'available' } : prev);
+
+        } catch (e) {
+          // Si falla, por seguridad regresamos a available
+          console.log("Regreso aqui")
+          await repartidorRepo.updateEstado(session.userId, 'available');
+          setRepartidor(prev => prev ? { ...prev, estado: 'available' } : prev);
+        }
+      }
     } catch (e: any) {
       setFetchError(e.message)
       navigation.navigate('LoginDriver')

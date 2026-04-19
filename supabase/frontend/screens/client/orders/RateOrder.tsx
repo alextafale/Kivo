@@ -52,8 +52,9 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onRate, size = 36 }) =>
 };
 
 export default function RateOrderScreen({ navigation, route }: Props) {
-  console.log(route.params);
   const orderId = route.params.id;
+  const [orderNumber, setOrderNumber] = useState("");
+  const [total, setTotal] = useState(0);
   console.log("Estas en rate order screen");
   const { session } = useAuth();
   const [branchId, setBranchId] = useState("");
@@ -95,7 +96,6 @@ export default function RateOrderScreen({ navigation, route }: Props) {
   useEffect(() => {
     const getOrder = async () => {
       try {
-        console.log("Entrando a obtener el pedido");
         const response = await fetch(`${process.env.API_BASE_URL}/pedidos/${orderId}`,
           {
             method: 'GET',
@@ -110,6 +110,8 @@ export default function RateOrderScreen({ navigation, route }: Props) {
           const data = await response.json();
           setBranchId(data.sucursal_id);
           setDriverId(data.repartidor_id);
+          setOrderNumber(data.order_number);
+          setTotal(data.total);
         } else {
           console.log('Error al obtener el pedido');
         }
@@ -169,7 +171,6 @@ export default function RateOrderScreen({ navigation, route }: Props) {
         }
       );
 
-      console.log('La respuesta es:', res);
       if (res.ok) {
         Alert.alert("Review Saved", "Your review has been saved successfully.");
         navigation.navigate("Orders");
@@ -320,6 +321,17 @@ export default function RateOrderScreen({ navigation, route }: Props) {
               textAlignVertical="top"
             />
           </View>
+
+          <TouchableOpacity
+            style={styles.reportButton}
+            onPress={() => navigation.navigate('ReportarProblema', {
+              orderId: orderId,
+              orderNumber: orderNumber,
+              total: total,
+            })}
+          >
+            <Text style={styles.reportButtonText}>⚠️ Reportar un problema</Text>
+          </TouchableOpacity>
 
           <Text style={styles.footerNote}>
             Your feedback helps us improve Kivu for everyone.
@@ -586,5 +598,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "bold",
+  },
+  reportButton: { paddingVertical: 14, alignItems: 'center' },
+  reportButtonText: { fontSize: 14, color: '#F97316', fontWeight: '600' },
+  ratingContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+    padding: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    // Un sombreado ligero para que resalte
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
 });

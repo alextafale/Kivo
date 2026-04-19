@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  SafeAreaView, StatusBar, KeyboardAvoidingView,
+  StatusBar, KeyboardAvoidingView,
   Platform, ScrollView, Alert,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
