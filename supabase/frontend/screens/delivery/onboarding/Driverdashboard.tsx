@@ -182,6 +182,8 @@ export default function DriverDashboard({ navigation }: Props) {
   }
 
   const handleAvanzarEstado = async () => {
+    console.log("entrando a avanzar estado")
+    console.log(pedidoActivoId, estadoPedido)
     if (!pedidoActivoId || !estadoPedido) return
 
     const siguienteEstado = estadoPedido === 'picked_up' ? 'on_the_way' : 'delivered'
@@ -197,10 +199,9 @@ export default function DriverDashboard({ navigation }: Props) {
             const { data: { session } } = await supabase.auth.getSession()
             if (!session?.access_token) return
 
-            const API_URL = process.env.EXPO_PUBLIC_API_URL
 
             const res = await fetch(
-              `${API_URL}/repartidores/pedidos/${pedidoActivoId}/estado`,
+              `${process.env.API_BASE_URL}/repartidores/pedidos/${pedidoActivoId}/estado`,
               {
                 method: 'PATCH',
                 headers: {
@@ -210,6 +211,7 @@ export default function DriverDashboard({ navigation }: Props) {
                 body: JSON.stringify({ estado: siguienteEstado }),
               }
             )
+            console.log("guardando")
 
             if (!res.ok) {
               const err = await res.json()

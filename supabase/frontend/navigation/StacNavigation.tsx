@@ -51,6 +51,7 @@ import SettingsScreen from '../screens/business/settings/SettingsBusiness'
 import MenuItemEditor from '../screens/business/menu/MenuItemEditor'
 import AdminCupones from '../screens/business/cupones/AdminCupones'
 import ManageOrders from '../screens/business/orders/ManageOrders'   // ← nuevo
+import OrderDetailsBusiness from '../screens/business/orders/OrderDetailsBusiness'
 
 // ─── Repartidor ───────────────────────────────────────────────────────────────
 import DriverOnboarding from '../screens/delivery/home/DriverOnboarding'
@@ -150,6 +151,7 @@ export type RootStackParamList = {
   Settings: undefined
   AdminCupones: undefined
   ManageOrders: undefined   // ← nuevo
+  OrderDetailsBusiness: { pedidoId: string }
 
   // Repartidor
   DriverDashboard: undefined
@@ -236,6 +238,7 @@ export default function StackNavigation() {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="AdminCupones" component={AdminCupones} />
         <Stack.Screen name="ManageOrders" component={ManageOrders} />
+        <Stack.Screen name="OrderDetailsBusiness" component={OrderDetailsBusiness} />
 
         {/* ── Repartidor ─────────────────────────────────────────────────── */}
         <Stack.Screen name="DriverDashboard" component={DriverDashboard} />

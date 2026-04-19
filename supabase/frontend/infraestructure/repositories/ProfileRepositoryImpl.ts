@@ -1,12 +1,11 @@
 import type { IProfileRepository } from '../../domain/ports/lNegocioRepository.ts/lProfileRepository'
 import type { User } from '../../domain/entities/User'
-import { API_URL } from '@env'
 
 // Implementación concreta — llama a FastAPI /api/v1/me
 export class ProfileRepositoryImpl implements IProfileRepository {
 
   async getMe(accessToken: string): Promise<User> {
-    const res = await fetch(`${API_URL}/api/v1/me`, {
+    const res = await fetch(`${process.env.API_BASE_URL}/api/v1/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -24,7 +23,7 @@ export class ProfileRepositoryImpl implements IProfileRepository {
     accessToken: string,
     data: Partial<Pick<User, 'nombre' | 'apellido' | 'telefono' | 'avatar_url'>>
   ): Promise<User> {
-    const res = await fetch(`${API_URL}/api/v1/me`, {
+    const res = await fetch(`${process.env.API_BASE_URL}/api/v1/me`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

@@ -99,7 +99,7 @@ export default function ReportarProblema({ navigation, route }: Props) {
   const [resolucion, setResolucion] = useState<Resolucion | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
 
-  const apiBase = process.env.EXPO_PUBLIC_API_URL ?? 'https://kivo-v1.onrender.com/api/v1'
+  const apiBase = process.env.API_BASE_URL ?? 'https://kivo-v1.onrender.com/api/v1'
   const headers = {
     Authorization: `Bearer ${session?.accessToken}`,
     'Content-Type': 'application/json',

@@ -200,7 +200,7 @@ function OrderCard({
         </TouchableOpacity>
       )}
 
-      {order.status === 'delivered' && (
+      {(order.status === 'delivered'  && rating === 0) && (
         <View>
           <TouchableOpacity style={styles.reorderButton}>
             <Text style={styles.reorderButtonText}>Volver a Pedir</Text>

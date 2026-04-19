@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Integer, String, ForeignKey, ARRAY
+from sqlalchemy import Column, Integer, String, ForeignKey, ARRAY, func
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP, BOOLEAN
 from db.database import Base
 
@@ -17,7 +17,7 @@ class Review(Base):
     comentario = Column(String, nullable=True)
     imagenes = Column(ARRAY(String), nullable=True, default=[])
     es_anonima = Column(BOOLEAN, nullable=True, default=False)
-    creado_en = Column(TIMESTAMP, nullable=False)
+    creado_en = Column(TIMESTAMP, nullable=False, default=func.now())
 
     __table_args__ = (
         {"schema": "public"},

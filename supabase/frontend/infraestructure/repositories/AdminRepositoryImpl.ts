@@ -1,7 +1,6 @@
 import { supabase } from '../../config/supabaseConfig'
 import type { IAdminRepository } from '../../domain/ports/repositories/lAdminRepository'
 import type { Negocio, NegocioPatch, Sucursal, SucursalCreate, SucursalPatch, MetricasNegocio } from '../../domain/entities/Negocio'
-import { API_URL } from '@env'
 
 // Obtiene el JWT activo de Supabase para enviarlo al backend FastAPI
 async function getAuthHeaders(): Promise<HeadersInit> {
@@ -17,7 +16,7 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = await getAuthHeaders()
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers })
+  const res = await fetch(`${process.env.API_BASE_URL}${path}`, { ...options, headers })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.detail ?? `Error ${res.status}`)

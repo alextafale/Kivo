@@ -11,9 +11,6 @@ import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { supabase } from '../../../config/supabaseConfig'
 import { useAuth } from '../../../application/context/AuthContext'
 
-
-const BASE_URL = 'https://kivo-v1.onrender.com/api/v1'
-
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ManageOrders'>
 }
@@ -108,7 +105,7 @@ export default function ManageOrders({ navigation }: Props) {
         return
       }
 
-      const response = await fetch(`${BASE_URL}/negocios/${negocioId}/pedidos`, {
+      const response = await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/pedidos`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
 
@@ -163,7 +160,7 @@ export default function ManageOrders({ navigation }: Props) {
         return
       }
 
-      const response = await fetch(`${BASE_URL}/pedidos/${pedidoId}/estado`, {
+      const response = await fetch(`${process.env.API_BASE_URL}/pedidos/${pedidoId}/estado`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -201,7 +198,11 @@ export default function ManageOrders({ navigation }: Props) {
     const isUpdating = updatingId === pedido.id
 
     return (
-      <View key={pedido.id} style={styles.card}>
+      <TouchableOpacity
+        key={pedido.id}
+        style={styles.card}
+        onPress={() => navigation.navigate('OrderDetailsBusiness', { pedidoId: pedido.id })}
+      >
 
         {/* Header del pedido */}
         <View style={styles.cardHeader}>
@@ -250,7 +251,7 @@ export default function ManageOrders({ navigation }: Props) {
             )}
           </View>
         )}
-      </View>
+      </TouchableOpacity>
     )
   }
 

@@ -123,14 +123,27 @@ export default function OrderDelivered({ navigation, route }: Props) {
       <View style={styles.footer}>
 
         {rating === 0 && (
-          <View>
+          <>
+            <View>
+              <TouchableOpacity
+                style={styles.rateButton}
+                onPress={() => navigation.navigate('RateOrder', { id })}
+              >
+                <Text style={styles.rateButtonText}>Calificar Pedido</Text>
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity
-              style={styles.rateButton}
-              onPress={() => navigation.navigate('RateOrder', { id })}
+              style={styles.reportButton}
+              onPress={() => navigation.navigate('ReportarProblema', {
+                orderId: id,
+                orderNumber: orderNumber,
+                restaurantName: restaurantName,
+                total: total,
+              })}
             >
-              <Text style={styles.rateButtonText}>Calificar Pedido</Text>
+              <Text style={styles.reportButtonText}>⚠️ Reportar un problema</Text>
             </TouchableOpacity>
-          </View>
+          </>
         )}
 
         <TouchableOpacity
@@ -147,17 +160,6 @@ export default function OrderDelivered({ navigation, route }: Props) {
           </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.reportButton}
-          onPress={() => navigation.navigate('ReportarProblema', {
-            orderId: id,
-            orderNumber: orderNumber,
-            restaurantName: restaurantName,
-            total: total,
-          })}
-        >
-          <Text style={styles.reportButtonText}>⚠️ Reportar un problema</Text>
-        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.homeButton}

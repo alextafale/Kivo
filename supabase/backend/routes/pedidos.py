@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from typing import List
 from pydantic import BaseModel
 from db.database import SessionLocal
 from core.dependencies import get_current_user, get_current_user_id
 from schemas.pedidos import PedidoIn, PedidoOut
 from schemas.enums import PedidoEstado
+from schemas.pedido_items import PedidoItemOut
 
 from services.pedidos import get_pedido, get_pedidos, get_pedidos_negocio, change_estado_pedido, create_pedido, get_metricas_negocio
+from services.pedido_items import get_pedidos_items_by_pedido_id
 
 router = APIRouter(tags=["Pedidos"])
 
@@ -44,6 +47,13 @@ def obtener_pedido_por_id(
     user=Depends(get_current_user),
 ):
     return get_pedido(db, pedido_id, _get_user_id(user))
+
+@router.get('/pedidos/{pedido_id}/items',response_model=List[PedidoItemOut])
+def obtener_items_pedido_por_pedido_id(
+    pedido_id: str,
+    db: Session = Depends(get_db),
+):
+    return get_pedidos_items_by_pedido_id(db, pedido_id)
 
 
 @router.get("/negocios/{negocio_id}/pedidos")

@@ -40,7 +40,7 @@ export const useRepartidorUbicacion = (pedidoId: string | null) => {
         if (!session?.access_token) return
 
         const res = await fetch(
-          `${API_URL}/repartidores/pedidos/${pedidoId}/ubicacion`,
+          `${process.env.API_BASE_URL}/repartidores/pedidos/${pedidoId}/ubicacion`,
           {
             headers: {
               Authorization: `Bearer ${session.access_token}`,

@@ -18,6 +18,7 @@ class Profile(Base):
     activo         = Column(Boolean, default=True)
     creado_en      = Column(TIMESTAMP(timezone=True))
     actualizado_en = Column(TIMESTAMP(timezone=True))
+    expo_push_token = Column(Text, nullable=True)
 
     __table_args__ = (
         {"schema": "public"},

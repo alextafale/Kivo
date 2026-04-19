@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../config/supabaseConfig'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL
+const API_URL = process.env.API_BASE_URL
 
 export interface ETAInfo {
     eta_minutos: number | null

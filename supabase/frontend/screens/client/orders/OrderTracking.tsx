@@ -110,6 +110,10 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
     outputRange: ['0%', '100%'],
   })
 
+  useEffect(() => {
+    console.log("Ubicación recibida en pantalla:", ubicacion);
+  }, [ubicacion]);
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#F4F6F0" />
