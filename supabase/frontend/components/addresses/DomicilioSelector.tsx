@@ -30,9 +30,9 @@ const DomicilioRow = ({
   item: Domicilio; isSelected: boolean; onPress: () => void
 }) => {
   const icono =
-    item.etiqueta === 'Casa'    ? '🏠'
-    : item.etiqueta === 'Trabajo' ? '💼'
-    : item.etiqueta === 'Gym'     ? '🏋️'
+    item.alias === 'Casa'    ? '🏠'
+    : item.alias === 'Trabajo' ? '💼'
+    : item.alias === 'Gym'     ? '🏋️'
     : '📍'
 
   const linea = [item.calle, item.numeroExt, item.colonia, item.ciudad]
@@ -43,7 +43,7 @@ const DomicilioRow = ({
       <View style={styles.rowLeft}>
         <Text style={styles.rowIcon}>{icono}</Text>
         <View>
-          <Text style={styles.rowEtiqueta}>{item.etiqueta}</Text>
+          <Text style={styles.rowEtiqueta}>{item.alias}</Text>
           <Text style={styles.rowDireccion} numberOfLines={2}>{linea}</Text>
         </View>
       </View>
@@ -78,9 +78,9 @@ export const DomicilioSelector = ({ selected, onSelect }: Props) => {
   }
 
   const icono =
-    selected?.etiqueta === 'Casa'    ? '🏠'
-    : selected?.etiqueta === 'Trabajo' ? '💼'
-    : selected?.etiqueta === 'Gym'     ? '🏋️'
+    selected?.alias === 'Casa'    ? '🏠'
+    : selected?.alias === 'Trabajo' ? '💼'
+    : selected?.alias === 'Gym'     ? '🏋️'
     : '📍'
 
   const direccionCorta = selected
@@ -98,7 +98,7 @@ export const DomicilioSelector = ({ selected, onSelect }: Props) => {
           <>
             <Text style={styles.pillIcon}>{icono}</Text>
             <View style={styles.pillTexts}>
-              <Text style={styles.pillLabel}>{selected.etiqueta}</Text>
+              <Text style={styles.pillLabel}>{selected.alias}</Text>
               <Text style={styles.pillDireccion} numberOfLines={1}>
                 {direccionCorta}
               </Text>

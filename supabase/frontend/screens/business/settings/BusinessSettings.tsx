@@ -12,6 +12,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation'
 import BottomNavBar, { TabName } from '../../../components/business/tabNavigation'
 
 import { useAuth } from '../../../application/context/AuthContext'
+import { useTheme } from '../../../application/context/ThemeContext'
 import { useAdminNegocio } from '../../../application/hooks/useAdminNegocio'
 import { useAdminSucursal } from '../../../application/hooks/useAdminSucursal'
 import type { HorarioDia } from '../../../domain/entities/Negocio'
@@ -55,6 +56,7 @@ type Props = {
 export default function BusinessSettings({ navigation }: Props) {
   console.log('Estas en la pantalla de business settings');
   const [activeTab, setActiveTab] = useState<TabName>('Settings')
+  const { colors, isDark } = useTheme()
 
   // negocio_id y permisos vienen directamente del AuthContext — nada hardcodeado
   const { adminAccess } = useAuth()
@@ -129,7 +131,7 @@ export default function BusinessSettings({ navigation }: Props) {
 
   if (loadingNegocio) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={[styles.centered, { backgroundColor: colors.pageBg }]}>
         <ActivityIndicator size="large" color="#22c55e" />
       </SafeAreaView>
     )
@@ -138,23 +140,23 @@ export default function BusinessSettings({ navigation }: Props) {
   // Usuario sin negocio asignado (no debería llegar aquí si la navegación está protegida)
   if (!negocioId) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={[styles.centered, { backgroundColor: colors.pageBg }]}>
         <Text style={{ color: '#9CA3AF', fontSize: 14 }}>No tienes un negocio asignado.</Text>
       </SafeAreaView>
     )
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.pageBg }]}>
           <View>
-            <Text style={styles.headerTitle}>Configuración</Text>
-            <Text style={styles.headerSubtitle}>Gestiona tu negocio</Text>
+            <Text style={[styles.headerTitle, { color: colors.titleText }]}>Configuración</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.subtitleText }]}>Gestiona tu negocio</Text>
           </View>
           <View style={styles.headerBadge}>
             <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.badgeGradient}>
@@ -164,13 +166,13 @@ export default function BusinessSettings({ navigation }: Props) {
         </View>
 
         {/* ── Datos del Negocio ────────────────────────────────────────── */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconWrap}><EditIcon /></View>
-            <Text style={styles.sectionTitle}>Datos del Negocio</Text>
+            <View style={[styles.sectionIconWrap, { backgroundColor: isDark ? '#14532d80' : '#F0FDF4' }]}><EditIcon /></View>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Datos del Negocio</Text>
             {/* Solo mostrar botón Editar si tiene permiso */}
             {!editingNegocio && puedeEditar && (
-              <TouchableOpacity style={styles.editBtn} onPress={startEditNegocio}>
+              <TouchableOpacity style={[styles.editBtn, { backgroundColor: isDark ? '#14532d80' : '#F0FDF4' }]} onPress={startEditNegocio}>
                 <Text style={styles.editBtnText}>Editar</Text>
               </TouchableOpacity>
             )}
@@ -178,32 +180,35 @@ export default function BusinessSettings({ navigation }: Props) {
 
           {editingNegocio ? (
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Nombre</Text>
+              <Text style={[styles.label, { color: colors.titleText }]}>Nombre</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                 value={nombreEdit}
                 onChangeText={setNombreEdit}
                 placeholder="Nombre del negocio"
+                placeholderTextColor={colors.subtitleText}
               />
-              <Text style={styles.label}>Descripción</Text>
+              <Text style={[styles.label, { color: colors.titleText }]}>Descripción</Text>
               <TextInput
-                style={[styles.input, styles.inputMultiline]}
+                style={[styles.input, styles.inputMultiline, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                 value={descripcionEdit}
                 onChangeText={setDescEdit}
                 placeholder="Descripción"
+                placeholderTextColor={colors.subtitleText}
                 multiline
                 numberOfLines={3}
               />
-              <Text style={styles.label}>Categoría</Text>
+              <Text style={[styles.label, { color: colors.titleText }]}>Categoría</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                 value={categoriaEdit}
                 onChangeText={setCategoriaEdit}
                 placeholder="ej: restaurante, cafetería..."
+                placeholderTextColor={colors.subtitleText}
               />
               <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditingNegocio(false)}>
-                  <Text style={styles.cancelBtnText}>Cancelar</Text>
+                <TouchableOpacity style={[styles.cancelBtn, { borderColor: isDark ? colors.border : '#E5E7EB', backgroundColor: isDark ? colors.border : 'transparent' }]} onPress={() => setEditingNegocio(false)}>
+                  <Text style={[styles.cancelBtnText, { color: isDark ? '#fff' : '#6B7280' }]}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveBtn} onPress={saveNegocio} disabled={savingNegocio}>
                   <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.saveBtnGradient}>
@@ -221,9 +226,9 @@ export default function BusinessSettings({ navigation }: Props) {
               <InfoRow label="Categoría"   value={negocio?.categoria ?? '—'} />
               <InfoRow label="Descripción" value={negocio?.descripcion ?? '—'} />
               <InfoRow label="Slug"        value={negocio?.slug ?? '—'} />
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Verificado</Text>
-                <View style={[styles.pill, negocio?.verificado ? styles.pillGreen : styles.pillGray]}>
+              <View style={[styles.infoRow, { borderBottomColor: isDark ? colors.border : '#F3F4F6' }]}>
+                <Text style={[styles.infoLabel, { color: colors.subtitleText }]}>Verificado</Text>
+                <View style={[styles.pill, negocio?.verificado ? [styles.pillGreen, { backgroundColor: isDark ? '#14532d80' : '#F0FDF4' }] : [styles.pillGray, { backgroundColor: isDark ? colors.border : '#F3F4F6' }]]}>
                   <Text style={[styles.pillText, negocio?.verificado ? styles.pillTextGreen : styles.pillTextGray]}>
                     {negocio?.verificado ? 'Sí' : 'Pendiente'}
                   </Text>
@@ -234,12 +239,12 @@ export default function BusinessSettings({ navigation }: Props) {
         </View>
 
         {/* ── Horarios ─────────────────────────────────────────────────── */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconWrap}><ClockIcon /></View>
-            <Text style={styles.sectionTitle}>Horarios</Text>
+            <View style={[styles.sectionIconWrap, { backgroundColor: isDark ? '#14532d80' : '#F0FDF4' }]}><ClockIcon /></View>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Horarios</Text>
             {!editingHorarios && (
-              <TouchableOpacity style={styles.editBtn} onPress={startEditHorarios}>
+              <TouchableOpacity style={[styles.editBtn, { backgroundColor: isDark ? '#14532d80' : '#F0FDF4' }]} onPress={startEditHorarios}>
                 <Text style={styles.editBtnText}>Editar</Text>
               </TouchableOpacity>
             )}
@@ -250,8 +255,8 @@ export default function BusinessSettings({ navigation }: Props) {
           {editingHorarios ? (
             <View>
               {horariosEdit.map(h => (
-                <View key={h.dia} style={styles.horarioRow}>
-                  <Text style={styles.horarioDia}>
+                <View key={h.dia} style={[styles.horarioRow, { borderBottomColor: isDark ? colors.border : '#F3F4F6' }]}>
+                  <Text style={[styles.horarioDia, { color: colors.titleText }]}>
                     {h.dia.charAt(0).toUpperCase() + h.dia.slice(1)}
                   </Text>
                   <Switch
@@ -263,18 +268,20 @@ export default function BusinessSettings({ navigation }: Props) {
                   {!h.cerrado ? (
                     <View style={styles.horaInputsRow}>
                       <TextInput
-                        style={styles.horaInput}
+                        style={[styles.horaInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                         value={h.abre ?? ''}
                         onChangeText={v => setHora(h.dia, 'abre', v)}
                         placeholder="09:00"
+                        placeholderTextColor={colors.subtitleText}
                         maxLength={5}
                       />
-                      <Text style={styles.horaSep}>–</Text>
+                      <Text style={[styles.horaSep, { color: colors.subtitleText }]}>–</Text>
                       <TextInput
-                        style={styles.horaInput}
+                        style={[styles.horaInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                         value={h.cierra ?? ''}
                         onChangeText={v => setHora(h.dia, 'cierra', v)}
                         placeholder="22:00"
+                        placeholderTextColor={colors.subtitleText}
                         maxLength={5}
                       />
                     </View>
@@ -285,8 +292,8 @@ export default function BusinessSettings({ navigation }: Props) {
               ))}
 
               <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditingHorarios(false)}>
-                  <Text style={styles.cancelBtnText}>Cancelar</Text>
+                <TouchableOpacity style={[styles.cancelBtn, { borderColor: isDark ? colors.border : '#E5E7EB', backgroundColor: isDark ? colors.border : 'transparent' }]} onPress={() => setEditingHorarios(false)}>
+                  <Text style={[styles.cancelBtnText, { color: isDark ? '#fff' : '#6B7280' }]}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveBtn} onPress={saveHorarios} disabled={savingHorarios}>
                   <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.saveBtnGradient}>
@@ -303,8 +310,8 @@ export default function BusinessSettings({ navigation }: Props) {
               {(sucursal?.horarios ?? []).length === 0
                 ? <Text style={styles.emptyText}>Sin horarios configurados</Text>
                 : sucursal?.horarios.map(h => (
-                    <View key={h.dia} style={styles.horarioReadRow}>
-                      <Text style={styles.horarioReadDia}>
+                    <View key={h.dia} style={[styles.horarioReadRow, { borderBottomColor: isDark ? colors.border : '#F3F4F6' }]}>
+                      <Text style={[styles.horarioReadDia, { color: colors.titleText }]}>
                         {h.dia.charAt(0).toUpperCase() + h.dia.slice(1)}
                       </Text>
                       {h.cerrado
@@ -329,10 +336,11 @@ export default function BusinessSettings({ navigation }: Props) {
 // ─── Componente auxiliar ──────────────────────────────────────────────────────
 
 function InfoRow({ label, value }: { label: string; value: string }) {
+  const { colors, isDark } = useTheme()
   return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+    <View style={[styles.infoRow, { borderBottomColor: isDark ? colors.border : '#F3F4F6' }]}>
+      <Text style={[styles.infoLabel, { color: colors.subtitleText }]}>{label}</Text>
+      <Text style={[styles.infoValue, { color: colors.titleText }]}>{value}</Text>
     </View>
   )
 }

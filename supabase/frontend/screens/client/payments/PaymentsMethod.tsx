@@ -17,6 +17,7 @@ import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'PaymentsMethod'>;
 type Props = { navigation: Nav };
@@ -25,8 +26,8 @@ const { width } = Dimensions.get('window');
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2.5">
+const BackIcon = ({ color = '#0f172a' }: { color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
@@ -57,8 +58,8 @@ const CheckIcon = () => (
   </Svg>
 );
 
-const WalletIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2">
+const WalletIcon = ({ color = '#334155' }: { color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M20 12V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
     <Path d="M20 12h-4a2 2 0 0 0 0 4h4" />
   </Svg>
@@ -156,6 +157,7 @@ const CardRow = ({
   delay: number;
 }) => {
   const anim = useRef(new Animated.Value(0)).current;
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     Animated.spring(anim, { toValue: 1, tension: 60, friction: 8, delay, useNativeDriver: true }).start();
@@ -167,17 +169,17 @@ const CardRow = ({
       transform: [{ translateX: anim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }],
     }}>
       <TouchableOpacity
-        style={[styles.cardRow, selected && styles.cardRowSelected]}
+        style={[styles.cardRow, { backgroundColor: colors.cardBg, borderColor: isDark ? colors.border : '#e2e8f0', shadowColor: isDark ? '#000' : '#000' }, selected && [styles.cardRowSelected, isDark && { backgroundColor: '#15803d20' }]]}
         onPress={onSelect}
         activeOpacity={0.8}
       >
         <CardBadge network={card.network} />
 
         <View style={styles.cardRowText}>
-          <Text style={styles.cardRowTitle}>
+          <Text style={[styles.cardRowTitle, { color: colors.titleText }]}>
             {CARD_NETWORK_LABEL[card.network]} •••• {card.last4}
           </Text>
-          <Text style={styles.cardRowSub}>Vence {card.expiry}</Text>
+          <Text style={[styles.cardRowSub, { color: colors.subtitleText }]}>Vence {card.expiry}</Text>
         </View>
 
         <View style={styles.cardRowRight}>
@@ -186,7 +188,7 @@ const CardRow = ({
               <CheckIcon />
             </View>
           ) : (
-            <TouchableOpacity onPress={onDelete} style={styles.deleteBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity onPress={onDelete} style={[styles.deleteBtn, { backgroundColor: isDark ? '#ef444430' : '#fff5f5' }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <TrashIcon />
             </TouchableOpacity>
           )}
@@ -209,6 +211,8 @@ const OtherRow = ({
   delay: number;
 }) => {
   const anim = useRef(new Animated.Value(0)).current;
+  const { colors, isDark } = useTheme();
+
   useEffect(() => {
     Animated.spring(anim, { toValue: 1, tension: 60, friction: 8, delay, useNativeDriver: true }).start();
   }, []);
@@ -219,16 +223,16 @@ const OtherRow = ({
       transform: [{ translateX: anim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }],
     }}>
       <TouchableOpacity
-        style={[styles.otherRow, selected && styles.otherRowSelected]}
+        style={[styles.otherRow, { backgroundColor: colors.cardBg, borderColor: isDark ? colors.border : '#e2e8f0', shadowColor: isDark ? '#000' : '#000' }, selected && [styles.otherRowSelected, isDark && { backgroundColor: '#15803d20' }]]}
         onPress={onSelect}
         activeOpacity={0.8}
       >
-        <View style={[styles.otherIcon, selected && styles.otherIconSelected]}>
+        <View style={[styles.otherIcon, { backgroundColor: colors.pageBg }, selected && [styles.otherIconSelected, isDark && { backgroundColor: '#15803d40' }]]}>
           {icon}
         </View>
         <View style={styles.otherText}>
-          <Text style={styles.otherTitle}>{title}</Text>
-          <Text style={styles.otherSub}>{sub}</Text>
+          <Text style={[styles.otherTitle, { color: colors.titleText }]}>{title}</Text>
+          <Text style={[styles.otherSub, { color: colors.subtitleText }]}>{sub}</Text>
         </View>
         {selected ? (
           <View style={styles.radioFilled}><CheckIcon /></View>
@@ -243,6 +247,7 @@ const OtherRow = ({
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 
 export default function PaymentMethods({ navigation }: Props) {
+  const { colors, isDark } = useTheme();
   const [cards, setCards]             = useState<SavedCard[]>(MOCK_CARDS);
   const [selectedCard, setSelectedCard] = useState<string>('1');
   const [selectedOther, setSelectedOther] = useState<OtherMethod | null>(null);
@@ -328,18 +333,20 @@ export default function PaymentMethods({ navigation }: Props) {
     : selectedOther === 'wallet' ? 'Apple/Google Pay' : selectedOther === 'cash' ? 'Efectivo' : null;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fafafa" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       {/* ── HEADER ─────────────────────────────────────────────── */}
       <Animated.View style={[styles.header, {
+        backgroundColor: colors.pageBg,
+        borderBottomColor: colors.rowDivider,
         opacity: headerAnim,
         transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
       }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <BackIcon />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.backBtnBg }]}>
+          <BackIcon color={colors.titleText} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Métodos de Pago</Text>
+        <Text style={[styles.headerTitle, { color: colors.titleText }]}>Métodos de Pago</Text>
         <View style={{ width: 42 }} />
       </Animated.View>
 
@@ -348,7 +355,7 @@ export default function PaymentMethods({ navigation }: Props) {
         contentContainerStyle={styles.scrollContent}
       >
         {/* ── TARJETAS GUARDADAS ──────────────────────────────── */}
-        <Text style={styles.sectionTitle}>Tarjetas Guardadas</Text>
+        <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Tarjetas Guardadas</Text>
 
         {cards.map((card, i) => (
           <CardRow
@@ -363,21 +370,21 @@ export default function PaymentMethods({ navigation }: Props) {
 
         {/* Add card dashed button */}
         <TouchableOpacity
-          style={styles.addCardBtn}
+          style={[styles.addCardBtn, { borderColor: isDark ? colors.border : '#dcfce7' }]}
           onPress={() => navigation.navigate('AddCard')}
           activeOpacity={0.75}
         >
-          <View style={styles.addCardIcon}>
+          <View style={[styles.addCardIcon, { backgroundColor: colors.iconBg }]}>
             <PlusIcon />
           </View>
-          <Text style={styles.addCardText}>Añadir Nueva Tarjeta</Text>
+          <Text style={[styles.addCardText, isDark && { color: '#4ade80' }]}>Añadir Nueva Tarjeta</Text>
         </TouchableOpacity>
 
         {/* ── OTRAS FORMAS DE PAGO ────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { marginTop: 28 }]}>Otras formas de pago</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 28, color: colors.titleText }]}>Otras formas de pago</Text>
 
         <OtherRow
-          icon={<WalletIcon />}
+          icon={<WalletIcon color={colors.titleText} />}
           title="Apple / Google Pay"
           sub="Billetera digital rápida"
           selected={selectedOther === 'wallet'}
@@ -398,6 +405,8 @@ export default function PaymentMethods({ navigation }: Props) {
 
       {/* ── FOOTER FIXED ───────────────────────────────────────── */}
       <Animated.View style={[styles.footer, {
+        backgroundColor: colors.pageBg,
+        borderTopColor: colors.rowDivider,
         opacity: footerAnim,
         transform: [{ translateY: footerAnim.interpolate({ inputRange: [0, 1], outputRange: [32, 0] }) }],
       }]}>

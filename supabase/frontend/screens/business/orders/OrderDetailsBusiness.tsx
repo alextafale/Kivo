@@ -10,6 +10,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { supabase } from '../../../config/supabaseConfig'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 type OrderDetailBusinessNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderDetailsBusiness'>;
 type OrderDetailBusinessrRouteProp = RouteProp<RootStackParamList, 'OrderDetailsBusiness'>;
@@ -28,8 +29,8 @@ interface OrderItem {
   notas: string | null
 }
 
-const BackIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+const BackIcon = ({ color = '#000' }: { color?: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 )
@@ -38,6 +39,7 @@ export default function OrderDetail({ route, navigation }: Props) {
   const { pedidoId } = route.params
   const [items, setItems] = useState<OrderItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const { colors, isDark } = useTheme()
 
   const fetchItems = useCallback(async () => {
     try {
@@ -62,16 +64,16 @@ export default function OrderDetail({ route, navigation }: Props) {
   }, [fetchItems])
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* HEADER */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.pageBg, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <BackIcon />
+          <BackIcon color={colors.titleText} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Detalles de pedido</Text>
+        <Text style={[styles.headerTitle, { color: colors.titleText }]}>Detalles de pedido</Text>
 
         <View style={{ width: 40 }} />
       </View>
@@ -83,31 +85,31 @@ export default function OrderDetail({ route, navigation }: Props) {
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
           {items.map((item) => (
-            <View key={item.id} style={styles.card}>
+            <View key={item.id} style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
 
               {/* TOP */}
               <View style={styles.rowTop}>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.cantidad}</Text>
+                <View style={[styles.badge, { backgroundColor: isDark ? '#15803d40' : '#DCFCE7' }]}>
+                  <Text style={[styles.badgeText, { color: isDark ? '#4ade80' : '#166534' }]}>{item.cantidad}</Text>
                 </View>
 
-                <Text style={styles.itemName}>{item.nombre}</Text>
+                <Text style={[styles.itemName, { color: colors.titleText }]}>{item.nombre}</Text>
               </View>
 
               {/* NOTAS */}
               {item.notas && (
-                <View style={styles.noteBox}>
-                  <Text style={styles.noteText}>{item.notas}</Text>
+                <View style={[styles.noteBox, { backgroundColor: isDark ? '#FEF3C715' : '#FEF3C7' }]}>
+                  <Text style={[styles.noteText, { color: isDark ? '#F59E0B' : '#92400E' }]}>{item.notas}</Text>
                 </View>
               )}
 
               {/* FOOTER */}
               <View style={styles.footer}>
-                <Text style={styles.unitPrice}>
+                <Text style={[styles.unitPrice, { color: colors.subtitleText }]}>
                   ${Number(item.precio_unitario).toFixed(2)} c/u
                 </Text>
 
-                <Text style={styles.price}>
+                <Text style={[styles.price, { color: isDark ? '#4ade80' : '#16a34a' }]}>
                   ${Number(item.subtotal).toFixed(2)}
                 </Text>
               </View>

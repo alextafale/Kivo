@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 type ConfirmPaymentNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ConfirmPayment'>
 type ConfirmPaymentRouteProp = RouteProp<RootStackParamList, 'ConfirmPayment'>
@@ -15,15 +16,16 @@ type Props = {
 
 export default function ConfirmPayment({ navigation, route }: Props) {
   const { total, subtotal, costoEnvio, descuento } = route.params
+  const { colors } = useTheme()
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
       <View style={styles.content}>
-        <Text style={styles.title}>Confirmar Pago</Text>
-        <Text style={styles.detail}>Subtotal: ${subtotal.toFixed(2)}</Text>
-        {descuento > 0 && <Text style={styles.detail}>Descuento: -${descuento.toFixed(2)}</Text>}
-        <Text style={styles.detail}>Envío: ${costoEnvio.toFixed(2)}</Text>
-        <Text style={styles.totalText}>Total a pagar: ${total.toFixed(2)}</Text>
+        <Text style={[styles.title, { color: colors.titleText }]}>Confirmar Pago</Text>
+        <Text style={[styles.detail, { color: colors.subtitleText }]}>Subtotal: ${subtotal.toFixed(2)}</Text>
+        {descuento > 0 && <Text style={[styles.detail, { color: colors.subtitleText }]}>Descuento: -${descuento.toFixed(2)}</Text>}
+        <Text style={[styles.detail, { color: colors.subtitleText }]}>Envío: ${costoEnvio.toFixed(2)}</Text>
+        <Text style={[styles.totalText, { color: colors.titleText }]}>Total a pagar: ${total.toFixed(2)}</Text>
         
         <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
           <Text style={styles.buttonText}>Volver</Text>

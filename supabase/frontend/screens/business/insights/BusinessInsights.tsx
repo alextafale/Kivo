@@ -16,6 +16,7 @@ import Svg, {
   Path, Circle, Rect, Line, G, Defs,
   LinearGradient as SvgGrad, Stop, ClipPath,
 } from 'react-native-svg';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const CHART_W = width - 48;
@@ -23,16 +24,16 @@ const CHART_H = 140;
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
 
-const DownloadIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2">
+const DownloadIcon = ({ color = '#334155' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
     <Polyline points="7 10 12 15 17 10" />
     <Line x1="12" y1="15" x2="12" y2="3" />
   </Svg>
 );
 
-const BellIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2">
+const BellIcon = ({ color = '#334155' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
     <Path d="M13.73 21a2 2 0 0 1-3.46 0" />
   </Svg>
@@ -128,6 +129,7 @@ const BAR_LABELS: Record<string, string[]> = {
 };
 
 const SalesChart = ({ period, totalRevenue }: { period: string; totalRevenue: string }) => {
+  const { isDark } = useTheme();
   const data   = BAR_DATA[period];
   const labels = BAR_LABELS[period];
   const max    = Math.max(...data);
@@ -160,7 +162,7 @@ const SalesChart = ({ period, totalRevenue }: { period: string; totalRevenue: st
                 width: BAR_W,
                 height: animVals[i].interpolate({ inputRange: [0, 1], outputRange: [0, barH] }),
                 borderRadius: 6,
-                backgroundColor: isActive ? '#22c55e' : '#e8f5e9',
+                backgroundColor: isActive ? '#22c55e' : (isDark ? '#022c22' : '#e8f5e9'),
                 alignSelf: 'flex-end',
                 overflow: 'hidden',
               }}
@@ -197,6 +199,7 @@ const SalesChart = ({ period, totalRevenue }: { period: string; totalRevenue: st
 // ─── DONUT CHART ─────────────────────────────────────────────────────────────
 
 const DonutChart = ({ items }: { items: { label: string; pct: number; color: string; units: number }[] }) => {
+  const { colors, isDark } = useTheme();
   const SIZE   = 120;
   const R      = 44;
   const STROKE = 18;
@@ -224,7 +227,7 @@ const DonutChart = ({ items }: { items: { label: string; pct: number; color: str
           {/* Background ring */}
           <Circle
             cx={SIZE / 2} cy={SIZE / 2} r={R}
-            fill="none" stroke="#f1f5f9" strokeWidth={STROKE}
+            fill="none" stroke={isDark ? colors.border : "#f1f5f9"} strokeWidth={STROKE}
           />
           {/* Segments */}
           {items.map((item, i) => {
@@ -249,8 +252,8 @@ const DonutChart = ({ items }: { items: { label: string; pct: number; color: str
         </Svg>
         {/* Center label */}
         <View style={[styles.donutCenter, { width: SIZE, height: SIZE }]}>
-          <Text style={styles.donutCenterSub}>Total</Text>
-          <Text style={styles.donutCenterVal}>842</Text>
+          <Text style={[styles.donutCenterSub, { color: colors.subtitleText }]}>Total</Text>
+          <Text style={[styles.donutCenterVal, { color: colors.titleText }]}>842</Text>
         </View>
       </View>
 
@@ -260,8 +263,8 @@ const DonutChart = ({ items }: { items: { label: string; pct: number; color: str
           <View key={item.label} style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: item.color }]} />
             <View>
-              <Text style={styles.legendLabel}>{item.label}</Text>
-              <Text style={styles.legendSub}>{item.pct}% • {item.units} units</Text>
+              <Text style={[styles.legendLabel, { color: colors.titleText }]}>{item.label}</Text>
+              <Text style={[styles.legendSub, { color: colors.subtitleText }]}>{item.pct}% • {item.units} units</Text>
             </View>
           </View>
         ))}
@@ -278,6 +281,7 @@ const KpiCard = ({
   label: string; value: string; change: string; positive: boolean;
   icon: React.ReactNode; delay: number;
 }) => {
+  const { colors, isDark } = useTheme();
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.spring(anim, { toValue: 1, tension: 55, friction: 8, delay, useNativeDriver: true }).start();
@@ -285,14 +289,15 @@ const KpiCard = ({
 
   return (
     <Animated.View style={[styles.kpiCard, {
+      backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000',
       opacity: anim,
       transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
     }]}>
       <View style={styles.kpiTop}>
         <Text style={styles.kpiLabel}>{label}</Text>
-        <View style={styles.kpiIconWrap}>{icon}</View>
+        <View style={[styles.kpiIconWrap, { backgroundColor: isDark ? '#14532d80' : '#f0fdf4' }]}>{icon}</View>
       </View>
-      <Text style={styles.kpiValue}>{value}</Text>
+      <Text style={[styles.kpiValue, { color: colors.titleText }]}>{value}</Text>
       <View style={styles.kpiTrend}>
         {positive ? <TrendUpIcon /> : <TrendDownIcon />}
         <Text style={[styles.kpiChange, { color: positive ? '#22c55e' : '#ef4444' }]}>
@@ -311,6 +316,7 @@ const MilestoneRow = ({
 }: {
   icon: React.ReactNode; iconBg: string; title: string; sub: string; delay: number;
 }) => {
+  const { colors, isDark } = useTheme();
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.spring(anim, { toValue: 1, tension: 55, friction: 8, delay, useNativeDriver: true }).start();
@@ -321,10 +327,10 @@ const MilestoneRow = ({
       opacity: anim,
       transform: [{ translateX: anim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }],
     }]}>
-      <View style={[styles.milestoneIcon, { backgroundColor: iconBg }]}>{icon}</View>
+      <View style={[styles.milestoneIcon, { backgroundColor: isDark ? colors.border : iconBg }]}>{icon}</View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.milestoneTitle}>{title}</Text>
-        <Text style={styles.milestoneSub}>{sub}</Text>
+        <Text style={[styles.milestoneTitle, { color: colors.titleText }]}>{title}</Text>
+        <Text style={[styles.milestoneSub, { color: colors.subtitleText }]}>{sub}</Text>
       </View>
     </Animated.View>
   );
@@ -343,6 +349,7 @@ const PERIOD_DATA: Record<string, { avgTicket: string; retention: string; botSuc
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 
 export default function BusinessInsights() {
+  const { colors, isDark } = useTheme();
   const [period, setPeriod] = useState<'Today' | 'Week' | 'Month'>('Week');
 
   const headerAnim  = useRef(new Animated.Value(0)).current;
@@ -366,8 +373,8 @@ export default function BusinessInsights() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       {/* ── HEADER ──────────────────────────────────────────────── */}
       <Animated.View style={[styles.header, {
@@ -375,16 +382,16 @@ export default function BusinessInsights() {
         transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-14, 0] }) }],
       }]}>
         <View>
-          <Text style={styles.headerTitle}>Business Insights</Text>
-          <Text style={styles.headerSub}>Last updated: 5 mins ago</Text>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>Business Insights</Text>
+          <Text style={[styles.headerSub, { color: colors.subtitleText }]}>Last updated: 5 mins ago</Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerBtn}>
-            <DownloadIcon />
+          <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
+            <DownloadIcon color={colors.titleText} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBtn}>
+          <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
             <View style={styles.notifDot} />
-            <BellIcon />
+            <BellIcon color={colors.titleText} />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -393,6 +400,7 @@ export default function BusinessInsights() {
 
         {/* ── PERIOD SELECTOR ─────────────────────────────────── */}
         <Animated.View style={[styles.periodWrap, {
+          backgroundColor: isDark ? colors.border : '#e8f5e9',
           opacity: periodAnim,
           transform: [{ scale: periodAnim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }],
         }]}>
@@ -405,13 +413,13 @@ export default function BusinessInsights() {
             >
               {period === p ? (
                 <LinearGradient
-                  colors={['#fff', '#f8fafc']}
+                  colors={isDark ? [colors.cardBg, colors.cardBg] : ['#fff', '#f8fafc']}
                   style={StyleSheet.absoluteFill}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
                 />
               ) : null}
-              <Text style={[styles.periodText, period === p && styles.periodTextActive]}>{p}</Text>
+              <Text style={[styles.periodText, period === p && styles.periodTextActive, period === p && { color: colors.titleText }]}>{p}</Text>
             </TouchableOpacity>
           ))}
         </Animated.View>
@@ -448,31 +456,31 @@ export default function BusinessInsights() {
           />
 
           {/* ── SALES CHART ───────────────────────────────────── */}
-          <View style={styles.chartCard}>
-            <View style={styles.chartHeader}>
-              <View>
-                <Text style={styles.chartTitle}>
-                  {period === 'Today' ? 'Hourly Sales' : period === 'Week' ? 'Weekly Sales' : 'Monthly Sales'}
-                </Text>
-                <Text style={styles.chartSub}>Revenue trends for current {period.toLowerCase()}</Text>
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.chartRevenue}>{data.revenue}</Text>
-                <Text style={styles.chartRevenueSub}>Total Revenue</Text>
-              </View>
-            </View>
-            <SalesChart period={period} totalRevenue={data.revenue} />
-          </View>
+          <View style={[styles.chartCard, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
+             <View style={styles.chartHeader}>
+               <View>
+                 <Text style={[styles.chartTitle, { color: colors.titleText }]}>
+                   {period === 'Today' ? 'Hourly Sales' : period === 'Week' ? 'Weekly Sales' : 'Monthly Sales'}
+                 </Text>
+                 <Text style={[styles.chartSub, { color: colors.subtitleText }]}>Revenue trends for current {period.toLowerCase()}</Text>
+               </View>
+               <View style={{ alignItems: 'flex-end' }}>
+                 <Text style={styles.chartRevenue}>{data.revenue}</Text>
+                 <Text style={[styles.chartRevenueSub, { color: colors.subtitleText }]}>Total Revenue</Text>
+               </View>
+             </View>
+             <SalesChart period={period} totalRevenue={data.revenue} />
+           </View>
 
           {/* ── TOP SELLING ITEMS ─────────────────────────────── */}
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Top Selling Items</Text>
+          <View style={[styles.sectionCard, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Top Selling Items</Text>
             <DonutChart items={donutItems} />
           </View>
 
           {/* ── BOT MILESTONES ────────────────────────────────── */}
-          <View style={[styles.sectionCard, { marginBottom: 24 }]}>
-            <Text style={styles.sectionTitle}>Bot Milestones</Text>
+          <View style={[styles.sectionCard, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000', marginBottom: 24 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Bot Milestones</Text>
             <MilestoneRow
               icon={<RocketIcon />}
               iconBg="#ede9fe"
@@ -500,7 +508,7 @@ export default function BusinessInsights() {
       </ScrollView>
 
       {/* ── BOTTOM NAV ──────────────────────────────────────────── */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { backgroundColor: colors.pageBg, borderTopColor: colors.rowDivider }]}>
         {[
           { label: 'HOME',   active: false,
             icon: <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><Path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><Path d="M9 21V12h6v9"/></Svg> },

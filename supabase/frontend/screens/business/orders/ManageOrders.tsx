@@ -11,6 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { supabase } from '../../../config/supabaseConfig'
 import { useAuth } from '../../../application/context/AuthContext'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ManageOrders'>
@@ -66,8 +67,8 @@ const ACCIONES: Record<PedidoEstado, { label: string; next: PedidoEstado; color:
 
 // ─── Iconos ───────────────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+const BackIcon = ({ color = '#000' }: { color?: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 )
@@ -84,6 +85,7 @@ const RefreshIcon = () => (
 export default function ManageOrders({ navigation }: Props) {
   const { adminAccess } = useAuth()
   const negocioId = adminAccess?.negocioId ?? null
+  const { colors, isDark } = useTheme()
   const [pedidos, setPedidos] = useState<PedidoNegocio[]>([])
   const [isLoading, setIsLoading] = useState(!negocioId)
   const [refreshing, setRefreshing] = useState(false)
@@ -201,15 +203,15 @@ export default function ManageOrders({ navigation }: Props) {
     return (
       <TouchableOpacity
         key={pedido.id}
-        style={styles.card}
+        style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}
         onPress={() => navigation.navigate('OrderDetailsBusiness', { pedidoId: pedido.id })}
       >
 
         {/* Header del pedido */}
         <View style={styles.cardHeader}>
           <View>
-            <Text style={styles.orderNumber}>{pedido.orderNumber}</Text>
-            <Text style={styles.clienteNombre}>{pedido.clienteNombre ?? 'Cliente'}</Text>
+            <Text style={[styles.orderNumber, { color: colors.titleText }]}>{pedido.orderNumber}</Text>
+            <Text style={[styles.clienteNombre, { color: colors.subtitleText }]}>{pedido.clienteNombre ?? 'Cliente'}</Text>
           </View>
           <View style={[styles.estadoBadge, { backgroundColor: estadoInfo.bg }]}>
             <Text style={[styles.estadoText, { color: estadoInfo.color }]}>
@@ -219,19 +221,19 @@ export default function ManageOrders({ navigation }: Props) {
         </View>
 
         {/* Dirección */}
-        <Text style={styles.direccion} numberOfLines={2}>
+        <Text style={[styles.direccion, { color: colors.subtitleText }]} numberOfLines={2}>
           📍 {pedido.deliveryAddress}
         </Text>
 
         {/* Notas */}
         {pedido.notas && (
-          <Text style={styles.notas}>📝 {pedido.notas}</Text>
+          <Text style={[styles.notas, { backgroundColor: isDark ? '#FEF3C715' : '#FEF3C7', color: isDark ? '#F59E0B' : '#92400E' }]}>📝 {pedido.notas}</Text>
         )}
 
         {/* Total */}
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>${Number(pedido.total).toFixed(2)}</Text>
+        <View style={[styles.totalRow, { borderTopColor: colors.rowDivider }]}>
+          <Text style={[styles.totalLabel, { color: colors.subtitleText }]}>Total</Text>
+          <Text style={[styles.totalValue, { color: colors.titleText }]}>${Number(pedido.total).toFixed(2)}</Text>
         </View>
 
         {/* Botones de acción */}
@@ -257,15 +259,15 @@ export default function ManageOrders({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.pageBg, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <BackIcon />
+          <BackIcon color={colors.titleText} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pedidos Activos</Text>
+        <Text style={[styles.headerTitle, { color: colors.titleText }]}>Pedidos Activos</Text>
         <TouchableOpacity onPress={fetchPedidos} style={styles.backBtn}>
           <RefreshIcon />
         </TouchableOpacity>
@@ -274,7 +276,7 @@ export default function ManageOrders({ navigation }: Props) {
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#22c55e" />
-          <Text style={styles.loadingText}>Cargando pedidos...</Text>
+          <Text style={[styles.loadingText, { color: colors.subtitleText }]}>Cargando pedidos...</Text>
         </View>
       ) : (
         <ScrollView
@@ -291,8 +293,8 @@ export default function ManageOrders({ navigation }: Props) {
           {pedidos.length === 0 ? (
             <View style={styles.center}>
               <Text style={styles.emptyEmoji}>🎉</Text>
-              <Text style={styles.emptyTitle}>Sin pedidos activos</Text>
-              <Text style={styles.emptyText}>Los nuevos pedidos aparecerán aquí automáticamente</Text>
+              <Text style={[styles.emptyTitle, { color: colors.titleText }]}>Sin pedidos activos</Text>
+              <Text style={[styles.emptyText, { color: colors.subtitleText }]}>Los nuevos pedidos aparecerán aquí automáticamente</Text>
             </View>
           ) : (
             pedidos.map(renderPedido)
@@ -325,15 +327,10 @@ const styles = StyleSheet.create({
   list: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
 
   card: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
   },
 
   cardHeader: {

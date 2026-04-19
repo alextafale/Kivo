@@ -52,7 +52,8 @@
           "locationAlwaysAndWhenInUsePermission": "Kivo necesita acceso a tu ubicación para rastrear tus entregas.",
           "locationWhenInUsePermission": "Kivo necesita acceso a tu ubicación para rastrear tus entregas."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

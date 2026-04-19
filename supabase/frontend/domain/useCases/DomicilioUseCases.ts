@@ -1,6 +1,6 @@
 // domain/usecases/DomicilioUseCases.ts
 
-import type { IDomicilioRepository } from '../ports/lNegocioRepository.ts/lDomicilioRepository'
+import type { IDomicilioRepository } from '../ports/repositories/lDomicilioRepository'
 import type { Domicilio, DomicilioCreate, DomicilioUpdate, Coordenadas } from '../entities/Domicilio'
 
 // ── Listar ────────────────────────────────────────────────────────────────────

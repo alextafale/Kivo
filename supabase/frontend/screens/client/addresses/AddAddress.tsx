@@ -13,18 +13,18 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useDomicilioForm } from '../../../application/hooks/useDomicilioForm';
+import { useTheme } from '../../../application/context/ThemeContext';
 import { ETIQUETAS } from '../../../domain/entities/Domicilio';
 import type { Domicilio, Coordenadas } from '../../../domain/entities/Domicilio';
 
-// ⚠️  Agrega esto en RootStackParamList de StacNavigation.tsx:
-//   AddAddress: { domicilio?: Domicilio } | undefined;
 
-type Nav   = NativeStackNavigationProp<RootStackParamList, 'AddAddress'>;
+
+type Nav = NativeStackNavigationProp<RootStackParamList, 'AddAddress'>;
 type Route = RouteProp<{ AddAddress: { domicilio?: Domicilio } }, 'AddAddress'>;
 type Props = { navigation: Nav; route: Route };
 
 const { height } = Dimensions.get('window');
-const MAP_HEIGHT  = height * 0.42;
+const MAP_HEIGHT = height * 0.42;
 
 const DEFAULT_REGION = {
   latitude: 19.9894, longitude: -102.2838,   // Zamora de Hidalgo
@@ -33,8 +33,8 @@ const DEFAULT_REGION = {
 
 // ─── ICONS (idénticos a los tuyos) ───────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2.5">
+const BackIcon = ({ color = '#0f172a' }: { color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
@@ -67,8 +67,9 @@ const MapPin = () => (
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 
 export default function AddAddress({ navigation, route }: Props) {
+  const { colors, isDark } = useTheme();
   const domicilioExistente = route.params?.domicilio;
-  const esEdicion          = !!domicilioExistente;
+  const esEdicion = !!domicilioExistente;
 
   const {
     form, errors, isLoading,
@@ -77,18 +78,18 @@ export default function AddAddress({ navigation, route }: Props) {
 
   const mapRef = useRef<MapView>(null);
   const [markerCoord, setMarkerCoord] = useState({
-    latitude:  domicilioExistente?.coordenadas?.latitud  ?? DEFAULT_REGION.latitude,
+    latitude: domicilioExistente?.coordenadas?.latitud ?? DEFAULT_REGION.latitude,
     longitude: domicilioExistente?.coordenadas?.longitud ?? DEFAULT_REGION.longitude,
   });
   const [loadingLocation, setLoadingLocation] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const formAnim  = useRef(new Animated.Value(0)).current;
+  const formAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.timing(slideAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.timing(formAnim,  { toValue: 1, duration: 350, delay: 80, useNativeDriver: true }),
+      Animated.timing(formAnim, { toValue: 1, duration: 350, delay: 80, useNativeDriver: true }),
     ]).start();
 
     // Modo edición: centrar mapa en coords existentes
@@ -114,14 +115,28 @@ export default function AddAddress({ navigation, route }: Props) {
     try {
       const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
       if (geo) {
-        const parts = [geo.street, geo.streetNumber].filter(Boolean);
-        if (parts.length > 0) setField('calle', parts.join(' ').trim());
-        if (geo.district || geo.subregion) setField('colonia', (geo.district ?? geo.subregion)!);
-        if (geo.city)    setField('ciudad', geo.city);
-        if (geo.region)  setField('estado', geo.region);
+        console.log('📌 GEO MAP_PRESS RESULT:', JSON.stringify(geo, null, 2));
+
+        let calleName = geo.street || '';
+        const extNum = geo.streetNumber || '';
+
+        if (calleName && extNum && calleName.includes(extNum)) {
+          calleName = calleName.replace(extNum, '').replace(/,\s*$/, '').trim();
+        }
+
+        if (calleName) setField('calle', calleName);
+        if (extNum) setField('numeroExt', extNum);
+
+        // Tratamos de buscar la colonia en district, subregion o name (depende de iOS/Android)
+        let suggColonia = geo.district || geo.subregion || '';
+        if (geo.name && geo.name.toLowerCase().includes('centro')) suggColonia = 'Centro';
+        if (suggColonia) setField('colonia', suggColonia);
+
+        if (geo.city || geo.subregion) setField('ciudad', geo.city || geo.subregion || '');
+        if (geo.region) setField('estado', geo.region);
         if (geo.postalCode) setField('codigoPostal', geo.postalCode);
       }
-    } catch {}
+    } catch { }
   }, [onMapPinDrop, setField]);
 
   // ── Usar ubicación actual ─────────────────────────────────────────────────
@@ -147,11 +162,24 @@ export default function AddAddress({ navigation, route }: Props) {
       // Geocoding inverso
       const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
       if (geo) {
-        const parts = [geo.street, geo.streetNumber].filter(Boolean);
-        if (parts.length > 0) setField('calle', parts.join(' ').trim());
-        if (geo.district || geo.subregion) setField('colonia', (geo.district ?? geo.subregion)!);
-        if (geo.city)       setField('ciudad',       geo.city);
-        if (geo.region)     setField('estado',       geo.region);
+        console.log('📌 GEO CURRENT_LOC RESULT:', JSON.stringify(geo, null, 2));
+
+        let calleName = geo.street || '';
+        const extNum = geo.streetNumber || '';
+
+        if (calleName && extNum && calleName.includes(extNum)) {
+          calleName = calleName.replace(extNum, '').replace(/,\s*$/, '').trim();
+        }
+
+        if (calleName) setField('calle', calleName);
+        if (extNum) setField('numeroExt', extNum);
+
+        let suggColonia = geo.district || geo.subregion || '';
+        if (geo.name && geo.name.toLowerCase().includes('centro')) suggColonia = 'Centro';
+        if (suggColonia) setField('colonia', suggColonia);
+
+        if (geo.city || geo.subregion) setField('ciudad', geo.city || geo.subregion || '');
+        if (geo.region) setField('estado', geo.region);
         if (geo.postalCode) setField('codigoPostal', geo.postalCode);
       }
     } catch {
@@ -173,8 +201,8 @@ export default function AddAddress({ navigation, route }: Props) {
   }, [submit, navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -182,13 +210,15 @@ export default function AddAddress({ navigation, route }: Props) {
       >
         {/* ── HEADER ──────────────────────────────────────────────── */}
         <Animated.View style={[styles.header, {
+          backgroundColor: colors.pageBg,
+          borderBottomColor: colors.rowDivider,
           opacity: slideAnim,
           transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
         }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <BackIcon />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.backBtnBg }]}>
+            <BackIcon color={colors.titleText} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>
             {esEdicion ? 'Editar Dirección' : 'Añadir Dirección'}
           </Text>
           <View style={{ width: 42 }} />
@@ -247,14 +277,14 @@ export default function AddAddress({ navigation, route }: Props) {
           }]}>
 
             {/* Tipo / Etiqueta */}
-            <Text style={styles.fieldLabel}>Guardar como:</Text>
+            <Text style={[styles.fieldLabel, { color: colors.labelText }]}>Guardar como:</Text>
             <View style={styles.typeRow}>
               {ETIQUETAS.map((etiqueta) => {
                 const active = form.alias === etiqueta;
                 return (
                   <TouchableOpacity
                     key={etiqueta}
-                    style={[styles.typeChip, active && styles.typeChipActive]}
+                    style={[styles.typeChip, { backgroundColor: colors.modalInputBg, borderColor: isDark ? colors.border : '#e2e8f0' }, active && styles.typeChipActive]}
                     onPress={() => setField('alias', etiqueta)}
                     activeOpacity={0.8}
                   >
@@ -270,7 +300,7 @@ export default function AddAddress({ navigation, route }: Props) {
                       </LinearGradient>
                     ) : (
                       <View style={styles.typeChipInner}>
-                        <Text style={styles.typeChipText}>
+                        <Text style={[styles.typeChipText, { color: colors.titleText }]}>
                           {etiqueta === 'Casa' ? '🏠' : etiqueta === 'Trabajo' ? '💼' : etiqueta === 'Gym' ? '🏋️' : '📍'} {etiqueta}
                         </Text>
                       </View>
@@ -281,75 +311,75 @@ export default function AddAddress({ navigation, route }: Props) {
             </View>
 
             {/* Calle */}
-            <Text style={styles.fieldLabel}>
+            <Text style={[styles.fieldLabel, { color: colors.labelText }]}>
               Calle <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
-              style={[styles.input, !!errors.calle && styles.inputError]}
+              style={[styles.input, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }, !!errors.calle && styles.inputError]}
               value={form.calle}
               onChangeText={v => setField('calle', v)}
               placeholder="Av. Insurgentes Sur #1234"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor={colors.placeholderText}
             />
             {!!errors.calle && <Text style={styles.errorText}>{errors.calle}</Text>}
 
             {/* Número ext / int */}
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Núm. Exterior</Text>
+                <Text style={[styles.fieldLabel, { color: colors.labelText }]}>Núm. Exterior</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }]}
                   value={form.numeroExt}
                   onChangeText={v => setField('numeroExt', v)}
                   placeholder="123"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={colors.placeholderText}
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Núm. Interior <Text style={styles.optional}>(Opcional)</Text></Text>
+                <Text style={[styles.fieldLabel, { color: colors.labelText }]}>Núm. Interior <Text style={styles.optional}>(Opcional)</Text></Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }]}
                   value={form.numeroInt}
                   onChangeText={v => setField('numeroInt', v)}
                   placeholder="Depto. 4"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={colors.placeholderText}
                 />
               </View>
             </View>
 
             {/* Colonia */}
-            <Text style={styles.fieldLabel}>Colonia</Text>
+            <Text style={[styles.fieldLabel, { color: colors.labelText }]}>Colonia</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }]}
               value={form.colonia}
               onChangeText={v => setField('colonia', v)}
               placeholder="Centro"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor={colors.placeholderText}
             />
 
             {/* Ciudad / Estado */}
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>
+                <Text style={[styles.fieldLabel, { color: colors.labelText }]}>
                   Ciudad <Text style={styles.required}>*</Text>
                 </Text>
                 <TextInput
-                  style={[styles.input, !!errors.ciudad && styles.inputError]}
+                  style={[styles.input, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }, !!errors.ciudad && styles.inputError]}
                   value={form.ciudad}
                   onChangeText={v => setField('ciudad', v)}
                   placeholder="Zamora"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={colors.placeholderText}
                 />
                 {!!errors.ciudad && <Text style={styles.errorText}>{errors.ciudad}</Text>}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Estado</Text>
+                <Text style={[styles.fieldLabel, { color: colors.labelText }]}>Estado</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }]}
                   value={form.estado}
                   onChangeText={v => setField('estado', v)}
                   placeholder="Michoacán"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={colors.placeholderText}
                 />
               </View>
             </View>
@@ -357,24 +387,24 @@ export default function AddAddress({ navigation, route }: Props) {
             {/* CP / País */}
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Código Postal</Text>
+                <Text style={[styles.fieldLabel, { color: colors.labelText }]}>Código Postal</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }]}
                   value={form.codigoPostal}
                   onChangeText={v => setField('codigoPostal', v)}
                   placeholder="59600"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="numeric"
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>País</Text>
+                <Text style={[styles.fieldLabel, { color: colors.labelText }]}>País</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }]}
                   value={form.pais}
                   onChangeText={v => setField('pais', v)}
                   placeholder="MX"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={colors.placeholderText}
                   autoCapitalize="characters"
                   maxLength={2}
                 />
@@ -382,25 +412,25 @@ export default function AddAddress({ navigation, route }: Props) {
             </View>
 
             {/* Referencias */}
-            <Text style={styles.fieldLabel}>
+            <Text style={[styles.fieldLabel, { color: colors.labelText }]}>
               Instrucciones de entrega <Text style={styles.optional}>(Opcional)</Text>
             </Text>
             <TextInput
-              style={[styles.input, styles.inputMulti]}
+              style={[styles.input, styles.inputMulti, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.titleText }]}
               value={form.referencias}
               onChangeText={v => setField('referencias', v)}
               placeholder="Portón blanco, tocar timbre fuerte..."
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor={colors.placeholderText}
               multiline
               numberOfLines={3}
               textAlignVertical="top"
             />
 
             {/* Predeterminado */}
-            <View style={styles.defaultToggleRow}>
+            <View style={[styles.defaultToggleRow, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
               <View>
-                <Text style={styles.defaultToggleTitle}>Establecer como predeterminada</Text>
-                <Text style={styles.defaultToggleSub}>Se usará automáticamente al ordenar</Text>
+                <Text style={[styles.defaultToggleTitle, { color: colors.titleText }]}>Establecer como predeterminada</Text>
+                <Text style={[styles.defaultToggleSub, { color: colors.subtitleText }]}>Se usará automáticamente al ordenar</Text>
               </View>
               <Switch
                 value={form.esPredeterminado}
@@ -458,7 +488,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a', letterSpacing: 0.1 },
 
   mapWrapper: { width: '100%', height: MAP_HEIGHT, position: 'relative', overflow: 'hidden' },
-  map:        { ...StyleSheet.absoluteFillObject },
+  map: { ...StyleSheet.absoluteFillObject },
 
   mapPinContainer: { alignItems: 'center' },
   mapPinBubble: {
@@ -467,7 +497,7 @@ const styles = StyleSheet.create({
     shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5, shadowRadius: 8, elevation: 6,
   },
-  mapPinText:   { color: '#fff', fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
+  mapPinText: { color: '#fff', fontWeight: '800', fontSize: 13, letterSpacing: 0.2 },
   mapPinDot: {
     width: 16, height: 16, borderRadius: 8, backgroundColor: '#22c55e',
     borderWidth: 3, borderColor: '#fff',
@@ -494,9 +524,9 @@ const styles = StyleSheet.create({
   formContainer: { paddingHorizontal: 22, paddingTop: 26 },
 
   fieldLabel: { fontSize: 15, fontWeight: '700', color: '#0f172a', marginBottom: 10, marginTop: 20 },
-  optional:   { fontSize: 13, fontWeight: '400', color: '#94a3b8' },
-  required:   { color: '#ef4444' },
-  errorText:  { color: '#ef4444', fontSize: 12, marginTop: 4 },
+  optional: { fontSize: 13, fontWeight: '400', color: '#94a3b8' },
+  required: { color: '#ef4444' },
+  errorText: { color: '#ef4444', fontSize: 12, marginTop: 4 },
 
   row: { flexDirection: 'row', gap: 12 },
 
@@ -509,7 +539,7 @@ const styles = StyleSheet.create({
   inputMulti: { minHeight: 88, textAlignVertical: 'top', paddingTop: 14 },
   inputError: { borderColor: '#ef4444' },
 
-  typeRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   typeChip: {
     borderRadius: 50, overflow: 'hidden',
     borderWidth: 1.5, borderColor: '#e2e8f0', backgroundColor: '#f8fafc',
@@ -519,9 +549,9 @@ const styles = StyleSheet.create({
     shadowColor: '#22c55e', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35, shadowRadius: 8, elevation: 5,
   },
-  typeChipGrad:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 12 },
+  typeChipGrad: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 12 },
   typeChipInner: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 12 },
-  typeChipText:       { fontSize: 14, fontWeight: '700', color: '#475569' },
+  typeChipText: { fontSize: 14, fontWeight: '700', color: '#475569' },
   typeChipTextActive: { color: '#fff' },
 
   defaultToggleRow: {
@@ -530,7 +560,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#e2e8f0',
   },
   defaultToggleTitle: { fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 2 },
-  defaultToggleSub:   { fontSize: 12, color: '#94a3b8' },
+  defaultToggleSub: { fontSize: 12, color: '#94a3b8' },
 
   saveBtn: {
     marginTop: 32, borderRadius: 20, overflow: 'hidden',

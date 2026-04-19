@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useCart } from '../../../application/context/CartContext'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 type OrderConfirmationNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderConfirmation'>
 type OrderConfirmationRouteProp = RouteProp<RootStackParamList, 'OrderConfirmation'>
@@ -28,6 +29,7 @@ const CheckIcon = () => (
 
 export default function OrderConfirmation({ navigation, route }: Props) {
    console.log("Estas en order confirmation");
+  const { colors, isDark } = useTheme();
   const { orders, totalGeneral } = route.params
   const { clearCart } = useCart()
 
@@ -36,45 +38,45 @@ export default function OrderConfirmation({ navigation, route }: Props) {
   }, [])
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
 
         {/* Icono de éxito */}
-        <View style={styles.iconContainer}>
+        <View style={[styles.iconContainer, { backgroundColor: isDark ? '#15803d40' : '#F0FDF4' }]}>
           <CheckIcon />
         </View>
 
-        <Text style={styles.title}>¡Pedidos Confirmados!</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.titleText }]}>¡Pedidos Confirmados!</Text>
+        <Text style={[styles.subtitle, { color: colors.subtitleText }]}>
           {orders.length === 1 ? '1 pedido realizado' : `${orders.length} pedidos realizados`}
         </Text>
 
         {/* Un card por cada pedido */}
         {orders.map((order, index) => (
-          <View key={index} style={styles.orderCard}>
-            <Text style={styles.orderNegocio}>{order.negocioNombre}</Text>
+          <View key={index} style={[styles.orderCard, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
+            <Text style={[styles.orderNegocio, { color: colors.titleText }]}>{order.negocioNombre}</Text>
             <View style={styles.orderRow}>
-              <Text style={styles.orderNumberLabel}>Número de pedido</Text>
-              <Text style={styles.orderNumber}>{order.orderNumber}</Text>
+              <Text style={[styles.orderNumberLabel, { color: colors.subtitleText }]}>Número de pedido</Text>
+              <Text style={[styles.orderNumber, isDark && { color: '#4ade80' }]}>{order.orderNumber}</Text>
             </View>
             <View style={styles.orderRow}>
-              <Text style={styles.orderTotalLabel}>Total</Text>
-              <Text style={styles.orderTotal}>${order.total.toFixed(2)}</Text>
+              <Text style={[styles.orderTotalLabel, { color: colors.subtitleText }]}>Total</Text>
+              <Text style={[styles.orderTotal, { color: colors.titleText }]}>${order.total.toFixed(2)}</Text>
             </View>
           </View>
         ))}
 
         {/* Total general */}
         {orders.length > 1 && (
-          <View style={styles.totalCard}>
-            <Text style={styles.totalLabel}>Total general</Text>
-            <Text style={styles.totalValue}>${totalGeneral.toFixed(2)}</Text>
+          <View style={[styles.totalCard, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
+            <Text style={[styles.totalLabel, { color: colors.titleText }]}>Total general</Text>
+            <Text style={[styles.totalValue, { color: colors.titleText }]}>${totalGeneral.toFixed(2)}</Text>
           </View>
         )}
 
-        <Text style={styles.message}>
+        <Text style={[styles.message, { color: colors.subtitleText }]}>
           Tus pedidos han sido recibidos y están siendo preparados. Puedes rastrear el estado en "Mis Pedidos".
         </Text>
 
@@ -98,10 +100,10 @@ export default function OrderConfirmation({ navigation, route }: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.homeButton}
+          style={[styles.homeButton, { backgroundColor: colors.border }]}
           onPress={() => navigation.navigate('HomeFeed')}
         >
-          <Text style={styles.homeButtonText}>Volver al Inicio</Text>
+          <Text style={[styles.homeButtonText, { color: colors.titleText }]}>Volver al Inicio</Text>
         </TouchableOpacity>
       </View>
 

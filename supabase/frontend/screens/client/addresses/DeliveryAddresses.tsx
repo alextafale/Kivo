@@ -10,6 +10,7 @@ import Svg, { Path, Circle, Line, Rect, Polyline } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useDomicilios } from '../../../application/context/DomiciliosContext';
+import { useTheme } from '../../../application/context/ThemeContext';
 import type { Domicilio } from '../../../domain/entities/Domicilio';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'DeliveryAddresses'>;
@@ -19,8 +20,8 @@ const { width } = Dimensions.get('window');
 
 // ─── ICONS (idénticos a los tuyos) ───────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2.5">
+const BackIcon = ({ color = '#0f172a' }: { color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
@@ -47,13 +48,13 @@ const PinIcon = ({ color = '#22c55e' }: { color?: string }) => (
     <Circle cx="12" cy="10" r="3" />
   </Svg>
 );
-const EditIcon = () => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+const EditIcon = ({ color = '#64748b' }: { color?: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
   </Svg>
 );
-const TrashIcon = () => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+const TrashIcon = ({ color = '#ef4444' }: { color?: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Polyline points="3 6 5 6 21 6" />
     <Path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
     <Path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
@@ -64,8 +65,8 @@ const CheckIcon = () => (
     <Path d="M20 6L9 17l-5-5" />
   </Svg>
 );
-const EmptyIcon = () => (
-  <Svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#d1fae5" strokeWidth="1.2">
+const EmptyIcon = ({ color = '#d1fae5' }: { color?: string }) => (
+  <Svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.2">
     <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
     <Circle cx="12" cy="10" r="3" />
   </Svg>
@@ -91,6 +92,7 @@ const AddressCard = ({
   delay?:       number;
 }) => {
   const anim = useRef(new Animated.Value(0)).current;
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     Animated.spring(anim, {
@@ -107,7 +109,7 @@ const AddressCard = ({
       opacity: anim,
       transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
     }}>
-      <View style={[styles.card, domicilio.esPredeterminado && styles.cardDefault]}>
+      <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000', borderColor: isDark ? colors.border : 'transparent' }, domicilio.esPredeterminado && styles.cardDefault]}>
 
         {domicilio.esPredeterminado && (
           <View style={styles.defaultBadge}>
@@ -117,15 +119,15 @@ const AddressCard = ({
         )}
 
         <View style={styles.cardTop}>
-          <View style={[styles.typeIconWrap, domicilio.esPredeterminado && styles.typeIconWrapActive]}>
-            {etiquetaIcon(domicilio.alias)}
+          <View style={[styles.typeIconWrap, { backgroundColor: colors.iconBg }, domicilio.esPredeterminado && [styles.typeIconWrapActive, isDark && { backgroundColor: '#15803d40' }]]}>
+            {etiquetaIcon(domicilio.alias, isDark ? '#4ade80' : '#22c55e')}
           </View>
           <View style={styles.cardTextBlock}>
-            <Text style={styles.cardLabel}>{domicilio.alias}</Text>
-            <Text style={styles.cardStreet}>{linea1}</Text>
-            {!!linea2 && <Text style={styles.cardCity}>{linea2}</Text>}
+            <Text style={[styles.cardLabel, { color: colors.titleText }]}>{domicilio.alias}</Text>
+            <Text style={[styles.cardStreet, { color: colors.titleText }]}>{linea1}</Text>
+            {!!linea2 && <Text style={[styles.cardCity, { color: colors.subtitleText }]}>{linea2}</Text>}
             {!!domicilio.referencias && (
-              <Text style={styles.cardReference}>📍 {domicilio.referencias}</Text>
+              <Text style={[styles.cardReference, { color: colors.subtitleText }]}>📍 {domicilio.referencias}</Text>
             )}
             {domicilio.coordenadas && (
               <Text style={styles.cardGps}>
@@ -135,19 +137,19 @@ const AddressCard = ({
           </View>
         </View>
 
-        <View style={styles.cardActions}>
+        <View style={[styles.cardActions, { borderTopColor: colors.rowDivider }]}>
           {!domicilio.esPredeterminado && (
             <TouchableOpacity style={styles.actionSetDefault} onPress={onSetDefault}>
-              <Text style={styles.actionSetDefaultText}>Usar como predeterminada</Text>
+              <Text style={[styles.actionSetDefaultText, isDark && { color: '#4ade80' }]}>Usar como predeterminada</Text>
             </TouchableOpacity>
           )}
           <View style={styles.cardActionBtns}>
-            <TouchableOpacity style={styles.iconBtn} onPress={onEdit}>
-              <EditIcon />
-              <Text style={styles.iconBtnText}>Editar</Text>
+            <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.pageBg }]} onPress={onEdit}>
+              <EditIcon color={colors.subtitleText} />
+              <Text style={[styles.iconBtnText, { color: colors.subtitleText }]}>Editar</Text>
             </TouchableOpacity>
-            <View style={styles.actionDivider} />
-            <TouchableOpacity style={[styles.iconBtn, styles.iconBtnDelete]} onPress={onDelete}>
+            <View style={[styles.actionDivider, { backgroundColor: colors.rowDivider }]} />
+            <TouchableOpacity style={[styles.iconBtn, { backgroundColor: isDark ? '#ef444430' : '#fff5f5' }]} onPress={onDelete}>
               <TrashIcon />
               <Text style={styles.iconBtnTextDelete}>Eliminar</Text>
             </TouchableOpacity>
@@ -162,6 +164,7 @@ const AddressCard = ({
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 
 export default function DeliveryAddresses({ navigation }: Props) {
+  const { colors, isDark } = useTheme();
   const {
     domicilios, isLoading, error,
     fetchDomicilios, setDefault, deleteDomicilio,
@@ -191,28 +194,29 @@ export default function DeliveryAddresses({ navigation }: Props) {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       {/* ── HEADER ──────────────────────────────────────────────── */}
       <Animated.View style={[styles.header, {
+        backgroundColor: colors.pageBg,
         opacity: headerAnim,
         transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
       }]}>
-        <TouchableOpacity onPress={() => navigation.navigate('HomeFeed')} style={styles.backBtn}>
-          <BackIcon />
+        <TouchableOpacity onPress={() => navigation.navigate('HomeFeed')} style={[styles.backBtn, { backgroundColor: colors.backBtnBg }]}>
+          <BackIcon color={colors.titleText} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Direcciones</Text>
-          <Text style={styles.headerSub}>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>Direcciones</Text>
+          <Text style={[styles.headerSub, { color: colors.subtitleText }]}>
             {domicilios.length} {domicilios.length === 1 ? 'dirección guardada' : 'direcciones guardadas'}
           </Text>
         </View>
         <TouchableOpacity
-          style={styles.addHeaderBtn}
+          style={[styles.addHeaderBtn, { backgroundColor: isDark ? '#15803d40' : '#dcfce7' }]}
           onPress={() => navigation.navigate('AddAddress', {} as any)}
         >
-          <PlusIcon color="#22c55e" />
+          <PlusIcon color={isDark ? '#4ade80' : '#22c55e'} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -244,9 +248,9 @@ export default function DeliveryAddresses({ navigation }: Props) {
         >
           {sorted.length === 0 ? (
             <View style={styles.emptyState}>
-              <EmptyIcon />
-              <Text style={styles.emptyTitle}>Sin direcciones</Text>
-              <Text style={styles.emptySub}>Agrega tu primera dirección de entrega</Text>
+              <EmptyIcon color={isDark ? '#16a34a' : '#d1fae5'} />
+              <Text style={[styles.emptyTitle, { color: colors.titleText }]}>Sin direcciones</Text>
+              <Text style={[styles.emptySub, { color: colors.subtitleText }]}>Agrega tu primera dirección de entrega</Text>
               <TouchableOpacity
                 style={styles.emptyBtn}
                 onPress={() => navigation.navigate('AddAddress', {} as any)}
@@ -275,12 +279,12 @@ export default function DeliveryAddresses({ navigation }: Props) {
               ))}
 
               <TouchableOpacity
-                style={styles.addMoreBtn}
+                style={[styles.addMoreBtn, { backgroundColor: colors.cardBg, borderColor: isDark ? colors.border : '#dcfce7' }]}
                 onPress={() => navigation.navigate('AddAddress', {} as any)}
                 activeOpacity={0.8}
               >
-                <View style={styles.addMoreIcon}><PlusIcon color="#22c55e" /></View>
-                <Text style={styles.addMoreText}>Agregar nueva dirección</Text>
+                <View style={[styles.addMoreIcon, { backgroundColor: colors.iconBg }]}><PlusIcon color={isDark ? '#4ade80' : '#22c55e'} /></View>
+                <Text style={[styles.addMoreText, isDark && { color: '#4ade80' }]}>Agregar nueva dirección</Text>
               </TouchableOpacity>
             </>
           )}

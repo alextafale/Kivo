@@ -16,6 +16,7 @@ import type { Domicilio } from '../../../domain/entities/Domicilio'
 
 import { useCart } from '../../../application/context/CartContext'
 import { supabase } from '../../../config/supabaseConfig'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 type OrderSummaryNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderSummary'>
 type OrderSummaryRouteProp = RouteProp<RootStackParamList, 'OrderSummary'>
@@ -27,34 +28,34 @@ type Props = {
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+const BackIcon = ({ color = '#000' }: { color?: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 )
 
-const LocationIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
+const LocationIcon = ({ color = '#6B7280' }: { color?: string }) => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
     <Circle cx="12" cy="10" r="3" />
   </Svg>
 )
 
-const NoteIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
+const NoteIcon = ({ color = '#6B7280' }: { color?: string }) => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
     <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
   </Svg>
 )
 
-const CheckIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+const CheckIcon = ({ color = '#22c55e' }: { color?: string }) => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
     <Path d="m20 6-11 11-5-5" />
   </Svg>
 )
 
-const ChevronIcon = () => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2">
+const ChevronIcon = ({ color = '#9CA3AF' }: { color?: string }) => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="m9 18 6-6-6-6" />
   </Svg>
 )
@@ -63,6 +64,7 @@ const ChevronIcon = () => (
 
 export default function OrderSummary({ navigation, route }: Props) {
   console.log("Estas en orderSummary");
+  const { colors, isDark } = useTheme();
   const { restaurants } = route.params
   const { clearCart } = useCart()
 
@@ -179,36 +181,36 @@ export default function OrderSummary({ navigation, route }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
 
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.pageBg }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <BackIcon />
+            <BackIcon color={colors.titleText} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Resumen del Pedido</Text>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>Resumen del Pedido</Text>
           <View style={styles.backButton} />
         </View>
 
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
           {/* Selector de domicilio */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
             <View style={styles.sectionHeader}>
-              <LocationIcon />
-              <Text style={styles.sectionTitle}>Dirección de entrega</Text>
+              <LocationIcon color={colors.titleText} />
+              <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Dirección de entrega</Text>
             </View>
 
             {loadingDomicilios ? (
               <ActivityIndicator size="small" color="#22c55e" />
             ) : domicilios.length === 0 ? (
               <TouchableOpacity
-                style={styles.addDomicilioButton}
+                style={[styles.addDomicilioButton, { backgroundColor: isDark ? '#15803d40' : '#F0FDF4', borderColor: isDark ? '#22c55e' : '#BBF7D0' }]}
                 onPress={() => navigation.navigate('AddAddress')}
               >
                 <Text style={styles.addDomicilioText}>+ Agregar dirección</Text>
@@ -216,15 +218,15 @@ export default function OrderSummary({ navigation, route }: Props) {
             ) : (
               <>
                 <TouchableOpacity
-                  style={styles.domicilioSelected}
+                  style={[styles.domicilioSelected, { backgroundColor: colors.pageBg, borderColor: colors.border }]}
                   onPress={() => setShowDomicilios(!showDomicilios)}
                 >
                   <View style={styles.domicilioSelectedInfo}>
-                    <Text style={styles.domicilioEtiqueta}>
+                    <Text style={[styles.domicilioEtiqueta, { color: colors.titleText }]}>
                       {selectedDomicilio?.alias ?? 'Selecciona una dirección'}
                     </Text>
                     {selectedDomicilio && (
-                      <Text style={styles.domicilioDireccion} numberOfLines={1}>
+                      <Text style={[styles.domicilioDireccion, { color: colors.subtitleText }]} numberOfLines={1}>
                         {getDireccion(selectedDomicilio)}
                       </Text>
                     )}
@@ -237,7 +239,8 @@ export default function OrderSummary({ navigation, route }: Props) {
                     key={d.id}
                     style={[
                       styles.domicilioOption,
-                      selectedDomicilio?.id === d.id && styles.domicilioOptionSelected
+                      { backgroundColor: colors.pageBg, borderColor: colors.border },
+                      selectedDomicilio?.id === d.id && { borderColor: '#22c55e', backgroundColor: isDark ? '#15803d40' : '#F0FDF4' }
                     ]}
                     onPress={() => {
                       setSelectedDomicilio(d)
@@ -245,8 +248,8 @@ export default function OrderSummary({ navigation, route }: Props) {
                     }}
                   >
                     <View style={styles.domicilioOptionInfo}>
-                      <Text style={styles.domicilioEtiqueta}>{d.alias}</Text>
-                      <Text style={styles.domicilioDireccion} numberOfLines={1}>
+                      <Text style={[styles.domicilioEtiqueta, { color: colors.titleText }]}>{d.alias}</Text>
+                      <Text style={[styles.domicilioDireccion, { color: colors.subtitleText }]} numberOfLines={1}>
                         {getDireccion(d)}
                       </Text>
                     </View>
@@ -263,35 +266,35 @@ export default function OrderSummary({ navigation, route }: Props) {
               (acc, i) => acc + i.price * i.quantity, 0
             )
             return (
-              <View key={rIndex} style={styles.card}>
-                <Text style={styles.cardTitle}>{restaurant.negocioNombre}</Text>
+              <View key={rIndex} style={[styles.card, { backgroundColor: colors.cardBg }]}>
+                <Text style={[styles.cardTitle, { color: colors.titleText }]}>{restaurant.negocioNombre}</Text>
                 {restaurant.items.map((item, index) => (
-                  <View key={index} style={styles.itemRow}>
-                    <View style={styles.itemQtyBadge}>
+                  <View key={index} style={[styles.itemRow, { borderBottomColor: colors.rowDivider }]}>
+                    <View style={[styles.itemQtyBadge, { backgroundColor: isDark ? '#15803d40' : '#F0FDF4' }]}>
                       <Text style={styles.itemQtyText}>{item.quantity}</Text>
                     </View>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                    <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
+                    <Text style={[styles.itemName, { color: colors.titleText }]}>{item.name}</Text>
+                    <Text style={[styles.itemPrice, { color: colors.titleText }]}>${(item.price * item.quantity).toFixed(2)}</Text>
                   </View>
                 ))}
-                <View style={styles.restaurantSubtotal}>
-                  <Text style={styles.subtotalLabel}>Subtotal</Text>
-                  <Text style={styles.subtotalValue}>${subtotal.toFixed(2)}</Text>
+                <View style={[styles.restaurantSubtotal, { borderTopColor: colors.rowDivider }]}>
+                  <Text style={[styles.subtotalLabel, { color: colors.subtitleText }]}>Subtotal</Text>
+                  <Text style={[styles.subtotalValue, { color: colors.titleText }]}>${subtotal.toFixed(2)}</Text>
                 </View>
               </View>
             )
           })}
 
           {/* Notas */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.cardBg }]}>
             <View style={styles.sectionHeader}>
-              <NoteIcon />
-              <Text style={styles.sectionTitle}>Notas (opcional)</Text>
+              <NoteIcon color={colors.titleText} />
+              <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Notas (opcional)</Text>
             </View>
             <TextInput
-              style={styles.notasInput}
+              style={[styles.notasInput, { backgroundColor: colors.pageBg, borderColor: colors.border, color: colors.titleText }]}
               placeholder="Ej: Sin cebolla, extra salsa..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.placeholderText}
               value={notas}
               onChangeText={setNotas}
               multiline
@@ -300,22 +303,22 @@ export default function OrderSummary({ navigation, route }: Props) {
           </View>
 
           {/* Desglose de totales */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Desglose</Text>
+          <View style={[styles.card, { backgroundColor: colors.cardBg }]}>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Desglose</Text>
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Subtotal</Text>
-              <Text style={styles.totalValue}>${subtotalGeneral.toFixed(2)}</Text>
+              <Text style={[styles.totalLabel, { color: colors.subtitleText }]}>Subtotal</Text>
+              <Text style={[styles.totalValue, { color: colors.titleText }]}>${subtotalGeneral.toFixed(2)}</Text>
             </View>
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Costo de envío</Text>
-              <Text style={styles.totalValue}>
+              <Text style={[styles.totalLabel, { color: colors.subtitleText }]}>Costo de envío</Text>
+              <Text style={[styles.totalValue, { color: colors.titleText }]}>
                 {costoEnvioGeneral === 0 ? 'Gratis' : `$${costoEnvioGeneral.toFixed(2)}`}
               </Text>
             </View>
-            <View style={styles.totalDivider} />
+            <View style={[styles.totalDivider, { backgroundColor: colors.rowDivider }]} />
             <View style={styles.totalRow}>
-              <Text style={styles.totalFinalLabel}>Total</Text>
-              <Text style={styles.totalFinalValue}>${totalGeneral.toFixed(2)}</Text>
+              <Text style={[styles.totalFinalLabel, { color: colors.titleText }]}>Total</Text>
+              <Text style={[styles.totalFinalValue, { color: colors.titleText }]}>${totalGeneral.toFixed(2)}</Text>
             </View>
           </View>
 
@@ -323,7 +326,7 @@ export default function OrderSummary({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Botón confirmar */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { backgroundColor: colors.pageBg, borderTopColor: colors.rowDivider }]}>
           <TouchableOpacity
             style={styles.confirmButton}
             onPress={handleConfirmar}

@@ -11,9 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
+import { useTheme } from '../../../application/context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'AccountTypeSelection'>;
@@ -21,8 +22,8 @@ type Props = {
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+const BackIcon = ({ color = '#000' }: { color?: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
@@ -56,8 +57,8 @@ const ArrowIcon = () => (
   </Svg>
 );
 
-const UserIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
+const UserIcon = ({ color = '#22c55e' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
     <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
     <Circle cx="12" cy="7" r="4" />
   </Svg>
@@ -66,6 +67,7 @@ const UserIcon = () => (
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AccountTypeSelection({ navigation }: Props) {
+  const { colors, isDark } = useTheme();
   const [selectedType, setSelectedType] = useState<'client' | 'business' | 'delivery' | null>(null);
 
   // Navegar a Registro
@@ -85,7 +87,11 @@ export default function AccountTypeSelection({ navigation }: Props) {
   // Navegar a Login
   const handleLogin = async () => {
     if (!selectedType) return;
-    await AsyncStorage.setItem('accountType', selectedType);
+    try {
+        await AsyncStorage.setItem('accountType', selectedType);
+    } catch (e) {
+        console.error('Error saving accountType', e);
+    }
 
     if (selectedType === 'client') {
       navigation.navigate('Login');
@@ -97,19 +103,25 @@ export default function AccountTypeSelection({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       {/* Header Separador*/}
-      <View style={styles.header}/>
+      <View style={styles.header}>
+        {navigation.canGoBack() && (
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <BackIcon color={colors.titleText} />
+            </TouchableOpacity>
+        )}
+      </View>
 
       {/* Content */}
       <View style={styles.content}>
         <View style={styles.textSection}>
-          <Text style={styles.title}>
+          <Text style={[styles.title, { color: colors.titleText }]}>
             Únete a <Text style={styles.titleGreen}>Pidelo</Text>
           </Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, { color: colors.subtitleText }]}>
             Selecciona tu perfil para comenzar a pedir o vender de forma conversacional.
           </Text>
         </View>
@@ -119,14 +131,14 @@ export default function AccountTypeSelection({ navigation }: Props) {
 
           {/* Cliente */}
           <TouchableOpacity
-            style={[styles.optionCard, selectedType === 'client' && styles.optionCardSelected]}
+            style={[styles.optionCard, { backgroundColor: isDark ? colors.cardBg : '#F9FAFB', borderColor: isDark ? colors.border : '#F3F4F6' }, selectedType === 'client' && [styles.optionCardSelected, { backgroundColor: isDark ? '#14532D' : '#F0FDF4' }]]}
             onPress={() => setSelectedType('client')}
             activeOpacity={0.7}
           >
-            <View style={styles.iconContainer}><ChatIcon /></View>
+            <View style={[styles.iconContainer, { backgroundColor: isDark ? colors.border : '#FFFFFF' }]}><ChatIcon /></View>
             <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>Soy un Cliente</Text>
-              <Text style={styles.optionDescription}>
+              <Text style={[styles.optionTitle, { color: colors.titleText }]}>Soy un Cliente</Text>
+              <Text style={[styles.optionDescription, { color: colors.subtitleText }]}>
                 Quiero pedir comida deliciosa de forma rápida y fácil.
               </Text>
             </View>
@@ -135,14 +147,14 @@ export default function AccountTypeSelection({ navigation }: Props) {
 
           {/* Negocio */}
           <TouchableOpacity
-            style={[styles.optionCard, selectedType === 'business' && styles.optionCardSelected]}
+            style={[styles.optionCard, { backgroundColor: isDark ? colors.cardBg : '#F9FAFB', borderColor: isDark ? colors.border : '#F3F4F6' }, selectedType === 'business' && [styles.optionCardSelected, { backgroundColor: isDark ? '#14532D' : '#F0FDF4' }]]}
             onPress={() => setSelectedType('business')}
             activeOpacity={0.7}
           >
-            <View style={styles.iconContainer}><StoreIcon /></View>
+            <View style={[styles.iconContainer, { backgroundColor: isDark ? colors.border : '#FFFFFF' }]}><StoreIcon /></View>
             <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>Tengo un Negocio</Text>
-              <Text style={styles.optionDescription}>
+              <Text style={[styles.optionTitle, { color: colors.titleText }]}>Tengo un Negocio</Text>
+              <Text style={[styles.optionDescription, { color: colors.subtitleText }]}>
                 Quiero gestionar mis pedidos y llegar a más clientes.
               </Text>
             </View>
@@ -151,14 +163,14 @@ export default function AccountTypeSelection({ navigation }: Props) {
 
           {/* Repartidor */}
           <TouchableOpacity
-            style={[styles.optionCard, selectedType === 'delivery' && styles.optionCardSelected]}
+            style={[styles.optionCard, { backgroundColor: isDark ? colors.cardBg : '#F9FAFB', borderColor: isDark ? colors.border : '#F3F4F6' }, selectedType === 'delivery' && [styles.optionCardSelected, { backgroundColor: isDark ? '#14532D' : '#F0FDF4' }]]}
             onPress={() => setSelectedType('delivery')}
             activeOpacity={0.7}
           >
-            <View style={styles.iconContainer}><BikeIcon /></View>
+            <View style={[styles.iconContainer, { backgroundColor: isDark ? colors.border : '#FFFFFF' }]}><BikeIcon /></View>
             <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>Soy Repartidor</Text>
-              <Text style={styles.optionDescription}>
+              <Text style={[styles.optionTitle, { color: colors.titleText }]}>Soy Repartidor</Text>
+              <Text style={[styles.optionDescription, { color: colors.subtitleText }]}>
                 Quiero hacer entregas y ganar dinero con mi tiempo libre.
               </Text>
             </View>
@@ -181,7 +193,7 @@ export default function AccountTypeSelection({ navigation }: Props) {
       <View style={styles.bottomSection}>
         {!selectedType ? (
           <View style={styles.noSelectionContainer}>
-            <Text style={styles.loginHint}>Selecciona un perfil para continuar</Text>
+            <Text style={[styles.loginHint, { color: colors.subtitleText }]}>Selecciona un perfil para continuar</Text>
           </View>
         ) : (
           <View style={styles.buttonsContainer}>
@@ -205,12 +217,12 @@ export default function AccountTypeSelection({ navigation }: Props) {
             {/* Botón Iniciar Sesión (Secundario) */}
             <TouchableOpacity
               onPress={handleLogin}
-              style={styles.secondaryButton}
+              style={[styles.secondaryButton, { backgroundColor: isDark ? colors.cardBg : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB' }]}
               activeOpacity={0.7}
             >
               <View style={styles.buttonContent}>
-                <UserIcon />
-                <Text style={styles.secondaryButtonText}>Iniciar Sesión</Text>
+                <UserIcon color={isDark ? '#22c55e' : '#111827'} />
+                <Text style={[styles.secondaryButtonText, { color: colors.titleText }]}>Iniciar Sesión</Text>
               </View>
             </TouchableOpacity>
           </View>

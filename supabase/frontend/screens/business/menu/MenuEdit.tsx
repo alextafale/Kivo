@@ -23,6 +23,7 @@ import BottomNavBar, { TabName } from '../../../components/business/tabNavigatio
 
 import { useAuth } from '../../../application/context/AuthContext';
 import { supabase } from '../../../config/supabaseConfig';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 
 
@@ -93,14 +94,15 @@ const MenuItemCard = ({
   onEdit: (item: MenuItem) => void;
 }) => {
   const disabled = !item.enabled;
+  const { colors, isDark } = useTheme();
 
   return (
-    <View style={[styles.itemCard, disabled && styles.itemCardDisabled]}>
+    <View style={[styles.itemCard, { borderBottomColor: isDark ? colors.border : '#F3F4F6' }, disabled && styles.itemCardDisabled]}>
       <View style={styles.imageWrapper}>
         {item.imageUrl ? (
           <Image source={{ uri: item.imageUrl }} style={[styles.itemImage, disabled && styles.itemImageDisabled]} />
         ) : (
-          <View style={styles.imagePlaceholder} />
+          <View style={[styles.imagePlaceholder, { backgroundColor: isDark ? colors.border : '#E5E7EB' }]} />
         )}
         {item.soldOut && (
           <View style={styles.soldOutOverlay}>
@@ -110,7 +112,7 @@ const MenuItemCard = ({
       </View>
 
       <View style={styles.itemInfo}>
-        <Text style={[styles.itemName, disabled && styles.itemNameDisabled]}>{item.name}</Text>
+        <Text style={[styles.itemName, { color: colors.titleText }, disabled && styles.itemNameDisabled]}>{item.name}</Text>
         <Text style={[styles.itemPrice, disabled && styles.itemPriceDisabled]}>
           ${item.price.toFixed(2)}
         </Text>
@@ -136,6 +138,7 @@ const MenuItemCard = ({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function MenuEditor({ navigation }: Props) {
+  const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab]     = useState<TabName>('Menu');
   const [activeCategory, setCategory] = useState<Category>('All Items');
   const [searchText, setSearchText]   = useState('');
@@ -417,14 +420,14 @@ const handleEliminarCategoria = async (nombre: string) => {
 }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F7F2" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       {/* Header */}
       <View style={styles.header}>
         <View style={{ flex: 1, paddingRight: 10 }}>
-          <Text style={styles.headerTitle}>Menu Editor</Text>
-          <Text style={styles.headerSubtitle}>Manage your shop inventory</Text>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>Menu Editor</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.subtitleText }]}>Manage your shop inventory</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity 
@@ -434,7 +437,7 @@ const handleEliminarCategoria = async (nombre: string) => {
             <PlusIcon />
             <Text style={styles.addButtonText}>Añadir</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.filterIconButton} 
+          <TouchableOpacity style={[styles.filterIconButton, { backgroundColor: isDark ? colors.cardBg : '#fff', borderColor: isDark ? colors.border : '#E5E7EB' }]} 
             onPress={() => setModalCategorias(true)}>
             <FilterIcon />
           </TouchableOpacity>
@@ -443,12 +446,12 @@ const handleEliminarCategoria = async (nombre: string) => {
 
       {/* Search */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBox}>
+        <View style={[styles.searchBox, { backgroundColor: isDark ? colors.cardBg : '#FFFFFF' }]}>
           <SearchIcon />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.titleText }]}
             placeholder="Search dishes or categories..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.subtitleText}
             value={searchText}
             onChangeText={setSearchText}
           />
@@ -465,11 +468,11 @@ const handleEliminarCategoria = async (nombre: string) => {
         {categories.map((cat) => (
           <TouchableOpacity
             key={cat}
-            style={[styles.categoryPill, activeCategory === cat && styles.categoryPillActive]}
+            style={[styles.categoryPill, { backgroundColor: isDark ? colors.border : '#FFFFFF', borderColor: isDark ? colors.border : '#E5E7EB' }, activeCategory === cat && styles.categoryPillActive]}
             onPress={() => setCategory(cat)}
             activeOpacity={0.75}
           >
-            <Text style={[styles.categoryPillText, activeCategory === cat && styles.categoryPillTextActive]}>
+            <Text style={[styles.categoryPillText, { color: colors.titleText }, activeCategory === cat && styles.categoryPillTextActive, activeCategory === cat && isDark && { color: '#fff' }]}>
               {cat}
             </Text>
           </TouchableOpacity>
@@ -486,12 +489,12 @@ const handleEliminarCategoria = async (nombre: string) => {
           {filteredSections.map((section) => (
             <View key={section.title} style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-                <View style={styles.sectionBadge}>
-                  <Text style={styles.sectionBadgeText}>{section.count} ITEMS</Text>
+                <Text style={[styles.sectionTitle, { color: colors.subtitleText }]}>{section.title}</Text>
+                <View style={[styles.sectionBadge, { backgroundColor: isDark ? colors.border : '#E5E7EB' }]}>
+                  <Text style={[styles.sectionBadgeText, { color: isDark ? colors.subtitleText : '#6B7280' }]}>{section.count} ITEMS</Text>
                 </View>
               </View>
-              <View style={styles.itemsContainer}>
+              <View style={[styles.itemsContainer, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
                 {section.items.map((item) => (
                   <MenuItemCard
                     key={item.id}
@@ -507,8 +510,8 @@ const handleEliminarCategoria = async (nombre: string) => {
           {filteredSections.length === 0 && (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>🍽️</Text>
-              <Text style={styles.emptyTitle}>No dishes found</Text>
-              <Text style={styles.emptySubtitle}>Try a different search term.</Text>
+              <Text style={[styles.emptyTitle, { color: colors.titleText }]}>No dishes found</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.subtitleText }]}>Try a different search term.</Text>
             </View>
           )}
           <View style={{ height: 100 }} />
@@ -522,9 +525,9 @@ const handleEliminarCategoria = async (nombre: string) => {
   onRequestClose={() => setModalCategorias(false)}
 >
   <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
+    <View style={[styles.modalContent, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
       <View style={styles.modalHeader}>
-        <Text style={styles.modalTitle}>Categorías</Text>
+        <Text style={[styles.modalTitle, { color: colors.titleText }]}>Categorías</Text>
         <TouchableOpacity onPress={() => setModalCategorias(false)}>
           <Text style={styles.modalClose}>✕</Text>
         </TouchableOpacity>
@@ -537,8 +540,8 @@ const handleEliminarCategoria = async (nombre: string) => {
           contentContainerStyle={{ paddingBottom: 10, flexGrow: 1 }}
         >
           {categories.filter(c => c !== 'All Items').map((cat, index, arr) => (
-            <View key={cat} style={styles.categoriaRow}>
-              <Text style={styles.categoriaRowText} numberOfLines={1}>{cat}</Text>
+            <View key={cat} style={[styles.categoriaRow, { borderBottomColor: isDark ? colors.border : '#F3F4F6' }]}>
+              <Text style={[styles.categoriaRowText, { color: colors.titleText }]} numberOfLines={1}>{cat}</Text>
               
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {index > 0 && (
@@ -563,9 +566,9 @@ const handleEliminarCategoria = async (nombre: string) => {
       {/* Crear nueva categoría */}
       <View style={styles.nuevaCategoriaRow}>
         <TextInput
-          style={styles.nuevaCategoriaInput}
+          style={[styles.nuevaCategoriaInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
           placeholder="Nueva categoría..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.subtitleText}
           value={nuevaCategoria}
           onChangeText={setNuevaCategoria}
         />

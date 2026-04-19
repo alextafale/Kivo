@@ -18,6 +18,7 @@ import BottomNavBar, { TabName } from '../../../components/business/tabNavigatio
 import { useAuth } from '../../../application/context/AuthContext';
 import { useAdminNegocio } from '../../../application/hooks/useAdminNegocio';
 import { supabase } from '../../../config/supabaseConfig';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 
 type BusinessDashboardNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BusinessDashboard'>;
@@ -102,6 +103,8 @@ export default function BusinessDashboard({ navigation }: Props) {
   const [deliveryScore, setDeliveryScore] = useState(0);
   const [deliveryReviews, setDeliveryReviews] = useState(0);
 
+  const { colors, isDark } = useTheme();
+
   // ✅ Tomamos session directamente del contexto — sin getSession() inline
   const { adminAccess, session } = useAuth();
   const negocioId = adminAccess?.negocioId;
@@ -182,12 +185,12 @@ export default function BusinessDashboard({ navigation }: Props) {
   const progressPct = Math.min((dailySales / 2000) * 100, 100);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.pageBg }]}>
           <View style={styles.headerLeft}>
             <View style={styles.logoContainer}>
               <LinearGradient
@@ -200,8 +203,8 @@ export default function BusinessDashboard({ navigation }: Props) {
               </LinearGradient>
             </View>
             <View>
-              <Text style={styles.businessName}>{negocio?.nombre || 'Cargando...'}</Text>
-              <Text style={styles.businessAddress}>{negocio?.slug ? `Kivu.app/${negocio.slug}` : 'Kivu.app/...'}</Text>
+              <Text style={[styles.businessName, { color: colors.titleText }]}>{negocio?.nombre || 'Cargando...'}</Text>
+              <Text style={[styles.businessAddress, { color: colors.subtitleText }]}>{negocio?.slug ? `Kivu.app/${negocio.slug}` : 'Kivu.app/...'}</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -219,18 +222,18 @@ export default function BusinessDashboard({ navigation }: Props) {
         </View>
 
         {/* Daily Sales */}
-        <View style={styles.salesSection}>
-          <Text style={styles.sectionLabel}>Daily Sales</Text>
+        <View style={[styles.salesSection, { backgroundColor: colors.cardBg }]}>
+          <Text style={[styles.sectionLabel, { color: colors.subtitleText }]}>Daily Sales</Text>
           <View style={styles.salesHeader}>
-            <Text style={styles.salesAmount}>${formattedSales}</Text>
-            <Text style={styles.salesCurrency}>USD</Text>
+            <Text style={[styles.salesAmount, { color: colors.titleText }]}>${formattedSales}</Text>
+            <Text style={[styles.salesCurrency, { color: colors.subtitleText }]}>USD</Text>
           </View>
           <View style={styles.salesChange}>
             <TrendUpIcon />
             <Text style={styles.salesChangeText}>+12.4%</Text>
           </View>
           <View style={styles.progressBarContainer}>
-            <View style={styles.progressBar}>
+            <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
               <LinearGradient
                 colors={['#22c55e', '#16a34a']}
                 style={[styles.progressFill, { width: `${progressPct}%` }]}
@@ -264,17 +267,17 @@ export default function BusinessDashboard({ navigation }: Props) {
           </TouchableOpacity>
 
           <View style={styles.statCard}>
-            <View style={styles.reviewsCard}>
-              <View style={styles.reviewsStarContainer}>
+            <View style={[styles.reviewsCard, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
+              <View style={[styles.reviewsStarContainer, { backgroundColor: isDark ? '#15803d40' : '#F0FDF4' }]}>
                 <StarIcon size={24} />
               </View>
               <View style={styles.reviewsContent}>
-                <Text style={styles.reviewsRating}>{deliveryScore}</Text>
+                <Text style={[styles.reviewsRating, { color: colors.titleText }]}>{deliveryScore}</Text>
                 <View style={styles.reviewsStars}>
                   <StarIcon size={16} />
                 </View>
               </View>
-              <Text style={styles.reviewsCount}>{deliveryReviews} Reviews</Text>
+              <Text style={[styles.reviewsCount, { color: colors.subtitleText }]}>{deliveryReviews} Reviews</Text>
             </View>
           </View>
         </View>
@@ -282,7 +285,7 @@ export default function BusinessDashboard({ navigation }: Props) {
         {/* Recent Orders */}
         <View style={styles.ordersSection}>
           <View style={styles.ordersSectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Orders</Text>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Recent Orders</Text>
             <TouchableOpacity onPress={() => navigation.navigate('ManageOrders')}>
               <Text style={styles.viewAllText}>View All →</Text>
             </TouchableOpacity>
@@ -296,16 +299,20 @@ export default function BusinessDashboard({ navigation }: Props) {
               return (
                 <TouchableOpacity
                   key={order.id}
-                  style={styles.orderItem}
+                  style={[styles.orderItem, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}
                   onPress={() => navigation.navigate('ManageOrders')}
                 >
-                  <View style={[styles.orderIconContainer, order.status === 'delivered' && styles.orderIconDelivered]}>
+                  <View style={[
+                    styles.orderIconContainer,
+                    { backgroundColor: isDark ? colors.border : '#F9FAFB' },
+                    order.status === 'delivered' && [styles.orderIconDelivered, { backgroundColor: isDark ? '#15803d40' : '#F3F4F6' }]
+                  ]}>
                     {order.status === 'delivered' ? <CheckCircleIcon /> : <OrderIcon />}
                   </View>
                   <View style={styles.orderContent}>
-                    <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-                    <Text style={styles.orderItems}>{order.notas ? 'Con notas especiales' : 'Pedido de cliente'}</Text>
-                    <Text style={styles.orderMeta}>
+                    <Text style={[styles.orderNumber, { color: colors.titleText }]}>{order.orderNumber}</Text>
+                    <Text style={[styles.orderItems, { color: colors.titleText }]}>{order.notas ? 'Con notas especiales' : 'Pedido de cliente'}</Text>
+                    <Text style={[styles.orderMeta, { color: colors.subtitleText }]}>
                       {new Date(order.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {order.clienteNombre || 'Cliente'}
                     </Text>
                   </View>

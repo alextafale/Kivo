@@ -9,6 +9,7 @@ import Svg, { Path, Circle } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 type OrderDeliveredNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderDelivered'>
 type OrderDeliveredRouteProp = RouteProp<RootStackParamList, 'OrderDelivered'>
@@ -40,6 +41,7 @@ const StarIcon = ({ color }: { color: string }) => (
  */
 export default function OrderDelivered({ navigation, route }: Props) {
   console.log("Estas en order delivered");
+  const { colors, isDark } = useTheme();
   const { id, orderNumber, restaurantName, total, deliveryAddress } = route.params
   const rating = route.params.rating || 0;
 
@@ -63,22 +65,22 @@ export default function OrderDelivered({ navigation, route }: Props) {
   }, [])
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       <Animated.View style={[styles.content, { opacity: opacityAnim }]}>
 
         {/* Icono animado */}
-        <Animated.View style={[styles.iconContainer, { transform: [{ scale: scaleAnim }] }]}>
+        <Animated.View style={[styles.iconContainer, { backgroundColor: isDark ? '#15803d40' : '#F0FDF4', transform: [{ scale: scaleAnim }] }]}>
           <CheckIcon />
           <Text style={styles.iconEmoji}>🎉</Text>
         </Animated.View>
 
-        <Text style={styles.title}>¡Pedido Entregado!</Text>
-        <Text style={styles.subtitle}>Esperamos que lo disfrutes</Text>
+        <Text style={[styles.title, { color: colors.titleText }]}>¡Pedido Entregado!</Text>
+        <Text style={[styles.subtitle, { color: colors.subtitleText }]}>Esperamos que lo disfrutes</Text>
 
         {rating > 0 && (
-          <View style={styles.ratingContainer}>
+          <View style={[styles.ratingContainer, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
             <View style={styles.starsRow}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <StarIcon
@@ -87,32 +89,32 @@ export default function OrderDelivered({ navigation, route }: Props) {
                 />
               ))}
             </View>
-            <Text style={styles.ratingValueText}>Calificaste con {rating} estrellas</Text>
+            <Text style={[styles.ratingValueText, { color: colors.subtitleText }]}>Calificaste con {rating} estrellas</Text>
           </View>
         )}
 
         {/* Resumen */}
-        <View style={styles.summaryCard}>
+        <View style={[styles.summaryCard, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Restaurante</Text>
-            <Text style={styles.summaryValue}>{restaurantName}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.subtitleText }]}>Restaurante</Text>
+            <Text style={[styles.summaryValue, { color: colors.titleText }]}>{restaurantName}</Text>
           </View>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.rowDivider }]} />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Número de pedido</Text>
-            <Text style={[styles.summaryValue, { color: '#22c55e' }]}>{orderNumber}</Text>
+            <Text style={[styles.summaryLabel, { color: colors.subtitleText }]}>Número de pedido</Text>
+            <Text style={[styles.summaryValue, { color: isDark ? '#4ade80' : '#22c55e' }]}>{orderNumber}</Text>
           </View>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.rowDivider }]} />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Dirección</Text>
-            <Text style={[styles.summaryValue, { flex: 1, textAlign: 'right' }]} numberOfLines={2}>
+            <Text style={[styles.summaryLabel, { color: colors.subtitleText }]}>Dirección</Text>
+            <Text style={[styles.summaryValue, { color: colors.titleText, flex: 1, textAlign: 'right' }]} numberOfLines={2}>
               {deliveryAddress}
             </Text>
           </View>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.rowDivider }]} />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryTotalLabel}>Total pagado</Text>
-            <Text style={styles.summaryTotalValue}>${total.toFixed(2)}</Text>
+            <Text style={[styles.summaryTotalLabel, { color: colors.titleText }]}>Total pagado</Text>
+            <Text style={[styles.summaryTotalValue, { color: colors.titleText }]}>${total.toFixed(2)}</Text>
           </View>
         </View>
 
@@ -151,10 +153,10 @@ export default function OrderDelivered({ navigation, route }: Props) {
 
 
         <TouchableOpacity
-          style={styles.homeButton}
+          style={[styles.homeButton, { backgroundColor: colors.border }]}
           onPress={() => navigation.navigate('HomeFeed')}
         >
-          <Text style={styles.homeButtonText}>Volver al Inicio</Text>
+          <Text style={[styles.homeButtonText, { color: colors.titleText }]}>Volver al Inicio</Text>
         </TouchableOpacity>
       </View>
 

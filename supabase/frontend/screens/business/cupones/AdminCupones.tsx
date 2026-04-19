@@ -9,8 +9,9 @@ import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
-import { useAdminCupones } from '../../../application/hooks/useAdminCupones'
 import { useAuth } from '../../../application/context/AuthContext'
+import { useTheme } from '../../../application/context/ThemeContext'
+import { useAdminCupones } from '../../../application/hooks/useAdminCupones'
 import type { Cupon, CuponCreate, TipoCupon } from '../../../domain/entities/Cupon'
 
 type AdminCuponesNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AdminCupones'>
@@ -19,13 +20,13 @@ type Props = { navigation: AdminCuponesNavigationProp }
 
 // ─── Iconos SVG ──────────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+const BackIcon = ({ color = '#000' }: { color?: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 )
-const PlusIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5">
+const PlusIcon = ({ color = '#000' }: { color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
     <Path d="M12 5v14M5 12h14" />
   </Svg>
 )
@@ -46,8 +47,8 @@ const TrashIcon = () => (
     <Path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
   </Svg>
 )
-const CloseIcon = () => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+const CloseIcon = ({ color = '#000' }: { color?: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M18 6 6 18M6 6l12 12" />
   </Svg>
 )
@@ -93,6 +94,7 @@ const formInicial: FormState = {
 export default function AdminCupones({ navigation }: Props) {
   const { adminAccess } = useAuth()
   const negocioId = adminAccess?.negocioId ?? ''
+  const { colors, isDark } = useTheme()
 
   const {
     cupones, isLoading, isSaving, error,
@@ -208,18 +210,18 @@ export default function AdminCupones({ navigation }: Props) {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.pageBg }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
-          <BackIcon />
+          <BackIcon color={colors.titleText} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cupones</Text>
+        <Text style={[styles.headerTitle, { color: colors.titleText }]}>Cupones</Text>
         <TouchableOpacity style={styles.headerBtn} onPress={abrirCrear}>
           <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.addButton} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-            <PlusIcon />
+            <PlusIcon color="#FFF" />
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -241,8 +243,8 @@ export default function AdminCupones({ navigation }: Props) {
           {cupones.length === 0 && (
             <View style={styles.emptyState}>
               <TagIcon />
-              <Text style={styles.emptyTitle}>Sin cupones</Text>
-              <Text style={styles.emptySubtitle}>Crea tu primer cupón de descuento</Text>
+              <Text style={[styles.emptyTitle, { color: colors.titleText }]}>Sin cupones</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.subtitleText }]}>Crea tu primer cupón de descuento</Text>
               <TouchableOpacity style={styles.emptyButton} onPress={abrirCrear}>
                 <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.emptyButtonGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                   <Text style={styles.emptyButtonText}>Crear cupón</Text>
@@ -254,12 +256,12 @@ export default function AdminCupones({ navigation }: Props) {
           {cupones.map(cupon => {
             const vencido = isVencido(cupon)
             return (
-              <View key={cupon.id} style={[styles.cuponCard, !cupon.activo && styles.cuponCardInactive]}>
+              <View key={cupon.id} style={[styles.cuponCard, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }, !cupon.activo && styles.cuponCardInactive]}>
                 {/* Cabecera de la card */}
                 <View style={styles.cuponCardHeader}>
                   <View style={styles.cuponCodigoContainer}>
                     <TagIcon />
-                    <Text style={styles.cuponCodigo}>{cupon.codigo}</Text>
+                    <Text style={[styles.cuponCodigo, { color: colors.titleText }]}>{cupon.codigo}</Text>
                   </View>
                   <View style={styles.cuponCardActions}>
                     <Switch
@@ -280,38 +282,37 @@ export default function AdminCupones({ navigation }: Props) {
 
                 {/* Descripción */}
                 {cupon.descripcion && (
-                  <Text style={styles.cuponDescripcion}>{cupon.descripcion}</Text>
+                  <Text style={[styles.cuponDescripcion, { color: colors.subtitleText }]}>{cupon.descripcion}</Text>
                 )}
 
                 {/* Chips de info */}
                 <View style={styles.cuponChips}>
-                  <View style={styles.chip}>
-                    <Text style={styles.chipText}>{tipoLabel[cupon.tipo]}</Text>
+                  <View style={[styles.chip, { backgroundColor: isDark ? colors.border : '#F3F4F6' }]}>
+                    <Text style={[styles.chipText, { color: colors.subtitleText }]}>{tipoLabel[cupon.tipo]}</Text>
                   </View>
-                  <View style={[styles.chip, styles.chipGreen]}>
-                    <Text style={[styles.chipText, styles.chipTextGreen]}>{formatearValor(cupon)}</Text>
+                  <View style={[styles.chip, styles.chipGreen, { backgroundColor: isDark ? '#15803d40' : '#F0FDF4' }]}>
+                    <Text style={[styles.chipText, styles.chipTextGreen, { color: isDark ? '#4ade80' : '#16a34a' }]}>{formatearValor(cupon)}</Text>
                   </View>
                   {cupon.minimoCompra && (
-                    <View style={styles.chip}>
-                      <Text style={styles.chipText}>Mín. ${cupon.minimoCompra}</Text>
+                    <View style={[styles.chip, { backgroundColor: isDark ? colors.border : '#F3F4F6' }]}>
+                      <Text style={[styles.chipText, { color: colors.subtitleText }]}>Mín. ${cupon.minimoCompra}</Text>
                     </View>
                   )}
                   {vencido && (
-                    <View style={[styles.chip, styles.chipRed]}>
-                      <Text style={[styles.chipText, styles.chipTextRed]}>Vencido</Text>
+                    <View style={[styles.chip, styles.chipRed, { backgroundColor: isDark ? '#450a0a' : '#FEF2F2' }]}>
+                      <Text style={[styles.chipText, styles.chipTextRed, { color: isDark ? '#f87171' : '#DC2626' }]}>Vencido</Text>
                     </View>
                   )}
                 </View>
 
-                {/* Usos y fechas */}
                 <View style={styles.cuponMeta}>
                   <View style={styles.cuponMetaRow}>
                     <CalendarIcon />
-                    <Text style={styles.cuponMetaText}>
+                    <Text style={[styles.cuponMetaText, { color: colors.subtitleText }]}>
                       Hasta {formatearFecha(cupon.fechaFin)}
                     </Text>
                   </View>
-                  <Text style={styles.cuponMetaText}>
+                  <Text style={[styles.cuponMetaText, { color: colors.subtitleText }]}>
                     {cupon.usosActuales}{cupon.usoMaximoTotal ? `/${cupon.usoMaximoTotal}` : ''} usos
                   </Text>
                 </View>
@@ -327,19 +328,23 @@ export default function AdminCupones({ navigation }: Props) {
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={cerrarModal}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+            <View style={[styles.modalContent, { backgroundColor: colors.pageBg }]}>
               {/* Header del modal */}
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{editando ? 'Editar cupón' : 'Nuevo cupón'}</Text>
-                <TouchableOpacity onPress={cerrarModal}><CloseIcon /></TouchableOpacity>
+              <View style={[styles.modalHeader, { borderBottomColor: colors.rowDivider }]}>
+                <Text style={[styles.modalTitle, { color: colors.titleText }]}>{editando ? 'Editar cupón' : 'Nuevo cupón'}</Text>
+                <TouchableOpacity onPress={cerrarModal}><CloseIcon color={colors.titleText} /></TouchableOpacity>
               </View>
 
               <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
 
                 {/* Código */}
-                <Text style={styles.fieldLabel}>Código *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Código *</Text>
                 <TextInput
-                  style={[styles.fieldInput, !!editando && styles.fieldInputDisabled]}
+                  style={[
+                    styles.fieldInput,
+                    { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText },
+                    !!editando && [styles.fieldInputDisabled, { backgroundColor: isDark ? '#1F2937' : '#F3F4F6', color: isDark ? '#9CA3AF' : '#9CA3AF' }]
+                  ]}
                   value={form.codigo}
                   onChangeText={v => setField('codigo', v.toUpperCase())}
                   placeholder="Ej: VERANO20"
@@ -349,9 +354,9 @@ export default function AdminCupones({ navigation }: Props) {
                 />
 
                 {/* Descripción */}
-                <Text style={styles.fieldLabel}>Descripción (opcional)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Descripción (opcional)</Text>
                 <TextInput
-                  style={styles.fieldInput}
+                  style={[styles.fieldInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                   value={form.descripcion}
                   onChangeText={v => setField('descripcion', v)}
                   placeholder="Ej: 20% de descuento en verano"
@@ -359,15 +364,27 @@ export default function AdminCupones({ navigation }: Props) {
                 />
 
                 {/* Tipo */}
-                <Text style={styles.fieldLabel}>Tipo de descuento *</Text>
+                <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Tipo de descuento *</Text>
                 <View style={styles.tipoSelector}>
                   {(['porcentaje', 'monto_fijo', 'envio_gratis'] as TipoCupon[]).map(t => (
                     <TouchableOpacity
                       key={t}
-                      style={[styles.tipoOption, form.tipo === t && styles.tipoOptionActive, !!editando && styles.tipoOptionDisabled]}
+                      style={[
+                        styles.tipoOption,
+                        form.tipo === t && styles.tipoOptionActive,
+                        !!editando && styles.tipoOptionDisabled,
+                        {
+                          backgroundColor: form.tipo === t ? (isDark ? '#15803d40' : '#F0FDF4') : (isDark ? colors.border : '#F9FAFB'),
+                          borderColor: form.tipo === t ? (isDark ? '#22c55e' : '#22c55e') : (isDark ? colors.border : '#E5E7EB')
+                        }
+                      ]}
                       onPress={() => !editando && setField('tipo', t)}
                     >
-                      <Text style={[styles.tipoOptionText, form.tipo === t && styles.tipoOptionTextActive]}>
+                      <Text style={[
+                        styles.tipoOptionText, { color: colors.subtitleText },
+                        form.tipo === t && styles.tipoOptionTextActive,
+                        form.tipo === t && { color: isDark ? '#4ade80' : '#16a34a' }
+                      ]}>
                         {tipoLabel[t]}
                       </Text>
                     </TouchableOpacity>
@@ -377,11 +394,11 @@ export default function AdminCupones({ navigation }: Props) {
                 {/* Valor */}
                 {form.tipo !== 'envio_gratis' && (
                   <>
-                    <Text style={styles.fieldLabel}>
+                    <Text style={[styles.fieldLabel, { color: colors.titleText }]}>
                       {form.tipo === 'porcentaje' ? 'Porcentaje (%)' : 'Monto fijo (MXN)'} *
                     </Text>
                     <TextInput
-                      style={styles.fieldInput}
+                      style={[styles.fieldInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                       value={form.valor}
                       onChangeText={v => setField('valor', v)}
                       placeholder={form.tipo === 'porcentaje' ? 'Ej: 20' : 'Ej: 50'}
@@ -392,9 +409,9 @@ export default function AdminCupones({ navigation }: Props) {
                 )}
 
                 {/* Mínimo de compra */}
-                <Text style={styles.fieldLabel}>Mínimo de compra (opcional)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Mínimo de compra (opcional)</Text>
                 <TextInput
-                  style={styles.fieldInput}
+                  style={[styles.fieldInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                   value={form.minimoCompra}
                   onChangeText={v => setField('minimoCompra', v)}
                   placeholder="Ej: 200"
@@ -405,9 +422,9 @@ export default function AdminCupones({ navigation }: Props) {
                 {/* Máximo de descuento */}
                 {form.tipo === 'porcentaje' && (
                   <>
-                    <Text style={styles.fieldLabel}>Máximo de descuento (opcional)</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Máximo de descuento (opcional)</Text>
                     <TextInput
-                      style={styles.fieldInput}
+                      style={[styles.fieldInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                       value={form.maximoDescuento}
                       onChangeText={v => setField('maximoDescuento', v)}
                       placeholder="Ej: 100"
@@ -420,9 +437,13 @@ export default function AdminCupones({ navigation }: Props) {
                 {/* Fechas */}
                 <View style={styles.fechasRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.fieldLabel}>Fecha inicio *</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Fecha inicio *</Text>
                     <TextInput
-                      style={[styles.fieldInput, !!editando && styles.fieldInputDisabled]}
+                      style={[
+                        styles.fieldInput,
+                        { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText },
+                        !!editando && [styles.fieldInputDisabled, { backgroundColor: isDark ? '#1F2937' : '#F3F4F6', color: isDark ? '#9CA3AF' : '#9CA3AF' }]
+                      ]}
                       value={form.fechaInicio}
                       onChangeText={v => setField('fechaInicio', v)}
                       placeholder="YYYY-MM-DD"
@@ -432,9 +453,9 @@ export default function AdminCupones({ navigation }: Props) {
                   </View>
                   <View style={{ width: 12 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.fieldLabel}>Fecha fin *</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Fecha fin *</Text>
                     <TextInput
-                      style={styles.fieldInput}
+                      style={[styles.fieldInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                       value={form.fechaFin}
                       onChangeText={v => setField('fechaFin', v)}
                       placeholder="YYYY-MM-DD"
@@ -446,9 +467,9 @@ export default function AdminCupones({ navigation }: Props) {
                 {/* Usos */}
                 <View style={styles.fechasRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.fieldLabel}>Usos totales</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Usos totales</Text>
                     <TextInput
-                      style={styles.fieldInput}
+                      style={[styles.fieldInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                       value={form.usoMaximoTotal}
                       onChangeText={v => setField('usoMaximoTotal', v)}
                       placeholder="Ilimitado"
@@ -458,9 +479,9 @@ export default function AdminCupones({ navigation }: Props) {
                   </View>
                   <View style={{ width: 12 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.fieldLabel}>Usos por usuario</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Usos por usuario</Text>
                     <TextInput
-                      style={styles.fieldInput}
+                      style={[styles.fieldInput, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                       value={form.usoMaximoPorUsuario}
                       onChangeText={v => setField('usoMaximoPorUsuario', v)}
                       placeholder="1"
@@ -472,7 +493,7 @@ export default function AdminCupones({ navigation }: Props) {
 
                 {/* Activo */}
                 <View style={styles.activoRow}>
-                  <Text style={styles.fieldLabel}>Cupón activo</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Cupón activo</Text>
                   <Switch
                     value={form.activo}
                     onValueChange={v => setField('activo', v)}
@@ -485,7 +506,7 @@ export default function AdminCupones({ navigation }: Props) {
               </ScrollView>
 
               {/* Botón guardar */}
-              <View style={styles.modalFooter}>
+              <View style={[styles.modalFooter, { borderTopColor: colors.rowDivider }]}>
                 {error && <Text style={styles.modalError}>{error}</Text>}
                 <TouchableOpacity
                   style={styles.saveButton}

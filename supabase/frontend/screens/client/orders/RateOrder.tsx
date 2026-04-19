@@ -20,6 +20,7 @@ import { AntDesign } from "@expo/vector-icons"
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from '../../../application/context/AuthContext'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 const TAGS = ["Delicious Food", "Fast Delivery", "Great Packaging", "Eco-friendly"];
 type RateOrderNavigationProp = NativeStackNavigationProp<RootStackParamList, 'RateOrder'>
@@ -53,6 +54,7 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onRate, size = 36 }) =>
 
 export default function RateOrderScreen({ navigation, route }: Props) {
   const orderId = route.params.id;
+  const { colors, isDark } = useTheme();
   const [orderNumber, setOrderNumber] = useState("");
   const [total, setTotal] = useState(0);
   console.log("Estas en rate order screen");
@@ -189,15 +191,15 @@ export default function RateOrderScreen({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F6F0" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} activeOpacity={0.7} onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
+      <View style={[styles.header, { backgroundColor: colors.pageBg }]}>
+        <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.backBtnBg }]} activeOpacity={0.7} onPress={() => navigation.goBack()}>
+          <Text style={[styles.backArrow, { color: colors.titleText }]}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rate Your Order</Text>
+        <Text style={[styles.headerTitle, { color: colors.titleText }]}>Rate Your Order</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -212,34 +214,34 @@ export default function RateOrderScreen({ navigation, route }: Props) {
 
           {/* Overall Rating */}
           <View style={styles.overallSection}>
-            <Text style={styles.overallTitle}>How was your meal?</Text>
-            <Text style={styles.overallSub}>Tap a star to rate your overall experience</Text>
+            <Text style={[styles.overallTitle, { color: colors.titleText }]}>How was your meal?</Text>
+            <Text style={[styles.overallSub, { color: colors.subtitleText }]}>Tap a star to rate your overall experience</Text>
             <StarRating rating={overallRating} onRate={setOverallRating} size={44} />
           </View>
 
           {/* Restaurant Card */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
             <View style={styles.cardRow}>
-              <View style={styles.avatarCircle}>
+              <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#334155' : '#FFF3E0' }]}>
                 <Text style={styles.avatarEmoji}>🍕</Text>
               </View>
               <View style={styles.cardInfo}>
-                <Text style={styles.cardName}>Food</Text>
-                <Text style={styles.cardSub}>How was the food?</Text>
+                <Text style={[styles.cardName, { color: colors.titleText }]}>Food</Text>
+                <Text style={[styles.cardSub, { color: colors.subtitleText }]}>How was the food?</Text>
               </View>
             </View>
             <StarRating rating={foodRating} onRate={setFoodRating} size={28} />
           </View>
 
           {/* Delivery Card */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
             <View style={styles.cardRow}>
-              <View style={[styles.avatarCircle, { backgroundColor: "#E8F5E9" }]}>
+              <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#15803d40' : '#E8F5E9' }]}>
                 <Text style={styles.avatarEmoji}>🛵</Text>
               </View>
               <View style={styles.cardInfo}>
-                <Text style={styles.cardName}>Delivery</Text>
-                <Text style={styles.cardSub}>How was the delivery?</Text>
+                <Text style={[styles.cardName, { color: colors.titleText }]}>Delivery</Text>
+                <Text style={[styles.cardSub, { color: colors.subtitleText }]}>How was the delivery?</Text>
               </View>
             </View>
             <StarRating rating={deliveryRating} onRate={setDeliveryRating} size={28} />
@@ -247,23 +249,23 @@ export default function RateOrderScreen({ navigation, route }: Props) {
 
           {/* Images */}
           <View style={[styles.section, { marginTop: 20 }]}>
-            <Text style={styles.sectionTitle}>Add photos</Text>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Add photos</Text>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.imagesRow}>
 
                 {/* Botón agregar */}
                 <TouchableOpacity
-                  style={styles.addImageBtn}
+                  style={[styles.addImageBtn, { backgroundColor: colors.pageBg, borderColor: colors.border }]}
                   onPress={pickImage}
                   activeOpacity={0.8}
                 >
                   <AntDesign
                     name="plus"
                     size={24}
-                    color="#818181"
+                    color={colors.subtitleText}
                   />
-                  <Text style={styles.addImageText}>Add</Text>
+                  <Text style={[styles.addImageText, { color: colors.subtitleText }]}>Add</Text>
                 </TouchableOpacity>
 
                 {/* Previews */}
@@ -289,7 +291,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
 
           {/* Tags */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>What did you like?</Text>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>What did you like?</Text>
             <View style={styles.tagsWrap}>
               {TAGS.map((tag) => {
                 const active = selectedTags.includes(tag);
@@ -298,9 +300,13 @@ export default function RateOrderScreen({ navigation, route }: Props) {
                     key={tag}
                     onPress={() => toggleTag(tag)}
                     activeOpacity={0.8}
-                    style={[styles.tag, active && styles.tagActive]}
+                    style={[
+                      styles.tag,
+                      { backgroundColor: colors.pageBg, borderColor: colors.border },
+                      active && [styles.tagActive, { backgroundColor: isDark ? '#15803d40' : '#F0FFF2' }]
+                    ]}
                   >
-                    <Text style={[styles.tagText, active && styles.tagTextActive]}>{tag}</Text>
+                    <Text style={[styles.tagText, { color: colors.subtitleText }, active && styles.tagTextActive]}>{tag}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -309,11 +315,11 @@ export default function RateOrderScreen({ navigation, route }: Props) {
 
           {/* Comment */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Leave a comment</Text>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Leave a comment</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { backgroundColor: colors.pageBg, borderColor: colors.border, color: colors.titleText }]}
               placeholder="How was your food? Share your experience with others..."
-              placeholderTextColor="#ABABAB"
+              placeholderTextColor={colors.placeholderText}
               value={comment}
               onChangeText={setComment}
               multiline
@@ -333,14 +339,14 @@ export default function RateOrderScreen({ navigation, route }: Props) {
             <Text style={styles.reportButtonText}>⚠️ Reportar un problema</Text>
           </TouchableOpacity>
 
-          <Text style={styles.footerNote}>
+          <Text style={[styles.footerNote, { color: colors.subtitleText }]}>
             Your feedback helps us improve Kivu for everyone.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
 
       {/* Submit */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: colors.pageBg }]}>
         <TouchableOpacity
           style={styles.submitBtn}
           onPress={handleSubmit}

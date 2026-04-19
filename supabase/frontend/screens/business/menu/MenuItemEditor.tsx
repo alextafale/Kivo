@@ -22,6 +22,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useAuth } from '../../../application/context/AuthContext';
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from '../../../config/supabaseConfig';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 type MenuItemEditorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MenuItemEditor'>;
 type MenuItemEditorRouteProp = RouteProp<RootStackParamList, 'MenuItemEditor'>;
@@ -33,8 +34,8 @@ type Props = {
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+const BackIcon = ({ color = '#111827' }: { color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <Path d="M19 12H5M12 5l-7 7 7 7" />
   </Svg>
 );
@@ -80,9 +81,11 @@ const TagPill = ({
   label: string;
   selected: boolean;
   onPress: () => void;
-}) => (
+}) => {
+  const { colors, isDark } = useTheme();
+  return (
   <TouchableOpacity
-    style={[styles.tagPill, selected && styles.tagPillActive]}
+    style={[styles.tagPill, { backgroundColor: isDark ? colors.border : '#fff', borderColor: isDark ? colors.border : '#E5E7EB' }, selected && styles.tagPillActive]}
     onPress={onPress}
     activeOpacity={0.75}
   >
@@ -93,18 +96,22 @@ const TagPill = ({
         </Svg>
       </View>
     )}
-    <Text style={[styles.tagPillText, selected && styles.tagPillTextActive]}>{label}</Text>
+    <Text style={[styles.tagPillText, { color: colors.titleText }, selected && styles.tagPillTextActive, selected && isDark && { color: '#4ade80' }]}>{label}</Text>
   </TouchableOpacity>
-);
+  );
+};
 
 // ─── Field Label ──────────────────────────────────────────────────────────────
 
-const FieldLabel = ({ label, required }: { label: string; required?: boolean }) => (
+const FieldLabel = ({ label, required }: { label: string; required?: boolean }) => {
+  const { colors } = useTheme();
+  return (
   <View style={styles.fieldLabelRow}>
-    <Text style={styles.fieldLabel}>{label}</Text>
+    <Text style={[styles.fieldLabel, { color: colors.titleText }]}>{label}</Text>
     {required && <Text style={styles.fieldRequired}>*</Text>}
   </View>
-);
+  );
+};
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -114,6 +121,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
   // ✅ session viene del contexto — sin supabase.auth.getSession() inline
   const { adminAccess, session } = useAuth();
+  const { colors, isDark } = useTheme();
   const sucursalId = adminAccess?.sucursalId;
   const negocioId  = adminAccess?.negocioId;
 
@@ -332,20 +340,20 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F2F7F2" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <BackIcon />
+        <TouchableOpacity style={[styles.backButton, { backgroundColor: isDark ? colors.border : '#fff' }]} onPress={() => navigation.goBack()}>
+          <BackIcon color={colors.titleText} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{itemId === 'new' ? 'Nuevo Platillo' : 'Editar Platillo'}</Text>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>{itemId === 'new' ? 'Nuevo Platillo' : 'Editar Platillo'}</Text>
           {hasChanges && <View style={styles.unsavedDot} />}
         </View>
         {itemId !== 'new' ? (
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <TouchableOpacity style={[styles.deleteButton, { backgroundColor: isDark ? '#7f1d1d' : '#FEF2F2' }]} onPress={handleDelete}>
             <TrashIcon />
           </TouchableOpacity>
         ) : (
@@ -380,7 +388,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                     style={styles.itemImage}
                   />
                 ) : (
-                  <View style={styles.imagePlaceholder}>
+                  <View style={[styles.imagePlaceholder, { backgroundColor: isDark ? colors.border : '#E5E7EB' }]}>
                     <CameraIcon />
                     <Text style={styles.imagePlaceholderText}>Add Photo</Text>
                   </View>
@@ -394,11 +402,11 @@ export default function MenuItemEditor({ navigation, route }: Props) {
             </View>
 
             {/* ── Availability Toggles ── */}
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
               <View style={styles.toggleRow}>
                 <View>
-                  <Text style={styles.toggleLabel}>Item Available</Text>
-                  <Text style={styles.toggleSubtext}>Show this item to customers</Text>
+                  <Text style={[styles.toggleLabel, { color: colors.titleText }]}>Item Available</Text>
+                  <Text style={[styles.toggleSubtext, { color: colors.subtitleText }]}>Show this item to customers</Text>
                 </View>
                 <Switch
                   value={enabled}
@@ -408,11 +416,11 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                   ios_backgroundColor="#E5E7EB"
                 />
               </View>
-              <View style={styles.cardDivider} />
+              <View style={[styles.cardDivider, { backgroundColor: isDark ? colors.border : '#F3F4F6' }]} />
               <View style={styles.toggleRow}>
                 <View>
-                  <Text style={[styles.toggleLabel, soldOut && styles.toggleLabelWarn]}>Sold Out</Text>
-                  <Text style={styles.toggleSubtext}>Temporarily unavailable</Text>
+                  <Text style={[styles.toggleLabel, { color: colors.titleText }, soldOut && styles.toggleLabelWarn]}>Sold Out</Text>
+                  <Text style={[styles.toggleSubtext, { color: colors.subtitleText }]}>Temporarily unavailable</Text>
                 </View>
                 <Switch
                   value={soldOut}
@@ -426,11 +434,11 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
             {/* ── Basic Info ── */}
             <View style={styles.sectionBlock}>
-              <Text style={styles.blockTitle}>Basic Info</Text>
-              <View style={styles.card}>
+              <Text style={[styles.blockTitle, { color: colors.subtitleText }]}>Basic Info</Text>
+              <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
                 <FieldLabel label="Item Name" required />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                   value={name}
                   onChangeText={(v) => { setName(v); mark(); }}
                   placeholder="e.g. Classic Margherita"
@@ -440,7 +448,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                 <View style={styles.fieldGap} />
                 <FieldLabel label="Description" />
                 <TextInput
-                  style={[styles.input, styles.textArea]}
+                  style={[styles.input, styles.textArea, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                   value={description}
                   onChangeText={(v) => { setDescription(v); mark(); }}
                   placeholder="Describe the dish, ingredients, flavours..."
@@ -454,15 +462,15 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
             {/* ── Pricing ── */}
             <View style={styles.sectionBlock}>
-              <Text style={styles.blockTitle}>Pricing</Text>
-              <View style={styles.card}>
+              <Text style={[styles.blockTitle, { color: colors.subtitleText }]}>Pricing</Text>
+              <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
                 <FieldLabel label="Price" required />
                 <View style={styles.inputWithPrefix}>
                   <View style={styles.inputPrefix}>
                     <DollarIcon />
                   </View>
                   <TextInput
-                    style={[styles.input, styles.inputPrefixed]}
+                    style={[styles.input, styles.inputPrefixed, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                     value={price}
                     onChangeText={(v) => { setPrice(v); mark(); }}
                     placeholder="0.00"
@@ -476,7 +484,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
             {/* ── Category ── */}
             <View style={styles.sectionBlock}>
-              <Text style={styles.blockTitle}>Category</Text>
+              <Text style={[styles.blockTitle, { color: colors.subtitleText }]}>Category</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -485,11 +493,11 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                 {availableCategories.map((cat) => (
                   <TouchableOpacity
                     key={cat}
-                    style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+                    style={[styles.categoryChip, { backgroundColor: isDark ? colors.border : '#fff', borderColor: isDark ? colors.border : '#E5E7EB' }, category === cat && styles.categoryChipActive]}
                     onPress={() => { setCategory(cat); mark(); }}
                     activeOpacity={0.75}
                   >
-                    <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
+                    <Text style={[styles.categoryChipText, { color: colors.titleText }, category === cat && styles.categoryChipTextActive, category === cat && isDark && { color: '#fff' }]}>
                       {cat}
                     </Text>
                   </TouchableOpacity>
@@ -499,13 +507,13 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
             {/* ── Details ── */}
             <View style={styles.sectionBlock}>
-              <Text style={styles.blockTitle}>Details</Text>
-              <View style={styles.card}>
+              <Text style={[styles.blockTitle, { color: colors.subtitleText }]}>Details</Text>
+              <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
                 <View style={styles.detailsRow}>
                   <View style={styles.detailField}>
                     <FieldLabel label="Prep Time (min)" />
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                       value={prepTime}
                       onChangeText={(v) => { setPrepTime(v); mark(); }}
                       placeholder="15"
@@ -513,11 +521,11 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                       keyboardType="number-pad"
                     />
                   </View>
-                  <View style={styles.detailDivider} />
+                  <View style={[styles.detailDivider, { backgroundColor: isDark ? colors.border : '#F3F4F6' }]} />
                   <View style={styles.detailField}>
                     <FieldLabel label="Calories (kcal)" />
                     <TextInput
-                      style={styles.input}
+                      style={[styles.input, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                       value={calories}
                       onChangeText={(v) => { setCalories(v); mark(); }}
                       placeholder="500"
@@ -531,7 +539,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
             {/* ── Tags ── */}
             <View style={styles.sectionBlock}>
-              <Text style={styles.blockTitle}>Tags</Text>
+              <Text style={[styles.blockTitle, { color: colors.subtitleText }]}>Tags</Text>
               <View style={styles.tagsWrapper}>
                 {TAG_OPTIONS.map((tag) => (
                   <TagPill
@@ -550,7 +558,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
       </KeyboardAvoidingView>
 
       {/* ── Save Button ── */}
-      <View style={styles.saveBar}>
+      <View style={[styles.saveBar, { backgroundColor: colors.pageBg, borderTopColor: colors.rowDivider }]}>
         <TouchableOpacity
           style={[styles.saveButton, !hasChanges && styles.saveButtonDim]}
           onPress={handleSave}

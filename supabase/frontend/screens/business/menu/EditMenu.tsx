@@ -22,6 +22,7 @@ import Svg, { Path, Circle, Rect, Line, Polyline, G } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'MenuEditor'>;
 type Props = { navigation: Nav; route: any };
@@ -149,16 +150,17 @@ const FocusInput = ({
   value: string; onChange: (v: string) => void; placeholder: string;
   multiline?: boolean; keyboardType?: any; prefix?: React.ReactNode; style?: any;
 }) => {
+  const { colors, isDark } = useTheme();
   const border = useRef(new Animated.Value(0)).current;
   const onFocus = () => Animated.timing(border, { toValue: 1, duration: 180, useNativeDriver: false }).start();
   const onBlur  = () => Animated.timing(border, { toValue: 0, duration: 180, useNativeDriver: false }).start();
-  const borderColor = border.interpolate({ inputRange: [0, 1], outputRange: ['#e2e8f0', '#22c55e'] });
+  const borderColor = border.interpolate({ inputRange: [0, 1], outputRange: [isDark ? colors.border : '#e2e8f0', '#22c55e'] });
 
   return (
-    <Animated.View style={[styles.inputWrap, { borderColor }, style]}>
+    <Animated.View style={[styles.inputWrap, { backgroundColor: isDark ? colors.border : '#f8fafc', borderColor }, style]}>
       {prefix && <View style={styles.inputPrefix}>{prefix}</View>}
       <TextInput
-        style={[styles.inputText, multiline && styles.inputMulti]}
+        style={[styles.inputText, { color: colors.titleText }, multiline && styles.inputMulti]}
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
@@ -180,6 +182,7 @@ const AddonRow = ({
 }: {
   addon: Addon; onSettings: () => void; delay: number;
 }) => {
+  const { colors, isDark } = useTheme();
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.spring(anim, { toValue: 1, tension: 60, friction: 8, delay, useNativeDriver: true }).start();
@@ -190,19 +193,19 @@ const AddonRow = ({
       opacity: anim,
       transform: [{ translateX: anim.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] }) }],
     }}>
-      <View style={styles.addonRow}>
+      <View style={[styles.addonRow, { backgroundColor: isDark ? colors.border : '#f8fafc', borderColor: isDark ? colors.border : '#f1f5f9' }]}>
         <View style={[styles.addonIcon, addon.required && styles.addonIconRequired]}>
           {addon.required
             ? <XIcon color="#ef4444" />
             : <PlusIcon color="#22c55e" />}
         </View>
         <View style={styles.addonText}>
-          <Text style={styles.addonName}>{addon.name}</Text>
-          <Text style={styles.addonSub}>
+          <Text style={[styles.addonName, { color: colors.titleText }]}>{addon.name}</Text>
+          <Text style={[styles.addonSub, { color: colors.subtitleText }]}>
             {addon.required ? 'Selección requerida' : `+$${addon.price.toFixed(2)}`}
           </Text>
         </View>
-        <TouchableOpacity style={styles.gearBtn} onPress={onSettings}>
+        <TouchableOpacity style={[styles.gearBtn, { backgroundColor: isDark ? colors.pageBg : '#f1f5f9' }]} onPress={onSettings}>
           <GearIcon />
         </TouchableOpacity>
       </View>
@@ -216,14 +219,16 @@ const CategoryModal = ({
   visible, selected, onSelect, onClose,
 }: {
   visible: boolean; selected: string; onSelect: (v: string) => void; onClose: () => void;
-}) => (
+}) => {
+  const { colors, isDark } = useTheme();
+  return (
   <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
     <View style={styles.modalOverlay}>
-      <View style={styles.modalSheet}>
-        <View style={styles.modalHandle} />
-        <View style={styles.modalHead}>
-          <Text style={styles.modalTitle}>Seleccionar Categoría</Text>
-          <TouchableOpacity onPress={onClose} style={styles.modalCloseBtn}>
+      <View style={[styles.modalSheet, { backgroundColor: colors.pageBg }]}>
+        <View style={[styles.modalHandle, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]} />
+        <View style={[styles.modalHead, { borderBottomColor: colors.rowDivider }]}>
+          <Text style={[styles.modalTitle, { color: colors.titleText }]}>Seleccionar Categoría</Text>
+          <TouchableOpacity onPress={onClose} style={[styles.modalCloseBtn, { backgroundColor: isDark ? colors.border : '#f8fafc' }]}>
             <CloseIcon />
           </TouchableOpacity>
         </View>
@@ -231,10 +236,10 @@ const CategoryModal = ({
           {CATEGORIES.map((cat) => (
             <TouchableOpacity
               key={cat}
-              style={[styles.catOption, selected === cat && styles.catOptionSelected]}
+              style={[styles.catOption, { borderBottomColor: colors.rowDivider }, selected === cat && styles.catOptionSelected]}
               onPress={() => { onSelect(cat); onClose(); }}
             >
-              <Text style={[styles.catOptionText, selected === cat && styles.catOptionTextSelected]}>
+              <Text style={[styles.catOptionText, { color: colors.titleText }, selected === cat && styles.catOptionTextSelected]}>
                 {cat}
               </Text>
               {selected === cat && (
@@ -251,7 +256,8 @@ const CategoryModal = ({
       </View>
     </View>
   </Modal>
-);
+  );
+};
 
 // ─── ADDON MODAL ─────────────────────────────────────────────────────────────
 
@@ -260,6 +266,7 @@ const AddonModal = ({
 }: {
   visible: boolean; addon: Addon | null; onSave: (a: Addon) => void; onClose: () => void;
 }) => {
+  const { colors, isDark } = useTheme();
   const [name, setName]         = useState(addon?.name ?? '');
   const [price, setPrice]       = useState(addon?.price?.toString() ?? '');
   const [required, setRequired] = useState(addon?.required ?? false);
@@ -283,21 +290,21 @@ const AddonModal = ({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHandle} />
-          <View style={styles.modalHead}>
-            <Text style={styles.modalTitle}>{addon ? 'Editar Add-on' : 'Nuevo Add-on'}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.modalCloseBtn}><CloseIcon /></TouchableOpacity>
+        <View style={[styles.modalSheet, { backgroundColor: colors.pageBg }]}>
+          <View style={[styles.modalHandle, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]} />
+          <View style={[styles.modalHead, { borderBottomColor: colors.rowDivider }]}>
+            <Text style={[styles.modalTitle, { color: colors.titleText }]}>{addon ? 'Editar Add-on' : 'Nuevo Add-on'}</Text>
+            <TouchableOpacity onPress={onClose} style={[styles.modalCloseBtn, { backgroundColor: isDark ? colors.border : '#f8fafc' }]}><CloseIcon /></TouchableOpacity>
           </View>
           <View style={{ padding: 20 }}>
-            <Text style={styles.fieldLabel}>Nombre</Text>
+            <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Nombre</Text>
             <FocusInput value={name} onChange={setName} placeholder="Ej: Extra Aguacate" />
-            <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Precio adicional ($)</Text>
+            <Text style={[styles.fieldLabel, { marginTop: 16, color: colors.titleText }]}>Precio adicional ($)</Text>
             <FocusInput value={price} onChange={setPrice} placeholder="0.00" keyboardType="decimal-pad" prefix={<DollarIcon />} />
-            <View style={styles.toggleRow}>
+            <View style={[styles.toggleRow, { backgroundColor: isDark ? colors.border : '#f8fafc', borderColor: isDark ? colors.border : '#e2e8f0' }]}>
               <View>
-                <Text style={styles.toggleTitle}>Selección requerida</Text>
-                <Text style={styles.toggleSub}>El cliente debe elegir una opción</Text>
+                <Text style={[styles.toggleTitle, { color: colors.titleText }]}>Selección requerida</Text>
+                <Text style={[styles.toggleSub, { color: colors.subtitleText }]}>El cliente debe elegir una opción</Text>
               </View>
               <Switch
                 value={required}
@@ -321,6 +328,7 @@ const AddonModal = ({
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 
 export default function EditMenuItem({ navigation, route }: Props) {
+  const { colors, isDark } = useTheme();
   const existingItem: MenuItem = route?.params?.item ?? MOCK_ITEM;
 
   const [name, setName]               = useState(existingItem.name);
@@ -408,21 +416,23 @@ export default function EditMenuItem({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
         {/* ── HEADER ──────────────────────────────────────────── */}
         <Animated.View style={[styles.header, {
+          backgroundColor: colors.pageBg,
+          borderBottomColor: colors.rowDivider,
           opacity: headerAnim,
           transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }) }],
         }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: isDark ? colors.border : '#f8fafc' }]}>
             <BackIcon />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Menu Item</Text>
-          <TouchableOpacity style={styles.deleteHeaderBtn} onPress={handleDelete}>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>Edit Menu Item</Text>
+          <TouchableOpacity style={[styles.deleteHeaderBtn, { backgroundColor: isDark ? '#7f1d1d' : '#fff5f5' }]} onPress={handleDelete}>
             <TrashIcon />
           </TouchableOpacity>
         </Animated.View>
@@ -437,7 +447,7 @@ export default function EditMenuItem({ navigation, route }: Props) {
             opacity: imageAnim,
             transform: [{ scale: imageAnim.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }],
           }]}>
-            <View style={styles.imageCard}>
+            <View style={[styles.imageCard, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
               <Image source={{ uri: imageUrl }} style={styles.dishImage} resizeMode="cover" />
               <TouchableOpacity style={styles.editImageBtn}>
                 <LinearGradient colors={['#22c55e', '#16a34a']} style={styles.editImageGrad}>
@@ -452,12 +462,15 @@ export default function EditMenuItem({ navigation, route }: Props) {
             transform: [{ translateY: formAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
           }}>
             {/* ── AVAILABLE TOGGLE ────────────────────────────── */}
-            <View style={[styles.toggleCard, available ? styles.toggleCardOn : styles.toggleCardOff]}>
+            <View style={[
+              styles.toggleCard,
+              available ? (isDark ? { backgroundColor: '#15803d40', borderColor: '#22c55e' } : styles.toggleCardOn) : (isDark ? { backgroundColor: '#450a0a', borderColor: '#ef4444' } : styles.toggleCardOff)
+            ]}>
               <View>
-                <Text style={styles.toggleCardTitle}>
+                <Text style={[styles.toggleCardTitle, { color: colors.titleText }]}>
                   {available ? 'Available' : 'Sold Out'}
                 </Text>
-                <Text style={styles.toggleCardSub}>Toggle to mark as sold out</Text>
+                <Text style={[styles.toggleCardSub, { color: colors.subtitleText }]}>Toggle to mark as sold out</Text>
               </View>
               <Switch
                 value={available}
@@ -469,11 +482,11 @@ export default function EditMenuItem({ navigation, route }: Props) {
             </View>
 
             {/* ── DISH NAME ─────────────────────────────────── */}
-            <Text style={styles.fieldLabel}>Dish Name</Text>
+            <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Dish Name</Text>
             <FocusInput value={name} onChange={setName} placeholder="Ej: Superfood Quinoa Bowl" />
 
             {/* ── DESCRIPTION ────────────────────────────────── */}
-            <Text style={[styles.fieldLabel, { marginTop: 18 }]}>Description</Text>
+            <Text style={[styles.fieldLabel, { marginTop: 18, color: colors.titleText }]}>Description</Text>
             <FocusInput
               value={description}
               onChange={setDescription}
@@ -485,7 +498,7 @@ export default function EditMenuItem({ navigation, route }: Props) {
             {/* ── PRICE + CATEGORY ───────────────────────────── */}
             <View style={styles.twoCol}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Price ($)</Text>
+                <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Price ($)</Text>
                 <FocusInput
                   value={price}
                   onChange={setPrice}
@@ -496,13 +509,13 @@ export default function EditMenuItem({ navigation, route }: Props) {
               </View>
               <View style={styles.colGap} />
               <View style={{ flex: 1.2 }}>
-                <Text style={styles.fieldLabel}>Category</Text>
+                <Text style={[styles.fieldLabel, { color: colors.titleText }]}>Category</Text>
                 <TouchableOpacity
-                  style={styles.categoryBtn}
+                  style={[styles.categoryBtn, { backgroundColor: isDark ? colors.border : '#f8fafc', borderColor: isDark ? colors.border : '#e2e8f0' }]}
                   onPress={() => setCategoryModal(true)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.categoryBtnText}>{category}</Text>
+                  <Text style={[styles.categoryBtnText, { color: colors.titleText }]}>{category}</Text>
                   <ChevronDown />
                 </TouchableOpacity>
               </View>
@@ -510,7 +523,7 @@ export default function EditMenuItem({ navigation, route }: Props) {
 
             {/* ── ADD-ONS & MODIFIERS ─────────────────────────── */}
             <View style={styles.addonsHeader}>
-              <Text style={styles.addonsTitle}>Add-ons & Modifiers</Text>
+              <Text style={[styles.addonsTitle, { color: colors.titleText }]}>Add-ons & Modifiers</Text>
               <TouchableOpacity
                 style={styles.addNewBtn}
                 onPress={() => { setEditingAddon(null); setAddonModal(true); }}
@@ -521,8 +534,8 @@ export default function EditMenuItem({ navigation, route }: Props) {
             </View>
 
             {addons.length === 0 ? (
-              <View style={styles.addonsEmpty}>
-                <Text style={styles.addonsEmptyText}>Sin add-ons. Toca "Add New" para agregar.</Text>
+              <View style={[styles.addonsEmpty, { backgroundColor: isDark ? colors.border : '#f8fafc', borderColor: isDark ? colors.border : '#e2e8f0' }]}>
+                <Text style={[styles.addonsEmptyText, { color: colors.subtitleText }]}>Sin add-ons. Toca "Add New" para agregar.</Text>
               </View>
             ) : (
               addons.map((addon, i) => (
@@ -541,6 +554,8 @@ export default function EditMenuItem({ navigation, route }: Props) {
 
         {/* ── FOOTER ──────────────────────────────────────────── */}
         <Animated.View style={[styles.footer, {
+          backgroundColor: colors.pageBg,
+          borderTopColor: colors.rowDivider,
           opacity: footerAnim,
           transform: [{ translateY: footerAnim.interpolate({ inputRange: [0, 1], outputRange: [32, 0] }) }],
         }]}>

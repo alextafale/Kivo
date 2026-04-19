@@ -12,6 +12,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useOrderRealtime } from '../../../application/hooks/useOrderRealTime'
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'
 import { useRepartidorUbicacion } from '../../../application/hooks/useRepartidorUbicacion'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 const { width } = Dimensions.get('window')
 
@@ -49,6 +50,7 @@ const ESTADO_A_STEP: Record<string, OrderStatus> = {
 
 export default function OrderTrackingScreen({ route, navigation }: Props) {
   console.log("Estas en order taracking screen");
+  const { colors, isDark } = useTheme();
   const { order: initialOrder } = route.params
 
   // Suscripción Realtime — actualiza cuando el negocio cambia el estado
@@ -115,15 +117,15 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
   }, [ubicacion]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F6F0" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
+      <View style={[styles.header, { backgroundColor: colors.pageBg }]}>
+        <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.backBtnBg }]} onPress={() => navigation.goBack()}>
+          <Text style={[styles.backArrow, { color: colors.titleText }]}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rastreo de Pedido</Text>
+        <Text style={[styles.headerTitle, { color: colors.titleText }]}>Rastreo de Pedido</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -131,22 +133,22 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
 
         {/* Número de pedido */}
         <View style={styles.orderNumberBanner}>
-          <Text style={styles.orderNumberLabel}>Pedido</Text>
-          <Text style={styles.orderNumberValue}>{order?.orderNumber ?? initialOrder.orderNumber}</Text>
+          <Text style={[styles.orderNumberLabel, { color: colors.subtitleText }]}>Pedido</Text>
+          <Text style={[styles.orderNumberValue, { color: colors.titleText }]}>{order?.orderNumber ?? initialOrder.orderNumber}</Text>
         </View>
 
         {/* ETA Banner */}
-        <View style={styles.etaBanner}>
+        <View style={[styles.etaBanner, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
           <View style={styles.etaLeft}>
-            <Text style={styles.etaLabel}>Estado actual</Text>
-            <Text style={styles.etaStep}>{STEPS[currentIndex]?.emoji} {STEPS[currentIndex]?.label}</Text>
-            <Text style={styles.etaSub}>{STEPS[currentIndex]?.sublabel}</Text>
+            <Text style={[styles.etaLabel, { color: colors.subtitleText }]}>Estado actual</Text>
+            <Text style={[styles.etaStep, { color: colors.titleText }]}>{STEPS[currentIndex]?.emoji} {STEPS[currentIndex]?.label}</Text>
+            <Text style={[styles.etaSub, { color: colors.subtitleText }]}>{STEPS[currentIndex]?.sublabel}</Text>
           </View>
-          <View style={styles.etaDivider} />
+          <View style={[styles.etaDivider, { backgroundColor: colors.border }]} />
           <View style={styles.etaRight}>
-            <View style={styles.statusBadge}>
+            <View style={[styles.statusBadge, { backgroundColor: isDark ? '#22c55e30' : '#E8FFF0' }]}>
               <View style={styles.statusDot} />
-              <Text style={styles.statusBadgeText}>En vivo</Text>
+              <Text style={[styles.statusBadgeText, isDark && { color: '#4ade80' }]}>En vivo</Text>
             </View>
           </View>
         </View>
@@ -176,9 +178,9 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
             </Marker>
           </MapView>
         ) : (
-          <View style={styles.mapPlaceholder}>
+          <View style={[styles.mapPlaceholder, { backgroundColor: isDark ? colors.cardBg : '#E4EDE0' }]}>
             <Text style={styles.mapEmoji}>🗺️</Text>
-            <Text style={styles.mapText}>
+            <Text style={[styles.mapText, isDark && { color: '#4ade80' }]}>
               {order?.status === 'on_the_way' || order?.status === 'picked_up'
                 ? 'Esperando ubicación del repartidor...'
                 : 'El mapa aparecerá cuando el repartidor esté en camino'}
@@ -188,10 +190,10 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
 
         {/* Timeline de estados */}
         <View style={styles.timelineSection}>
-          <Text style={styles.sectionTitle}>Progreso del pedido</Text>
+          <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Progreso del pedido</Text>
 
           <View style={styles.timeline}>
-            <View style={styles.trackBg} />
+            <View style={[styles.trackBg, { backgroundColor: colors.border }]} />
             <Animated.View style={[styles.trackFill, { height: progressHeight }]} />
 
             {STEPS.map((step, index) => {
@@ -207,7 +209,12 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
                         <Text style={styles.stepEmoji}>{step.emoji}</Text>
                       </Animated.View>
                     ) : (
-                      <View style={[styles.stepCircle, isDone && styles.stepCircleDone, isPending && styles.stepCirclePending]}>
+                      <View style={[
+                        styles.stepCircle,
+                        { backgroundColor: isDark ? colors.border : '#F0F0F0', borderColor: colors.border },
+                        isDone && [styles.stepCircleDone, { backgroundColor: isDark ? '#22c55e30' : '#E8FFF0' }],
+                        isPending && [styles.stepCirclePending, { backgroundColor: colors.pageBg, borderColor: colors.border }]
+                      ]}>
                         <Text style={[styles.stepEmoji, isPending && { opacity: 0.4 }]}>
                           {isDone ? '✓' : step.emoji}
                         </Text>
@@ -218,13 +225,14 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
                   <View style={styles.stepContent}>
                     <Text style={[
                       styles.stepLabel,
+                      { color: colors.titleText },
                       isDone && styles.stepLabelDone,
-                      isActive && styles.stepLabelActive,
-                      isPending && styles.stepLabelPending,
+                      isActive && [styles.stepLabelActive, isDark && { color: '#4ade80' }],
+                      isPending && [styles.stepLabelPending, { color: colors.subtitleText }],
                     ]}>
                       {step.label}
                     </Text>
-                    <Text style={[styles.stepSublabel, isPending && { opacity: 0.4 }]}>
+                    <Text style={[styles.stepSublabel, { color: colors.subtitleText }, isPending && { opacity: 0.4 }]}>
                       {step.sublabel}
                     </Text>
                   </View>
@@ -236,9 +244,9 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
 
         {/* Dirección de entrega */}
         {initialOrder.deliveryAddress && (
-          <View style={styles.addressCard}>
-            <Text style={styles.sectionTitle}>Dirección de entrega</Text>
-            <Text style={styles.addressText}>📍 {initialOrder.deliveryAddress}</Text>
+          <View style={[styles.addressCard, { backgroundColor: colors.cardBg }]}>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Dirección de entrega</Text>
+            <Text style={[styles.addressText, { color: colors.subtitleText }]}>📍 {initialOrder.deliveryAddress}</Text>
           </View>
         )}
 

@@ -20,6 +20,7 @@ import Svg, { Path, Circle, Rect, G, Defs, LinearGradient as SvgGradient, Stop }
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
+import { useTheme } from '../../../application/context/ThemeContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AddCard'>;
 type Props = { navigation: Nav };
@@ -30,42 +31,42 @@ const CARD_HEIGHT = CARD_WIDTH * 0.58;
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
 
-const BackIcon = () => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2.5">
+const BackIcon = ({ color = '#0f172a' }: { color?: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5">
     <Path d="M19 12H5M12 19l-7-7 7-7" />
   </Svg>
 );
 
-const CardIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
+const CardIcon = ({ color = '#94a3b8' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Rect x="1" y="4" width="22" height="16" rx="2" />
     <Path d="M1 10h22" />
   </Svg>
 );
 
-const UserIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
+const UserIcon = ({ color = '#94a3b8' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
     <Circle cx="12" cy="7" r="4" />
   </Svg>
 );
 
-const CalendarIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
+const CalendarIcon = ({ color = '#94a3b8' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Rect x="3" y="4" width="18" height="18" rx="2" />
     <Path d="M16 2v4M8 2v4M3 10h18" />
   </Svg>
 );
 
-const LockIcon = () => (
-  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
+const LockIcon = ({ color = '#94a3b8' }: { color?: string }) => (
+  <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Rect x="3" y="11" width="18" height="11" rx="2" />
     <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
   </Svg>
 );
 
-const InfoIcon = () => (
-  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
+const InfoIcon = ({ color = '#94a3b8' }: { color?: string }) => (
+  <Svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <Circle cx="12" cy="12" r="10" />
     <Path d="M12 16v-4M12 8h.01" />
   </Svg>
@@ -241,6 +242,7 @@ const Field = ({
   style?: any;
 }) => {
   const borderAnim = useRef(new Animated.Value(0)).current;
+  const { colors, isDark } = useTheme();
 
   const onFocus = () =>
     Animated.timing(borderAnim, { toValue: 1, duration: 200, useNativeDriver: false }).start();
@@ -249,19 +251,19 @@ const Field = ({
 
   const borderColor = borderAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#e2e8f0', '#22c55e'],
+    outputRange: [isDark ? colors.modalInputBorder : '#e2e8f0', '#22c55e'],
   });
 
   return (
     <View style={style}>
-      <Animated.View style={[styles.inputWrap, { borderColor }]}>
+      <Animated.View style={[styles.inputWrap, { backgroundColor: colors.modalInputBg, borderColor }]}>
         <View style={styles.inputIcon}>{icon}</View>
         <TextInput
-          style={styles.inputText}
+          style={[styles.inputText, { color: colors.titleText }]}
           value={value}
           onChangeText={onChange}
           placeholder={placeholder}
-          placeholderTextColor="#b0bec5"
+          placeholderTextColor={colors.placeholderText}
           keyboardType={keyboardType || 'default'}
           maxLength={maxLength}
           onFocus={onFocus}
@@ -276,6 +278,7 @@ const Field = ({
 // ─── MAIN SCREEN ─────────────────────────────────────────────────────────────
 
 export default function AddCard({ navigation }: Props) {
+  const { colors, isDark } = useTheme();
   const [cardNumber, setCardNumber]   = useState('');
   const [cardName, setCardName]       = useState('');
   const [expiry, setExpiry]           = useState('');
@@ -356,8 +359,8 @@ export default function AddCard({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fafafa" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -367,14 +370,15 @@ export default function AddCard({ navigation }: Props) {
         {/* ── HEADER ──────────────────────────────────────────── */}
         <Animated.View
           style={[styles.header, {
+            backgroundColor: colors.pageBg,
             opacity: headerAnim,
             transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-14, 0] }) }],
           }]}
         >
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <BackIcon />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.backBtnBg }]}>
+            <BackIcon color={colors.titleText} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Añadir Nueva Tarjeta</Text>
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>Añadir Nueva Tarjeta</Text>
           <View style={{ width: 42 }} />
         </Animated.View>
 
@@ -409,9 +413,9 @@ export default function AddCard({ navigation }: Props) {
             }]}
           >
             {/* Card number */}
-            <Text style={styles.fieldLabel}>Número de Tarjeta</Text>
+            <Text style={[styles.fieldLabel, { color: colors.labelText }]}>Número de Tarjeta</Text>
             <Field
-              icon={<CardIcon />}
+              icon={<CardIcon color={colors.subtitleText} />}
               value={cardNumber}
               onChange={(v) => setCardNumber(formatCardNumber(v, network))}
               placeholder="0000 0000 0000 0000"
@@ -420,9 +424,9 @@ export default function AddCard({ navigation }: Props) {
             />
 
             {/* Name */}
-            <Text style={[styles.fieldLabel, { marginTop: 20 }]}>Nombre en la Tarjeta</Text>
+            <Text style={[styles.fieldLabel, { marginTop: 20, color: colors.labelText }]}>Nombre en la Tarjeta</Text>
             <Field
-              icon={<UserIcon />}
+              icon={<UserIcon color={colors.subtitleText} />}
               value={cardName}
               onChange={setCardName}
               placeholder="Ej. Juan Pérez"
@@ -431,9 +435,9 @@ export default function AddCard({ navigation }: Props) {
             {/* Expiry + CVV */}
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.fieldLabel}>Vencimiento</Text>
+                <Text style={[styles.fieldLabel, { color: colors.labelText }]}>Vencimiento</Text>
                 <Field
-                  icon={<CalendarIcon />}
+                  icon={<CalendarIcon color={colors.subtitleText} />}
                   value={expiry}
                   onChange={(v) => setExpiry(formatExpiry(v))}
                   placeholder="MM/AA"
@@ -444,13 +448,13 @@ export default function AddCard({ navigation }: Props) {
               <View style={styles.rowGap} />
               <View style={{ flex: 1 }}>
                 <View style={styles.cvvLabelRow}>
-                  <Text style={styles.fieldLabel}>CVV</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.labelText }]}>CVV</Text>
                   <TouchableOpacity onPress={() => Alert.alert('CVV', 'El CVV son los 3 o 4 dígitos en el reverso de tu tarjeta.')}>
-                    <InfoIcon />
+                    <InfoIcon color={colors.subtitleText} />
                   </TouchableOpacity>
                 </View>
                 <Field
-                  icon={<LockIcon />}
+                  icon={<LockIcon color={colors.subtitleText} />}
                   value={cvv}
                   onChange={setCvv}
                   placeholder="123"
@@ -461,17 +465,17 @@ export default function AddCard({ navigation }: Props) {
             </View>
 
             {/* Default toggle */}
-            <View style={styles.toggleCard}>
+            <View style={[styles.toggleCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.toggleTitle}>Método de pago principal</Text>
-                <Text style={styles.toggleSub}>Se usará por defecto en tus pedidos.</Text>
+                <Text style={[styles.toggleTitle, { color: colors.titleText }]}>Método de pago principal</Text>
+                <Text style={[styles.toggleSub, { color: colors.subtitleText }]}>Se usará por defecto en tus pedidos.</Text>
               </View>
               <Switch
                 value={isDefault}
                 onValueChange={setIsDefault}
                 trackColor={{ false: '#e2e8f0', true: '#86efac' }}
-                thumbColor={isDefault ? '#22c55e' : '#f1f5f9'}
-                ios_backgroundColor="#e2e8f0"
+                thumbColor={isDefault ? '#22c55e' : (isDark ? '#334155' : '#f1f5f9')}
+                ios_backgroundColor={isDark ? '#334155' : '#e2e8f0'}
               />
             </View>
 
