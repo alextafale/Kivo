@@ -1,15 +1,18 @@
+"""
+schemas/quejas.py
+─────────────────
+Schemas de entrada/salida para el módulo de quejas y resoluciones.
+
+Cambios v2:
+  - QuejaContextoOut: campos nuevos para tiempos granulares y promedios históricos
+"""
+
 from pydantic import BaseModel
 from typing import Optional
-from enum import Enum
+from schemas.enums import QuejaAccion
 
 
-class QuejaAccionEnum(str, Enum):
-    reembolso_parcial = "reembolso_parcial"
-    cupon             = "cupon"
-    disculpa          = "disculpa"
-
-
-# ── Respuesta de /queja ──────────────────────────────────────────────────────
+# ── Contexto de queja ─────────────────────────────────────────────────────────
 
 class ItemContexto(BaseModel):
     nombre: str
@@ -30,27 +33,35 @@ class QuejaContextoOut(BaseModel):
     order_number: Optional[str]
     estado: str
     total: float
-    tiempo_entrega_real_min: Optional[int]
-    tiempo_estimado_min: Optional[int]
-    items: list[ItemContexto]
-    historial_quejas_30d: list[QuejaHistorialItem]
-    # campos útiles para el LLM
     negocio_nombre: Optional[str]
     sucursal_nombre: Optional[str]
 
+    # Tiempo estimado original del pedido
+    tiempo_estimado_min: Optional[int]
 
-# ── Body de /resolucion ──────────────────────────────────────────────────────
+    # Tiempos reales desglosados por responsable
+    tiempo_entrega_real_min: Optional[int]       # total: creado → entregado
+    tiempo_negocio_min: Optional[int]            # preparación: aceptado → preparado
+    tiempo_repartidor_min: Optional[int]         # trayecto: recogido → entregado
+    tiempo_espera_repartidor_min: Optional[int]  # espera en negocio: preparado → recogido
+
+    # Promedios históricos del negocio (últimas 4 semanas)
+    avg_tiempo_negocio_min: Optional[int]
+    avg_tiempo_repartidor_min: Optional[int]
+    avg_tiempo_total_min: Optional[int]
+    total_pedidos_historico: int = 0
+
+    items: list[ItemContexto] = []
+    historial_quejas_30d: list[QuejaHistorialItem] = []
+
+
+# ── Resolución ────────────────────────────────────────────────────────────────
 
 class ResolucionIn(BaseModel):
-    """
-    El frontend puede llamar sin body y el backend invocará el LLM automáticamente,
-    o puede pasar la acción directamente (útil para pruebas / override manual).
-    """
-    accion_override: Optional[QuejaAccionEnum] = None   # si viene, se salta el LLM
-    monto_override:  Optional[float]           = None
+    # Opcionales: para override manual (testing o soporte humano)
+    accion_override: Optional[QuejaAccion] = None
+    monto_override: Optional[float] = None
 
-
-# ── Respuesta de /resolucion ──────────────────────────────────────────────────
 
 class ResolucionOut(BaseModel):
     queja_id: str
@@ -58,4 +69,4 @@ class ResolucionOut(BaseModel):
     accion: str
     monto: Optional[float]
     razon_interna: str
-    mensaje_usuario: str            # texto humanizado para mostrar al usuario
+    mensaje_usuario: str
