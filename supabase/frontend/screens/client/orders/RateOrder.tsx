@@ -11,7 +11,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Dimensions
+  Dimensions,
+  Modal
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -22,9 +23,12 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from '../../../application/context/AuthContext'
 import { useTheme } from '../../../application/context/ThemeContext'
 
+
 const TAGS = ["Delicious Food", "Fast Delivery", "Great Packaging", "Eco-friendly"];
 type RateOrderNavigationProp = NativeStackNavigationProp<RootStackParamList, 'RateOrder'>
 type RateOrderRouteProp = RouteProp<RootStackParamList, 'RateOrder'>
+
+
 
 
 type Props = {
@@ -32,11 +36,13 @@ type Props = {
   route: RateOrderRouteProp
 }
 
+
 interface StarRatingProps {
   rating: number;
   onRate: (star: number) => void;
   size?: number;
 }
+
 
 const StarRating: React.FC<StarRatingProps> = ({ rating, onRate, size = 36 }) => {
   return (
@@ -52,6 +58,7 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onRate, size = 36 }) =>
   );
 };
 
+
 export default function RateOrderScreen({ navigation, route }: Props) {
   const orderId = route.params.id;
   const { colors, isDark } = useTheme();
@@ -62,6 +69,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
   const [branchId, setBranchId] = useState("");
   const [driverId, setDriverId] = useState("");
 
+
   const [overallRating, setOverallRating] = useState(4);
   const [foodRating, setFoodRating] = useState(4);
   const [deliveryRating, setDeliveryRating] = useState(5);
@@ -71,11 +79,43 @@ export default function RateOrderScreen({ navigation, route }: Props) {
   const [imagesUri, setImagesUri] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
+
+  const [showPicker, setShowPicker] = useState(false);
+
+
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
+
+
+  const takePhoto = async () => {
+    if (imagesUri.length >= 5) {
+      Alert.alert("Límite alcanzado", "Máximo 5 imágenes");
+      return;
+    }
+
+
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permiso requerido", "Se necesita acceso a la cámara");
+      return;
+    }
+
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+
+    if (!result.canceled) {
+      const newUris = result.assets.map(asset => asset.uri);
+      setImagesUri(prev => [...prev, ...newUris].slice(0, 5));
+    }
+  };
+
 
   const pickImage = async () => {
     if (imagesUri.length >= 5) {
@@ -83,17 +123,20 @@ export default function RateOrderScreen({ navigation, route }: Props) {
       return;
     }
 
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
     });
 
+
     if (!result.canceled) {
       const newUris = result.assets.map(asset => asset.uri);
       setImagesUri(prev => [...prev, ...newUris].slice(0, 5));
     }
   };
+
 
   useEffect(() => {
     const getOrder = async () => {
@@ -107,6 +150,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
             },
           }
         );
+
 
         if (response.ok) {
           const data = await response.json();
@@ -123,12 +167,16 @@ export default function RateOrderScreen({ navigation, route }: Props) {
       }
     }
 
+
     getOrder();
+
 
   }, []);
 
+
   const buildFormData = () => {
     const formData = new FormData();
+
 
     formData.append("pedido_id", orderId);
     formData.append("sucursal_id", branchId);
@@ -138,6 +186,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
     formData.append("rating_general", overallRating.toString());
     formData.append("comentario", comment);
     formData.append("es_anonima", isAnonymous ? "true" : "false");
+
 
     if (imagesUri.length > 0) {
       for (let i = 0; i < imagesUri.length; i++) {
@@ -149,8 +198,11 @@ export default function RateOrderScreen({ navigation, route }: Props) {
       }
     }
 
+
     return formData;
   };
+
+
 
 
   const handleSubmit = async () => {
@@ -160,6 +212,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
         Alert.alert("Error", "No se pudo obtener la sucursal");
         return;
       }
+
 
       const formData = buildFormData();
       const res = await fetch(
@@ -172,6 +225,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
           body: formData,
         }
       );
+
 
       if (res.ok) {
         Alert.alert("Review Saved", "Your review has been saved successfully.");
@@ -188,11 +242,14 @@ export default function RateOrderScreen({ navigation, route }: Props) {
       setIsSaving(false);
     }
 
+
   };
+
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.pageBg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
+
 
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.pageBg }]}>
@@ -203,6 +260,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
         <View style={{ width: 40 }} />
       </View>
 
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -212,12 +270,14 @@ export default function RateOrderScreen({ navigation, route }: Props) {
           showsVerticalScrollIndicator={false}
         >
 
+
           {/* Overall Rating */}
           <View style={styles.overallSection}>
             <Text style={[styles.overallTitle, { color: colors.titleText }]}>How was your meal?</Text>
             <Text style={[styles.overallSub, { color: colors.subtitleText }]}>Tap a star to rate your overall experience</Text>
             <StarRating rating={overallRating} onRate={setOverallRating} size={44} />
           </View>
+
 
           {/* Restaurant Card */}
           <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
@@ -233,6 +293,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
             <StarRating rating={foodRating} onRate={setFoodRating} size={28} />
           </View>
 
+
           {/* Delivery Card */}
           <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
             <View style={styles.cardRow}>
@@ -247,17 +308,20 @@ export default function RateOrderScreen({ navigation, route }: Props) {
             <StarRating rating={deliveryRating} onRate={setDeliveryRating} size={28} />
           </View>
 
+
           {/* Images */}
           <View style={[styles.section, { marginTop: 20 }]}>
             <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Add photos</Text>
 
+
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.imagesRow}>
+
 
                 {/* Botón agregar */}
                 <TouchableOpacity
                   style={[styles.addImageBtn, { backgroundColor: colors.pageBg, borderColor: colors.border }]}
-                  onPress={pickImage}
+                  onPress={() => setShowPicker(true)}
                   activeOpacity={0.8}
                 >
                   <AntDesign
@@ -268,10 +332,12 @@ export default function RateOrderScreen({ navigation, route }: Props) {
                   <Text style={[styles.addImageText, { color: colors.subtitleText }]}>Add</Text>
                 </TouchableOpacity>
 
+
                 {/* Previews */}
                 {imagesUri.map((uri, index) => (
                   <View key={index} style={styles.imageWrapper}>
                     <Image source={{ uri }} style={styles.imagePreview} />
+
 
                     {/* Botón eliminar */}
                     <TouchableOpacity
@@ -285,9 +351,11 @@ export default function RateOrderScreen({ navigation, route }: Props) {
                   </View>
                 ))}
 
+
               </View>
             </ScrollView>
           </View>
+
 
           {/* Tags */}
           <View style={styles.section}>
@@ -313,6 +381,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
             </View>
           </View>
 
+
           {/* Comment */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Leave a comment</Text>
@@ -328,6 +397,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
             />
           </View>
 
+
           <TouchableOpacity
             style={styles.reportButton}
             onPress={() => navigation.navigate('ReportarProblema', {
@@ -339,11 +409,53 @@ export default function RateOrderScreen({ navigation, route }: Props) {
             <Text style={styles.reportButtonText}>⚠️ Reportar un problema</Text>
           </TouchableOpacity>
 
+
           <Text style={[styles.footerNote, { color: colors.subtitleText }]}>
             Your feedback helps us improve Kivu for everyone.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
+      <Modal
+        visible={showPicker}
+        transparent
+        animationType="fade"
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPicker(false)}
+        >
+          <View style={styles.modalContent}>
+
+
+            <TouchableOpacity
+              style={styles.optionBtn}
+              onPress={() => {
+                setShowPicker(false);
+                takePhoto();
+              }}
+            >
+              <AntDesign name="camera" size={48} color="#000" />
+              <Text style={styles.optionText}>Camera</Text>
+            </TouchableOpacity>
+
+
+            <TouchableOpacity
+              style={styles.optionBtn}
+              onPress={() => {
+                setShowPicker(false);
+                pickImage();
+              }}
+            >
+              <AntDesign name="picture" size={48} color="#000" />
+              <Text style={styles.optionText}>Galery</Text>
+            </TouchableOpacity>
+
+
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
 
       {/* Submit */}
       <View style={[styles.footer, { backgroundColor: colors.pageBg }]}>
@@ -360,8 +472,11 @@ export default function RateOrderScreen({ navigation, route }: Props) {
   );
 }
 
+
 const screenHeight = Dimensions.get("screen").height;
 const screenWidth = Dimensions.get("screen").width;
+
+
 
 
 const styles = StyleSheet.create({
@@ -556,6 +671,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 
+
   addImageBtn: {
     width: 90,
     height: 90,
@@ -568,9 +684,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 
+
   addImageIcon: {
     fontSize: 26,
   },
+
 
   addImageText: {
     fontSize: 12,
@@ -578,15 +696,18 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+
   imageWrapper: {
     position: "relative",
   },
+
 
   imagePreview: {
     width: 90,
     height: 90,
     borderRadius: 16,
   },
+
 
   removeImageBtn: {
     position: "absolute",
@@ -599,6 +720,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
 
   removeImageText: {
     color: "#fff",
@@ -619,5 +741,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#FFF",
+    width: screenWidth * 0.75,
+    height: screenHeight * 0.15,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    alignItems: "center",
+  },
+  optionBtn: {
+    alignItems: "center",
+    padding: 10,
+    marginHorizontal: 20,
+  },
+  optionText: {
+    marginTop: 6,
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
