@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { Order } from '../../../types/order';
 import { useAuth } from '../../../application/context/AuthContext';
 import { useTheme } from '../../../application/context/ThemeContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type OrdersNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Orders'>;
 type Props = { navigation: OrdersNavigationProp };
@@ -143,7 +144,7 @@ function OrderCard({
           <Image source={{ uri: order.restaurantImage }} style={styles.restaurantImage} />
         ) : (
           <View style={[styles.restaurantImage, { backgroundColor: colors.border, justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={{ fontSize: 20 }}>🍴</Text>
+            <MaterialIcons name="restaurant" size={20} color="#9CA3AF" />
           </View>
         )}
         <View style={styles.orderHeaderInfo}>
@@ -215,7 +216,10 @@ function OrderCard({
               total: order.total,
             })}
           >
-            <Text style={styles.reportProblemText}>⚠️ Reportar un problema</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <MaterialIcons name="warning" size={16} color="#F97316" />
+              <Text style={styles.reportProblemText}>Reportar un problema</Text>
+            </View>
           </TouchableOpacity>
         </View>
       )}

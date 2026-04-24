@@ -23,6 +23,7 @@ import { useAuth } from '../../../application/context/AuthContext';
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from '../../../config/supabaseConfig';
 import { useTheme } from '../../../application/context/ThemeContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type MenuItemEditorNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MenuItemEditor'>;
 type MenuItemEditorRouteProp = RouteProp<RootStackParamList, 'MenuItemEditor'>;
@@ -486,7 +487,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
                     <>
-                      <Text style={styles.magicBtnIcon}>✨</Text>
+                      <MaterialIcons name="auto-awesome" size={14} color="#fff" />
                       <Text style={styles.magicBtnText}>Magia IA</Text>
                     </>
                   )}
@@ -507,7 +508,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                   <FieldLabel label="Description" />
                   {description.length > 0 && (
                     <View style={styles.aiGeneratedBadge}>
-                      <Text style={styles.aiGeneratedText}>✨ IA</Text>
+                      <MaterialIcons name="auto-awesome" size={10} color={MAGIC_PURPLE} />
                     </View>
                   )}
                 </View>

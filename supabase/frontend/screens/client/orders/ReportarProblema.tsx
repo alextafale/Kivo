@@ -1,7 +1,3 @@
-// screens/client/orders/ReportarProblema.tsx
-// Pantalla de reporte de queja con resolución automática vía LLM
-// v2: visualización de desglose de tiempos granulares (negocio vs repartidor)
-
 import React, { useState } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
@@ -15,6 +11,7 @@ import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
 import { useTheme } from '../../../application/context/ThemeContext'
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons'
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'ReportarProblema'>
 type Ruta = RouteProp<RootStackParamList, 'ReportarProblema'>
@@ -101,14 +98,16 @@ function excedePromedio(valor: number | null, promedio: number | null): boolean 
 // ─── Subcomponente: fila de desglose de tiempo ────────────────────────────────
 
 function FilaTiempo({
-  emoji,
+  iconName,
+  iconLib = 'material',
   label,
   valor,
   promedio,
   colors,
   isDark,
 }: {
-  emoji: string
+  iconName: string
+  iconLib?: 'material' | 'community'
   label: string
   valor: number | null
   promedio: number | null
@@ -120,7 +119,11 @@ function FilaTiempo({
 
   return (
     <View style={ft.fila}>
-      <Text style={ft.emoji}>{emoji}</Text>
+      <View style={ft.iconWrap}>
+        {iconLib === 'material'
+          ? <MaterialIcons name={iconName as any} size={20} color={colors.subtitleText} />
+          : <MaterialCommunityIcons name={iconName as any} size={20} color={colors.subtitleText} />}
+      </View>
       <View style={ft.info}>
         <Text style={[ft.label, { color: colors.subtitleText }]}>{label}</Text>
         {promedio != null && (
@@ -133,7 +136,12 @@ function FilaTiempo({
         <Text style={[ft.valor, excede ? ft.valorAlto : { color: isDark ? '#4ade80' : '#22c55e' }]}>
           {valor} min
         </Text>
-        {excede && <Text style={ft.badge}>⬆️ Alto</Text>}
+        {excede && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+            <MaterialIcons name="arrow-upward" size={11} color="#EF4444" />
+            <Text style={ft.badge}>Alto</Text>
+          </View>
+        )}
       </View>
     </View>
   )
@@ -141,7 +149,7 @@ function FilaTiempo({
 
 const ft = StyleSheet.create({
   fila: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  emoji: { fontSize: 20, marginRight: 12, marginTop: 2 },
+  iconWrap: { width: 28, alignItems: 'center', marginRight: 10, marginTop: 2 },
   info: { flex: 1 },
   label: { fontSize: 14, fontWeight: '600', color: '#374151' },
   promedio: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
@@ -260,12 +268,15 @@ export default function ReportarProblema({ navigation, route }: Props) {
             </View>
 
             <View style={[s.infoBox, { backgroundColor: isDark ? '#082f49' : '#F0F9FF', borderColor: isDark ? '#0c4a6e' : '#BAE6FD' }]}>
-              <Text style={[s.infoText, { color: isDark ? '#38bdf8' : '#0369A1' }]}>
-                🤖 Nuestro mediador IA analizará quién fue responsable del retraso y decidirá si aplica un{' '}
-                <Text style={{ fontWeight: 'bold' }}>reembolso parcial</Text>,{' '}
-                <Text style={{ fontWeight: 'bold' }}>cupón</Text> o{' '}
-                <Text style={{ fontWeight: 'bold' }}>disculpa</Text>.
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                <MaterialIcons name="smart-toy" size={18} color={isDark ? '#38bdf8' : '#0369A1'} style={{ marginTop: 2 }} />
+                <Text style={[s.infoText, { color: isDark ? '#38bdf8' : '#0369A1', flex: 1 }]}>
+                  Nuestro mediador IA analizará quién fue responsable del retraso y decidirá si aplica un{' '}
+                  <Text style={{ fontWeight: 'bold' }}>reembolso parcial</Text>,{' '}
+                  <Text style={{ fontWeight: 'bold' }}>cupón</Text> o{' '}
+                  <Text style={{ fontWeight: 'bold' }}>disculpa</Text>.
+                </Text>
+              </View>
             </View>
           </>
         )}
@@ -307,11 +318,14 @@ export default function ReportarProblema({ navigation, route }: Props) {
               </View>
 
               {/* Badge de retraso */}
-              {retrasoMin != null && retrasoMin > 0 && (
+                            {retrasoMin != null && retrasoMin > 0 && (
                 <View style={[s.retraso, { backgroundColor: isDark ? '#7f1d1d30' : '#FEF2F2', borderColor: isDark ? '#7f1d1d' : '#FECACA' }]}>
-                  <Text style={[s.retrasoTxt, { color: isDark ? '#f87171' : '#B91C1C' }]}>
-                    ⚠️ Tu pedido llegó {retrasoMin} min tarde
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MaterialIcons name="warning" size={16} color={isDark ? '#f87171' : '#B91C1C'} />
+                    <Text style={[s.retrasoTxt, { color: isDark ? '#f87171' : '#B91C1C' }]}>
+                      Tu pedido llegó {retrasoMin} min tarde
+                    </Text>
+                  </View>
                 </View>
               )}
             </View>
@@ -327,7 +341,8 @@ export default function ReportarProblema({ navigation, route }: Props) {
                   </Text>
 
                   <FilaTiempo
-                    emoji="🍳"
+                    iconName="soup-kitchen"
+                    iconLib="material"
                     label="Preparación del negocio"
                     valor={contexto.tiempo_negocio_min}
                     promedio={contexto.avg_tiempo_negocio_min}
@@ -335,7 +350,8 @@ export default function ReportarProblema({ navigation, route }: Props) {
                     isDark={isDark}
                   />
                   <FilaTiempo
-                    emoji="⏳"
+                    iconName="hourglass-empty"
+                    iconLib="material"
                     label="Espera del repartidor en el negocio"
                     valor={contexto.tiempo_espera_repartidor_min}
                     promedio={null}
@@ -343,7 +359,8 @@ export default function ReportarProblema({ navigation, route }: Props) {
                     isDark={isDark}
                   />
                   <FilaTiempo
-                    emoji="🛵"
+                    iconName="moped"
+                    iconLib="material"
                     label="Trayecto del repartidor"
                     valor={contexto.tiempo_repartidor_min}
                     promedio={contexto.avg_tiempo_repartidor_min}
@@ -367,9 +384,12 @@ export default function ReportarProblema({ navigation, route }: Props) {
             {/* Historial de quejas — solo si hay */}
             {contexto.historial_quejas_30d.length > 0 && (
               <View style={[s.historialBox, { backgroundColor: isDark ? '#FEF3C710' : '#FEF3C7', borderColor: isDark ? '#FDE68A30' : '#FDE68A' }]}>
-                <Text style={[s.historialTitle, { color: isDark ? '#F59E0B' : '#92400E' }]}>
-                  ⚠️ Tienes {contexto.historial_quejas_30d.length} queja(s) en los últimos 30 días
-                </Text>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MaterialIcons name="warning" size={15} color={isDark ? '#F59E0B' : '#92400E'} />
+                  <Text style={[s.historialTitle, { color: isDark ? '#F59E0B' : '#92400E' }]}>
+                    Tienes {contexto.historial_quejas_30d.length} queja(s) en los últimos 30 días
+                  </Text>
+                </View>
                 <Text style={[s.historialSub, { color: isDark ? '#FCD34D' : '#78350F' }]}>
                   El mediador tomará esto en cuenta al decidir.
                 </Text>
@@ -416,13 +436,16 @@ export default function ReportarProblema({ navigation, route }: Props) {
               <Text style={[s.resultMsg, { color: colors.titleText }]}>{resolucion.mensaje_usuario}</Text>
             </View>
 
-            <View style={[s.infoBox, { backgroundColor: isDark ? '#082f49' : '#F0F9FF', borderColor: isDark ? '#0c4a6e' : '#BAE6FD' }]}>
-              <Text style={[s.infoText, { color: isDark ? '#38bdf8' : '#0369A1' }]}>
-                🎫 ID de caso:{' '}
-                <Text style={{ fontFamily: 'monospace', fontSize: 11 }}>
-                  {resolucion.queja_id.slice(0, 8).toUpperCase()}
+                        <View style={[s.infoBox, { backgroundColor: isDark ? '#082f49' : '#F0F9FF', borderColor: isDark ? '#0c4a6e' : '#BAE6FD' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MaterialIcons name="confirmation-number" size={16} color={isDark ? '#38bdf8' : '#0369A1'} />
+                <Text style={[s.infoText, { color: isDark ? '#38bdf8' : '#0369A1' }]}>
+                  ID de caso:{' '}
+                  <Text style={{ fontFamily: 'monospace', fontSize: 11 }}>
+                    {resolucion.queja_id.slice(0, 8).toUpperCase()}
+                  </Text>
                 </Text>
-              </Text>
+              </View>
             </View>
           </>
         )}
@@ -452,9 +475,12 @@ export default function ReportarProblema({ navigation, route }: Props) {
 
         {paso === 'contexto' && (
           <>
-            <TouchableOpacity onPress={solicitarResolucion} style={s.btnPrimary}>
+                        <TouchableOpacity onPress={solicitarResolucion} style={s.btnPrimary}>
               <LinearGradient colors={['#8B5CF6', '#7c3aed']} style={s.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-                <Text style={s.btnPrimaryText}>Solicitar resolución automática 🤖</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MaterialIcons name="smart-toy" size={18} color="#fff" />
+                  <Text style={s.btnPrimaryText}>Solicitar resolución automática</Text>
+                </View>
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity style={[s.btnSecondary, { backgroundColor: colors.border }]} onPress={() => navigation.goBack()}>

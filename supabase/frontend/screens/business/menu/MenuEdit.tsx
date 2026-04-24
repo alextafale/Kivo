@@ -24,6 +24,7 @@ import BottomNavBar, { TabName } from '../../../components/business/tabNavigatio
 import { useAuth } from '../../../application/context/AuthContext';
 import { supabase } from '../../../config/supabaseConfig';
 import { useTheme } from '../../../application/context/ThemeContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 
 
@@ -513,7 +514,7 @@ const handleEliminarCategoria = async (nombre: string) => {
 
           {filteredSections.length === 0 && (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>🍽️</Text>
+              <MaterialIcons name="restaurant-menu" size={48} color="#9CA3AF" />
               <Text style={[styles.emptyTitle, { color: colors.titleText }]}>No dishes found</Text>
               <Text style={[styles.emptySubtitle, { color: colors.subtitleText }]}>Try a different search term.</Text>
             </View>
@@ -533,7 +534,7 @@ const handleEliminarCategoria = async (nombre: string) => {
       <View style={styles.modalHeader}>
         <Text style={[styles.modalTitle, { color: colors.titleText }]}>Categorías</Text>
         <TouchableOpacity onPress={() => setModalCategorias(false)}>
-          <Text style={styles.modalClose}>✕</Text>
+          <MaterialIcons name="close" size={22} color={isDark ? '#9CA3AF' : '#6B7280'} />
         </TouchableOpacity>
       </View>
 
@@ -550,16 +551,16 @@ const handleEliminarCategoria = async (nombre: string) => {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 {index > 0 && (
                   <TouchableOpacity onPress={() => handleMoverCategoria(index, 'up')} style={{ padding: 5 }}>
-                    <Text>⬆️</Text>
+                    <MaterialIcons name="arrow-upward" size={18} color={colors.titleText} />
                   </TouchableOpacity>
                 )}
                 {index < arr.length - 1 && (
                   <TouchableOpacity onPress={() => handleMoverCategoria(index, 'down')} style={{ padding: 5 }}>
-                    <Text>⬇️</Text>
+                    <MaterialIcons name="arrow-downward" size={18} color={colors.titleText} />
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={() => handleEliminarCategoria(cat)} style={{ padding: 5, marginLeft: 8 }}>
-                  <Text style={styles.categoriaDeleteBtn}>🗑️</Text>
+                  <MaterialIcons name="delete" size={18} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             </View>

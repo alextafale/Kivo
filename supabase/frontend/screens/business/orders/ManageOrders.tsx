@@ -12,6 +12,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { supabase } from '../../../config/supabaseConfig'
 import { useAuth } from '../../../application/context/AuthContext'
 import { useTheme } from '../../../application/context/ThemeContext'
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ManageOrders'>
@@ -52,17 +53,17 @@ const ESTADO_CONFIG: Record<PedidoEstado, { label: string; color: string; bg: st
 }
 
 // Botones de acción según estado actual
-const ACCIONES: Record<PedidoEstado, { label: string; next: PedidoEstado; color: string }[]> = {
-  pending: [{ label: '✅ Aceptar', next: 'confirmed', color: '#22c55e' },
-  { label: '❌ Cancelar', next: 'cancelled', color: '#EF4444' }],
-  confirmed: [{ label: '👨‍🍳 Preparando', next: 'preparing', color: '#F97316' },
-  { label: '❌ Cancelar', next: 'cancelled', color: '#EF4444' }],
-  preparing: [{ label: '📦 Listo', next: 'ready', color: '#06B6D4' }],
-  ready: [{ label: '🛵 Recogido', next: 'picked_up', color: '#3B82F6' }],
-  picked_up: [{ label: '🗺️ En camino', next: 'on_the_way', color: '#3B82F6' }],
+const ACCIONES: Record<PedidoEstado, { label: string; icon: string; iconLib: 'material' | 'community'; next: PedidoEstado; color: string }[]> = {
+  pending:    [{ label: 'Aceptar',    icon: 'check-circle',  iconLib: 'material',   next: 'confirmed',  color: '#22c55e' },
+               { label: 'Cancelar',   icon: 'cancel',        iconLib: 'material',   next: 'cancelled',  color: '#EF4444' }],
+  confirmed:  [{ label: 'Preparando', icon: 'chef-hat',      iconLib: 'community',  next: 'preparing',  color: '#F97316' },
+               { label: 'Cancelar',   icon: 'cancel',        iconLib: 'material',   next: 'cancelled',  color: '#EF4444' }],
+  preparing:  [{ label: 'Listo',      icon: 'inventory-2',  iconLib: 'material',   next: 'ready',      color: '#06B6D4' }],
+  ready:      [{ label: 'Recogido',   icon: 'moped',         iconLib: 'material',   next: 'picked_up',  color: '#3B82F6' }],
+  picked_up:  [{ label: 'En camino',  icon: 'near-me',       iconLib: 'material',   next: 'on_the_way', color: '#3B82F6' }],
   on_the_way: [],
-  delivered: [],
-  cancelled: [],
+  delivered:  [],
+  cancelled:  [],
 }
 
 // ─── Iconos ───────────────────────────────────────────────────────────────────
@@ -221,13 +222,19 @@ export default function ManageOrders({ navigation }: Props) {
         </View>
 
         {/* Dirección */}
-        <Text style={[styles.direccion, { color: colors.subtitleText }]} numberOfLines={2}>
-          📍 {pedido.deliveryAddress}
-        </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <MaterialIcons name="location-on" size={13} color={colors.subtitleText} />
+          <Text style={[styles.direccion, { color: colors.subtitleText, flex: 1 }]} numberOfLines={2}>
+            {pedido.deliveryAddress}
+          </Text>
+        </View>
 
         {/* Notas */}
         {pedido.notas && (
-          <Text style={[styles.notas, { backgroundColor: isDark ? '#FEF3C715' : '#FEF3C7', color: isDark ? '#F59E0B' : '#92400E' }]}>📝 {pedido.notas}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+            <MaterialIcons name="sticky-note-2" size={13} color={isDark ? '#F59E0B' : '#92400E'} />
+            <Text style={[styles.notas, { backgroundColor: isDark ? '#FEF3C715' : '#FEF3C7', color: isDark ? '#F59E0B' : '#92400E', flex: 1 }]}>{pedido.notas}</Text>
+          </View>
         )}
 
         {/* Total */}
@@ -248,7 +255,12 @@ export default function ManageOrders({ navigation }: Props) {
                   style={[styles.accionBtn, { backgroundColor: accion.color }]}
                   onPress={() => cambiarEstado(pedido.id, accion.next)}
                 >
-                  <Text style={styles.accionBtnText}>{accion.label}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    {accion.iconLib === 'material'
+                      ? <MaterialIcons name={accion.icon as any} size={14} color="#fff" />
+                      : <MaterialCommunityIcons name={accion.icon as any} size={14} color="#fff" />}
+                    <Text style={styles.accionBtnText}>{accion.label}</Text>
+                  </View>
                 </TouchableOpacity>
               ))
             )}
@@ -291,8 +303,8 @@ export default function ManageOrders({ navigation }: Props) {
           }
         >
           {pedidos.length === 0 ? (
-            <View style={styles.center}>
-              <Text style={styles.emptyEmoji}>🎉</Text>
+                        <View style={styles.center}>
+              <MaterialIcons name="check-circle" size={56} color="#22c55e" />
               <Text style={[styles.emptyTitle, { color: colors.titleText }]}>Sin pedidos activos</Text>
               <Text style={[styles.emptyText, { color: colors.subtitleText }]}>Los nuevos pedidos aparecerán aquí automáticamente</Text>
             </View>

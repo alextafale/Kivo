@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { MaterialIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useCart, CartRestaurant, CartItem } from '../../../application/context/CartContext';
@@ -283,7 +284,7 @@ export default function CartScreen({ navigation }: Props) {
           <View style={styles.backButton} />
         </View>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateIcon}>🛒</Text>
+          <MaterialIcons name="shopping-cart" size={64} color="#9CA3AF" />
           <Text style={[styles.emptyStateTitle, { color: colors.titleText }]}>Tu carrito está vacío</Text>
           <Text style={[styles.emptyStateText, { color: colors.labelText }]}>Agrega items desde un restaurante o usa el chatbot</Text>
           <TouchableOpacity style={styles.emptyStateButton} onPress={() => navigation.navigate('HomeFeed')}>
@@ -321,7 +322,10 @@ export default function CartScreen({ navigation }: Props) {
       {chatbotOrder && (
         <View style={[styles.chatbotBanner, { backgroundColor: isDark ? 'rgba(34,197,94,0.1)' : '#F0FDF4', borderBottomColor: isDark ? 'transparent' : '#BBF7D0' }]}>
           <Text style={[styles.chatbotBannerText, { color: isDark ? colors.green : '#15803d' }]}>
-            🤖 Pedido del chatbot — confirma para generar tu ticket PDF
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MaterialIcons name="smart-toy" size={16} color={isDark ? '#818CF8' : '#4F46E5'} />
+                <Text style={[styles.chatbotBadgeText, { color: isDark ? '#818CF8' : '#4F46E5' }]}>Pedido del chatbot — confirma para generar tu ticket PDF</Text>
+              </View>
           </Text>
         </View>
       )}
@@ -357,7 +361,10 @@ export default function CartScreen({ navigation }: Props) {
             {isCheckingAlergias ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.aiDietBtnText}>⚕️ Analizar con IA Dieta / Alergias</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MaterialIcons name="medical-services" size={16} color="#fff" />
+                <Text style={styles.aiDietBtnText}>Analizar con IA Dieta / Alergias</Text>
+              </View>
             )}
           </TouchableOpacity>
         )}
@@ -365,7 +372,12 @@ export default function CartScreen({ navigation }: Props) {
         {chatbotOrder && (
           <View style={[styles.ticketNote, { backgroundColor: isDark ? 'rgba(56,130,246,0.1)' : '#EFF6FF', borderColor: isDark ? 'rgba(56,130,246,0.3)' : '#BFDBFE' }]}>
             <Text style={[styles.ticketNoteText, { color: isDark ? '#60A5FA' : '#1D4ED8' }]}>
-              📄 Al confirmar se generará un PDF y se enviará un resumen por WhatsApp a tu número registrado.
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <MaterialIcons name="picture-as-pdf" size={14} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                <Text style={[styles.legalText, { color: isDark ? '#9CA3AF' : '#6B7280', flex: 1 }]}>
+                  Al confirmar se generará un PDF y se enviará un resumen por WhatsApp a tu número registrado.
+                </Text>
+              </View>
             </Text>
           </View>
         )}
