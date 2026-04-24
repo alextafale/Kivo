@@ -348,7 +348,7 @@ export default function AddCard({ navigation }: Props) {
 
       await AsyncStorage.setItem('paymentMethods', JSON.stringify(updated));
 
-      Alert.alert('✓ Tarjeta guardada', 'Tu tarjeta fue agregada exitosamente.', [
+      Alert.alert('Tarjeta guardada', 'Tu tarjeta fue agregada exitosamente.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch {

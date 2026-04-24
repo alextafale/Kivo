@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from "expo-image-picker";
 import { RootStackParamList } from '../../../navigation/StacNavigation';
@@ -219,7 +220,7 @@ export default function SettingsScreen({ navigation }: Props) {
       }
 
       if (reviews.length === 0) {
-        setAiReviewAnalysis('Aún no tienes reseñas suficientes para analizar. 😊 ¡Sigue atendiendo a tus clientes!');
+        setAiReviewAnalysis('Aún no tienes reseñas suficientes para analizar. ¡Sigue atendiendo a tus clientes!');
         setAiReviewCount(0);
         return;
       }
@@ -514,7 +515,7 @@ export default function SettingsScreen({ navigation }: Props) {
                 />
               ) : (
                 <LinearGradient colors={['#DCFCE7', '#BBF7D0']} style={styles.avatarGradient}>
-                  <Text style={styles.avatarEmoji}>🍽️</Text>
+                  <MaterialIcons name="restaurant" size={48} color="#22c55e" />
                 </LinearGradient>
               )}
             </View>
@@ -685,9 +686,12 @@ export default function SettingsScreen({ navigation }: Props) {
           <View style={[styles.whiteCard, { backgroundColor: isDark ? '#111111' : '#FFFFFF' }]}>
             <View style={[styles.scheduleRow, { justifyContent: 'space-between' }]}>
               <View>
-                <Text style={[styles.timeText, { color: isDark ? '#FFFFFF' : '#374151' }]}>
-                  {isDark ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}
-                </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MaterialIcons name={isDark ? 'dark-mode' : 'light-mode'} size={18} color={isDark ? '#E9D5FF' : '#F59E0B'} />
+                    <Text style={[styles.timeText, { color: isDark ? '#FFFFFF' : '#374151' }]}>
+                      {isDark ? 'Modo Oscuro' : 'Modo Claro'}
+                    </Text>
+                  </View>
                 <Text style={{ fontSize: 11, color: isDark ? '#888888' : '#9CA3AF', marginTop: 2 }}>
                   Cambiar apariencia de la app
                 </Text>
@@ -707,7 +711,10 @@ export default function SettingsScreen({ navigation }: Props) {
         {/* AI Review Insights */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#111827' }]}>📝 AI Review Insights</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <MaterialIcons name="rate-review" size={18} color={isDark ? '#FFFFFF' : '#111827'} />
+              <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#111827' }]}>AI Review Insights</Text>
+            </View>
           </View>
           <View style={[styles.aiReviewCard, { backgroundColor: isDark ? '#1a0a2e' : '#FAF5FF', borderColor: isDark ? '#4c1d95' : '#DDD6FE' }]}>
             <View style={styles.aiReviewHeader}>
@@ -741,9 +748,16 @@ export default function SettingsScreen({ navigation }: Props) {
               {aiReviewLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.aiReviewBtnText}>
-                  {aiReviewAnalysis ? '🔄 Actualizar análisis' : '✨ Analizar ahora'}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MaterialIcons
+                    name={aiReviewAnalysis ? 'refresh' : 'auto-awesome'}
+                    size={16}
+                    color="#fff"
+                  />
+                  <Text style={styles.aiReviewBtnText}>
+                    {aiReviewAnalysis ? 'Actualizar análisis' : 'Analizar ahora'}
+                  </Text>
+                </View>
               )}
             </TouchableOpacity>
           </View>

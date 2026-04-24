@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
@@ -100,11 +100,11 @@ type Props = { navigation: BusinessDetailNavigationProp; route: BusinessDetailRo
 // ─── Emojis de reacción ───────────────────────────────────────────────────────
 
 const REACCIONES = [
-  { tipo: 'like', emoji: '👍' },
-  { tipo: 'love', emoji: '❤️' },
-  { tipo: 'haha', emoji: '😂' },
-  { tipo: 'wow', emoji: '😮' },
-  { tipo: 'sad', emoji: '😢' },
+  { tipo: 'like', icon: 'thumb-up', lib: 'MaterialIcons' },
+  { tipo: 'love', icon: 'favorite', lib: 'MaterialIcons' },
+  { tipo: 'haha', icon: 'emoticon-happy', lib: 'MaterialCommunityIcons' },
+  { tipo: 'wow', icon: 'emoticon-outline', lib: 'MaterialCommunityIcons' },
+  { tipo: 'sad', icon: 'emoticon-sad', lib: 'MaterialCommunityIcons' },
 ];
 
 // ─── Componente de reacciones por comentario ──────────────────────────────────
@@ -187,7 +187,11 @@ const ReaccionesRow = React.memo(({
             onPress={() => toggleReaccion(r.tipo)}
             activeOpacity={0.75}
           >
-            <Text style={styles.reaccionEmoji}>{r.emoji}</Text>
+            {r.lib === 'MaterialIcons' ? (
+              <MaterialIcons name={r.icon as any} size={16} color={activa ? '#fff' : '#64748b'} />
+            ) : (
+              <MaterialCommunityIcons name={r.icon as any} size={16} color={activa ? '#fff' : '#64748b'} />
+            )}
             {conteo > 0 && (
               <Text style={[styles.reaccionConteo, activa && styles.reaccionConteoActivo]}>
                 {conteo}
@@ -392,7 +396,7 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
       setNuevoComentario('');
       cargarComentarios(negocioId, 1, true);
     } catch (e) {
-      console.error('📝 error:', e);
+      console.error('Comentario error:', e);
       Alert.alert('Error', 'No se pudo publicar el comentario.');
     } finally {
       setPublicando(false);
@@ -639,7 +643,7 @@ export default function BusinessDetailScreen({ navigation, route }: Props) {
             <ActivityIndicator color={GREEN} style={{ marginTop: 16 }} />
           ) : comentarios.length === 0 ? (
             <View style={styles.sinComentarios}>
-              <Text style={styles.sinComentariosEmoji}>💬</Text>
+              <MaterialIcons name="chat-bubble-outline" size={40} color="#9CA3AF" />
               <Text style={styles.sinComentariosText}>Sé el primero en comentar</Text>
             </View>
           ) : (

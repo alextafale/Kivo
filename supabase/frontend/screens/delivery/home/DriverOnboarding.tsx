@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle } from 'react-native-svg'
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
@@ -124,9 +125,15 @@ const VEHICULOS = ['moto', 'bici', 'auto'] as const
 type Vehiculo = typeof VEHICULOS[number]
 
 const VEHICULO_LABEL: Record<Vehiculo, string> = {
-  moto: '🏍  Moto',
-  bici: '🚲  Bici',
-  auto: '🚗  Auto',
+  moto: 'Moto',
+  bici: 'Bici',
+  auto: 'Auto',
+}
+
+const VEHICULO_ICON: Record<Vehiculo, string> = {
+  moto: 'moped',
+  bici: 'pedal-bike',
+  auto: 'directions-car',
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -199,7 +206,10 @@ export default function DriverOnboarding({ navigation, route }: Props) {
         {/* Header */}
         <LinearGradient colors={['#F0FDF4', '#FFFFFF']} style={styles.headerGradient}>
           <Text style={styles.headerTitle}>Configura tu perfil</Text>
-          <Text style={styles.headerSubtitle}>Un paso rápido ⚡</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <MaterialIcons name="bolt" size={15} color="#9CA3AF" />
+            <Text style={styles.headerSubtitle}>Un paso rápido</Text>
+          </View>
           <StepIndicator current={step} total={2} />
         </LinearGradient>
 
@@ -233,9 +243,12 @@ export default function DriverOnboarding({ navigation, route }: Props) {
                   style={[styles.vehiculoChip, vehiculo === v && styles.vehiculoChipActive]}
                   onPress={() => setVehiculo(v)}
                 >
-                  <Text style={[styles.vehiculoChipText, vehiculo === v && styles.vehiculoChipTextActive]}>
-                    {VEHICULO_LABEL[v]}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <MaterialIcons name={VEHICULO_ICON[v] as any} size={16} color={vehiculo === v ? '#16a34a' : '#6B7280'} />
+                    <Text style={[styles.vehiculoChipText, vehiculo === v && styles.vehiculoChipTextActive]}>
+                      {VEHICULO_LABEL[v]}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
@@ -257,7 +270,7 @@ export default function DriverOnboarding({ navigation, route }: Props) {
         {step === 1 && (
           <View style={styles.form}>
             <View style={styles.successCard}>
-              <Text style={styles.successEmoji}>🎉</Text>
+              <MaterialIcons name="celebration" size={48} color="#22c55e" />
               <Text style={styles.successTitle}>¡Registro completado!</Text>
               <Text style={styles.successText}>
                 Tu perfil de repartidor ha sido creado exitosamente. Ya puedes ver pedidos disponibles y comenzar a ganar.

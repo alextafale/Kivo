@@ -121,7 +121,7 @@ export default function DriverSupport({ navigation }: Props) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '🆘 ¡Hola! Soy KivoSOS, tu asistente de soporte logístico.\n\nEstoy aquí para ayudarte en cualquier situación durante tus entregas. ¿Qué está pasando?',
+      text: 'Hola! Soy KivoSOS, tu asistente de soporte logístico.\n\nEstoy aquí para ayudarte en cualquier situación durante tus entregas. ¿Qué está pasando?',
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -189,7 +189,7 @@ export default function DriverSupport({ navigation }: Props) {
         ...prev,
         {
           id: (Date.now() + 1).toString(),
-          text: 'No pude conectarme. Revisa tu internet e intenta de nuevo. 🔄',
+          text: 'No pude conectarme. Revisa tu internet e intenta de nuevo.',
           sender: 'bot',
           timestamp: new Date(),
         },

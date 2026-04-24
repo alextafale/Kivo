@@ -15,7 +15,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient'
+import { MaterialIcons } from '@expo/vector-icons';;
 import Svg, { Path, Circle, Rect, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -185,7 +186,7 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.pedidoHeaderLeft}>
-          <Text style={styles.pedidoHeaderEmoji}>🧾</Text>
+          <MaterialIcons name="receipt" size={22} color="#22c55e" />
           <View>
             <Text style={styles.pedidoHeaderTitle}>Resumen del Pedido</Text>
             <Text style={[styles.pedidoHeaderSub, { color: colors.green }]}>{pedido.negocio?.nombre}</Text>
@@ -228,7 +229,7 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
 
       {/* Dirección */}
       <View style={styles.pedidoDireccionRow}>
-        <Text style={styles.pedidoDireccionIcon}>📍</Text>
+        <MaterialIcons name="location-on" size={12} color="#22c55e" />
         <Text style={[styles.pedidoDireccionText, { color: colors.textSec }]} numberOfLines={2}>
           {pedido.direccionEntrega}
         </Text>
@@ -236,7 +237,7 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
 
       {!!pedido.notas && (
         <View style={styles.pedidoNotasRow}>
-          <Text style={styles.pedidoDireccionIcon}>📝</Text>
+          <MaterialIcons name="notes" size={12} color="#9CA3AF" />
           <Text style={[styles.pedidoNotasText, { color: colors.textSec }]}>{pedido.notas}</Text>
         </View>
       )}
@@ -290,7 +291,7 @@ export default function Chatbot({ navigation, route }: Props) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '¡Hola! 👋 Soy KivoBot.\n\nPuedo ayudarte a:\n🍕 Ver menús y precios\n📍 Info de negocios\n🛵 Tomar tu pedido\n\n¿Qué se te antoja hoy?',
+      text: '¡Hola! Soy KivoBot.\n\nPuedo ayudarte a:\n• Ver menús y precios\n• Info de negocios\n• Tomar tu pedido\n\n¿Qué se te antoja hoy?',
       sender: 'bot',
       timestamp: new Date(),
       suggestions: ['Ver restaurantes', 'Hacer un pedido', '¿Qué hay de comer?'],
@@ -416,7 +417,7 @@ export default function Chatbot({ navigation, route }: Props) {
       ]);
 
       const botText = pedidoCard
-        ? `¡Listo! Tu pedido en ${pedidoCard.negocio?.nombre} está confirmado 🎉\n\nRevisa el resumen abajo y ve al carrito para finalizar.`
+        ? `¡Listo! Tu pedido en ${pedidoCard.negocio?.nombre} está confirmado.\n\nRevisa el resumen abajo y ve al carrito para finalizar.`
         : displayText;
 
       const botMsg: Message = {
@@ -442,7 +443,7 @@ export default function Chatbot({ navigation, route }: Props) {
         ...prev,
         {
           id: (Date.now() + 1).toString(),
-          text: 'Ups, tuve un problema 😅 ¿Puedes intentarlo de nuevo?',
+          text: 'Ups, tuve un problema. ¿Puedes intentarlo de nuevo?',
           sender: 'bot',
           timestamp: new Date(),
         },

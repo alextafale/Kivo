@@ -405,7 +405,7 @@ export default function EditMenuItem({ navigation, route }: Props) {
       const idx = items.findIndex(i => i.id === item.id);
       if (idx >= 0) items[idx] = item; else items.push(item);
       await AsyncStorage.setItem('menuItems', JSON.stringify(items));
-      Alert.alert('✓ Guardado', 'Los cambios fueron guardados exitosamente.', [
+      Alert.alert('Guardado', 'Los cambios fueron guardados exitosamente.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch {

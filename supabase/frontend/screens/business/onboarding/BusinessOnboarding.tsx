@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Location from 'expo-location';
 import Svg, { Path, Circle } from 'react-native-svg'
+import { MaterialIcons } from '@expo/vector-icons'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { MapPicker } from '../../../components/addresses/MapPicker'
@@ -181,7 +182,7 @@ function SelectField({
 
           {/* Búsqueda */}
           <View style={selectStyles.searchWrap}>
-            <Text style={selectStyles.searchIcon}>🔍</Text>
+            <MaterialIcons name="search" size={18} color="#9CA3AF" />
             <TextInput
               style={selectStyles.searchInput}
               value={search}
@@ -192,7 +193,7 @@ function SelectField({
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch('')}>
-                <Text style={selectStyles.clearBtn}>✕</Text>
+                <MaterialIcons name="close" size={16} color="#9CA3AF" />
               </TouchableOpacity>
             )}
           </View>
@@ -209,7 +210,7 @@ function SelectField({
                 <Text style={[selectStyles.optionText, item === value && selectStyles.optionTextSelected]}>
                   {item}
                 </Text>
-                {item === value && <Text style={selectStyles.optionCheck}>✓</Text>}
+                {item === value && <MaterialIcons name="check" size={16} color="#22c55e" />}
               </TouchableOpacity>
             )}
             ItemSeparatorComponent={() => <View style={selectStyles.separator} />}
@@ -456,7 +457,10 @@ export default function BusinessOnboarding({ navigation }: Props) {
         {/* Header */}
         <LinearGradient colors={['#F0FDF4', '#FFFFFF']} style={styles.headerGradient}>
           <Text style={styles.headerTitle}>Configura tu negocio</Text>
-          <Text style={styles.headerSubtitle}>Solo toma 2 minutos ⚡</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <MaterialIcons name="bolt" size={16} color="#9CA3AF" />
+            <Text style={styles.headerSubtitle}>Solo toma 2 minutos</Text>
+          </View>
           <StepIndicator current={step} total={3} />
         </LinearGradient>
 

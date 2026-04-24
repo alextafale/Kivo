@@ -8,6 +8,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
+import { MaterialIcons } from '@expo/vector-icons'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -125,7 +126,7 @@ export default function Profile({ navigation }: Props) {
         await AsyncStorage.setItem('KIVO_ALERGIAS', editValue.trim())
         setAlergias(editValue.trim())
         setEditModalVisible(false)
-        Alert.alert('✓ Actualizado', 'Información dietética guardada.')
+        Alert.alert('Actualizado', 'Información dietética guardada.')
         return
       } catch (e: any) {
         Alert.alert('Error', 'No se pudieron guardar las alergias')
@@ -138,7 +139,7 @@ export default function Profile({ navigation }: Props) {
     try {
       await updateProfile({ [editField]: editValue.trim() })   // ← PATCH /me real
       setEditModalVisible(false)
-      Alert.alert('✓ Actualizado', 'Tu información fue guardada correctamente.')
+      Alert.alert('Actualizado', 'Tu información fue guardada correctamente.')
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'No se pudo actualizar')
     }
@@ -271,7 +272,7 @@ export default function Profile({ navigation }: Props) {
                 {/* Alergias / Dieta */}
                 <TouchableOpacity style={styles.infoRow}
                   onPress={() => openEdit('alergias', alergias)} activeOpacity={0.7}>
-                  <View style={[styles.infoIconWrap, { backgroundColor: colors.iconBg }]}><Text style={{fontSize: 16}}>⚕️</Text></View>
+                  <View style={[styles.infoIconWrap, { backgroundColor: colors.iconBg }]}><MaterialIcons name="medical-services" size={16} color={colors.subtitleText} /></View>
                   <View style={styles.infoTextBlock}>
                     <Text style={[styles.infoLabel, { color: colors.labelText }]}>Alergias y Dieta IA</Text>
                     <Text style={[styles.infoValue, { color: colors.titleText }]}>{alergias || 'Sin restricciones'}</Text>

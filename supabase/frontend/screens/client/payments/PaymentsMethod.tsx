@@ -323,7 +323,7 @@ export default function PaymentMethods({ navigation }: Props) {
       await AsyncStorage.setItem('paymentMethods', JSON.stringify(updated));
     }
 
-    Alert.alert('✓ Método confirmado', `Pagarás con: ${label}`, [
+    Alert.alert('Método confirmado', `Pagarás con: ${label}`, [
       { text: 'OK', onPress: () => navigation.goBack() },
     ]);
   };

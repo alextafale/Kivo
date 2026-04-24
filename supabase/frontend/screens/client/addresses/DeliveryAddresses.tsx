@@ -127,11 +127,14 @@ const AddressCard = ({
             <Text style={[styles.cardStreet, { color: colors.titleText }]}>{linea1}</Text>
             {!!linea2 && <Text style={[styles.cardCity, { color: colors.subtitleText }]}>{linea2}</Text>}
             {!!domicilio.referencias && (
-              <Text style={[styles.cardReference, { color: colors.subtitleText }]}>📍 {domicilio.referencias}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <PinIcon color={colors.subtitleText} />
+                <Text style={[styles.cardReference, { color: colors.subtitleText }]}>{domicilio.referencias}</Text>
+              </View>
             )}
             {domicilio.coordenadas && (
               <Text style={styles.cardGps}>
-                🗺 {domicilio.coordenadas.latitud.toFixed(4)}, {domicilio.coordenadas.longitud.toFixed(4)}
+                {domicilio.coordenadas.latitud.toFixed(4)}, {domicilio.coordenadas.longitud.toFixed(4)}
               </Text>
             )}
           </View>

@@ -199,10 +199,10 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
   const mark = () => setHasChanges(true);
 
-  // ✨ Botón Magia — llama al backend y rellena descripción, tags y tiempo
+  // Botón Magia — llama al backend y rellena descripción, tags y tiempo
   const handleMagic = async () => {
     if (!name.trim()) {
-      Alert.alert('Primero escribe el nombre del platillo', 'Escribe el nombre antes de usar la magia ✨');
+      Alert.alert('Primero escribe el nombre del platillo', 'Escribe el nombre antes de usar la magia');
       return;
     }
     setIsMagicLoading(true);

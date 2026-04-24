@@ -14,9 +14,16 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
 import { useDomicilioForm } from '../../../application/hooks/useDomicilioForm';
 import { useTheme } from '../../../application/context/ThemeContext';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ETIQUETAS } from '../../../domain/entities/Domicilio';
 import type { Domicilio, Coordenadas } from '../../../domain/entities/Domicilio';
 
+const getEtiquetaIcon = (etiqueta: string): string => {
+  if (etiqueta === 'Casa')    return 'home';
+  if (etiqueta === 'Trabajo') return 'work';
+  if (etiqueta === 'Gym')     return 'fitness-center';
+  return 'location-on';
+};
 
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AddAddress'>;
@@ -194,7 +201,7 @@ export default function AddAddress({ navigation, route }: Props) {
   const handleSave = useCallback(async () => {
     const result = await submit();
     if (result) {
-      Alert.alert('✓ Guardado', 'Tu dirección fue guardada correctamente.', [
+      Alert.alert('Guardado', 'Tu dirección fue guardada correctamente.', [
         { text: 'OK', onPress: () => navigation.navigate('DeliveryAddresses') },
       ]);
     }
@@ -294,15 +301,17 @@ export default function AddAddress({ navigation, route }: Props) {
                         style={styles.typeChipGrad}
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                       >
-                        <Text style={[styles.typeChipText, styles.typeChipTextActive]}>
-                          {etiqueta === 'Casa' ? '🏠' : etiqueta === 'Trabajo' ? '💼' : etiqueta === 'Gym' ? '🏋️' : '📍'} {etiqueta}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <MaterialIcons name={getEtiquetaIcon(etiqueta) as any} size={16} color="#fff" />
+                          <Text style={[styles.typeChipText, styles.typeChipTextActive]}>{etiqueta}</Text>
+                        </View>
                       </LinearGradient>
                     ) : (
                       <View style={styles.typeChipInner}>
-                        <Text style={[styles.typeChipText, { color: colors.titleText }]}>
-                          {etiqueta === 'Casa' ? '🏠' : etiqueta === 'Trabajo' ? '💼' : etiqueta === 'Gym' ? '🏋️' : '📍'} {etiqueta}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <MaterialIcons name={getEtiquetaIcon(etiqueta) as any} size={16} color={colors.titleText} />
+                          <Text style={[styles.typeChipText, { color: colors.titleText }]}>{etiqueta}</Text>
+                        </View>
                       </View>
                     )}
                   </TouchableOpacity>

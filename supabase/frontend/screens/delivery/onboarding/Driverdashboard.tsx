@@ -15,6 +15,7 @@ import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/
 import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../domain/ports/repositories/lRepartidorRepository'
 import { useDriverLocation } from '../../../application/hooks/useDriverLocation'
 import { supabase } from '../../../config/supabaseConfig'
+import { MaterialIcons } from '@expo/vector-icons'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'DriverDashboard'>
@@ -281,7 +282,7 @@ export default function DriverDashboard({ navigation }: Props) {
   if (fetchError && !repartidor) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <Text style={styles.errorEmoji}>⚠️</Text>
+        <MaterialIcons name="warning" size={40} color="#EF4444" />
         <Text style={styles.errorText}>{fetchError}</Text>
         <TouchableOpacity
           onPress={() => { setLoading(true); loadAll().finally(() => setLoading(false)) }}
@@ -325,7 +326,10 @@ export default function DriverDashboard({ navigation }: Props) {
 
           {/* Título + estado */}
           <View style={styles.headerCenter}>
-            <Text style={styles.headerGreeting}>Hola 👋</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <MaterialIcons name="waving-hand" size={20} color="#22c55e" />
+              <Text style={styles.headerGreeting}>Hola</Text>
+            </View>
             <Text style={styles.headerTitle}>Mi Dashboard</Text>
           </View>
 
@@ -435,9 +439,12 @@ export default function DriverDashboard({ navigation }: Props) {
                   <PackageIcon color="#22c55e" size={22} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.activoTitle}>
-                    {estadoPedido === 'picked_up' ? 'Pedido recogido 📦' : 'En camino 🛵'}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MaterialIcons name={estadoPedido === 'picked_up' ? 'inventory-2' : 'moped'} size={16} color="#fff" />
+                    <Text style={styles.activoTitle}>
+                      {estadoPedido === 'picked_up' ? 'Pedido recogido' : 'En camino'}
+                    </Text>
+                  </View>
                   <Text style={styles.activoSubtitle}>
                     {estadoPedido === 'picked_up'
                       ? 'Confirma cuando estés en camino'
@@ -461,9 +468,12 @@ export default function DriverDashboard({ navigation }: Props) {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Text style={styles.avanzarBtnText}>
-                    {estadoPedido === 'picked_up' ? '🛵 Ya voy en camino' : '✅ Pedido entregado'}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <MaterialIcons name={estadoPedido === 'picked_up' ? 'moped' : 'check-circle'} size={18} color="#fff" />
+                    <Text style={styles.avanzarBtnText}>
+                      {estadoPedido === 'picked_up' ? 'Ya voy en camino' : 'Pedido entregado'}
+                    </Text>
+                  </View>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -481,14 +491,14 @@ export default function DriverDashboard({ navigation }: Props) {
             </View>
 
             {estado === 'offline' ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyEmoji}>😴</Text>
+                            <View style={styles.emptyCard}>
+                <MaterialIcons name="bedtime" size={40} color="#9CA3AF" />
                 <Text style={styles.emptyTitle}>Estás offline</Text>
                 <Text style={styles.emptyText}>Cambia tu estado a "Disponible" para ver pedidos.</Text>
               </View>
             ) : pedidos.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyEmoji}>🔍</Text>
+                            <View style={styles.emptyCard}>
+                <MaterialIcons name="search" size={40} color="#9CA3AF" />
                 <Text style={styles.emptyTitle}>Sin pedidos por ahora</Text>
                 <Text style={styles.emptyText}>Jala hacia abajo para actualizar.</Text>
               </View>

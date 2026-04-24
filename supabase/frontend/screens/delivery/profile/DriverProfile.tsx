@@ -14,6 +14,7 @@ import { useDriverPhoto } from '../../../application/hooks/useDriverPhoto'
 import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/RepartidorRepositoryImpl'
 import type { RepartidorInfo } from '../../../domain/ports/repositories/lRepartidorRepository'
 import { useTheme } from '../../../application/context/ThemeContext'
+import { MaterialIcons } from '@expo/vector-icons'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'DriverProfile'>
@@ -245,9 +246,12 @@ export default function DriverProfile({ navigation, route }: Props) {
           <View style={[styles.card, { backgroundColor: colors.cardBg }]}>
             <View style={[styles.infoRow, { justifyContent: 'space-between' }]}>
               <View style={styles.infoTextBlock}>
-                <Text style={[styles.infoValue, { color: colors.titleText }]}>
-                  {isDark ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MaterialIcons name={isDark ? 'dark-mode' : 'light-mode'} size={18} color={isDark ? '#E9D5FF' : '#F59E0B'} />
+                  <Text style={[styles.infoValue, { color: colors.titleText }]}>
+                    {isDark ? 'Modo Oscuro' : 'Modo Claro'}
+                  </Text>
+                </View>
                 <Text style={[styles.infoLabel, { color: colors.labelText }]}>Cambiar apariencia de la app</Text>
               </View>
               <Switch

@@ -49,9 +49,7 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onRate, size = 36 }) =>
     <View style={styles.starsRow}>
       {[1, 2, 3, 4, 5].map((star) => (
         <TouchableOpacity key={star} onPress={() => onRate(star)} activeOpacity={0.7}>
-          <Text style={[styles.star, { fontSize: size, color: star <= rating ? "#2ECC40" : "#D0D0D0" }]}>
-            ★
-          </Text>
+          <AntDesign name={star <= rating ? "star" : "staro"} size={size} color={star <= rating ? "#2ECC40" : "#D0D0D0"} />
         </TouchableOpacity>
       ))}
     </View>
@@ -283,7 +281,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
           <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
             <View style={styles.cardRow}>
               <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#334155' : '#FFF3E0' }]}>
-                <Text style={styles.avatarEmoji}>🍕</Text>
+                <MaterialIcons name="restaurant" size={32} color="#22c55e" />
               </View>
               <View style={styles.cardInfo}>
                 <Text style={[styles.cardName, { color: colors.titleText }]}>Food</Text>
@@ -298,7 +296,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
           <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
             <View style={styles.cardRow}>
               <View style={[styles.avatarCircle, { backgroundColor: isDark ? '#15803d40' : '#E8F5E9' }]}>
-                <Text style={styles.avatarEmoji}>🛵</Text>
+                <MaterialIcons name="moped" size={32} color="#22c55e" />
               </View>
               <View style={styles.cardInfo}>
                 <Text style={[styles.cardName, { color: colors.titleText }]}>Delivery</Text>
@@ -406,7 +404,10 @@ export default function RateOrderScreen({ navigation, route }: Props) {
               total: total,
             })}
           >
-            <Text style={styles.reportButtonText}>⚠️ Reportar un problema</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <MaterialIcons name="warning" size={16} color="#F97316" />
+              <Text style={styles.reportButtonText}>Reportar un problema</Text>
+            </View>
           </TouchableOpacity>
 
 

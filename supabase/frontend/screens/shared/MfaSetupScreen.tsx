@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path } from 'react-native-svg'
+import { MaterialIcons } from '@expo/vector-icons'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/StacNavigation'
 import { AuthRepositoryImpl } from '../../infraestructure/repositories/AuthRepositoryImpl'
@@ -101,7 +102,7 @@ export default function MfaSetupScreen({ navigation }: Props) {
 
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Text style={styles.iconText}>🔐</Text>
+          <MaterialIcons name="lock" size={48} color="#22c55e" />
         </View>
         
         <Text style={styles.title}>Protege tu cuenta</Text>

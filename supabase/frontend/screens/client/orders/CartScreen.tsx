@@ -52,7 +52,7 @@ const CartItemRow = ({ item, sucursal_id }: { item: CartItem; sucursal_id: strin
         <Image source={{ uri: item.imagen }} style={styles.itemImage} />
       ) : (
         <View style={[styles.itemImage, styles.itemImagePlaceholder, { backgroundColor: colors.border }]}>
-          <Text style={{ fontSize: 20 }}>🍽️</Text>
+          <MaterialIcons name="restaurant" size={24} color={colors.subtitleText} />
         </View>
       )}
       <View style={styles.itemInfo}>
@@ -88,7 +88,7 @@ const RestaurantCard = ({ restaurant }: { restaurant: CartRestaurant }) => {
           <Image source={{ uri: restaurant.logo }} style={styles.restaurantLogo} />
         ) : (
           <View style={[styles.restaurantLogo, styles.restaurantLogoPlaceholder, { backgroundColor: colors.border }]}>
-            <Text style={{ fontSize: 18 }}>🍽️</Text>
+            <MaterialIcons name="restaurant" size={20} color={colors.subtitleText} />
           </View>
         )}
         <View style={styles.restaurantInfo}>
@@ -116,7 +116,7 @@ const RestaurantCard = ({ restaurant }: { restaurant: CartRestaurant }) => {
 // ─── CartScreen ───────────────────────────────────────────────────────────────
 
 export default function CartScreen({ navigation }: Props) {
-   console.log("Estas en cart screen");
+  console.log("Estas en cart screen");
   const { cart, clearCart, clearChatbotOrder, getSubtotal, getTotalItems, chatbotOrder } = useCart();
   const { session } = useAuth();
   const { profile } = useProfile();
@@ -124,9 +124,9 @@ export default function CartScreen({ navigation }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [isCheckingAlergias, setIsCheckingAlergias] = useState(false);
 
-  const subtotal  = getSubtotal();
+  const subtotal = getSubtotal();
   const costoEnvio = cart.length * 12;
-  const total     = subtotal + costoEnvio;
+  const total = subtotal + costoEnvio;
 
   const handleCheckAlergias = async () => {
     if (cart.length === 0) return;
@@ -137,7 +137,7 @@ export default function CartScreen({ navigation }: Props) {
         Alert.alert('Configura primero', 'Ve a tu Perfil y configura tus Alergias y Dieta IA antes de poder escanear alimentos.');
         return;
       }
-      
+
       const allItems = cart.flatMap(rest => rest.items).map(item => ({
         name: item.nombre,
         quantity: item.cantidad,
@@ -145,11 +145,11 @@ export default function CartScreen({ navigation }: Props) {
         original_id: item.id // optional, but mapping to OrderItem structure
       }));
       const res = await checkAllergies(storedAlergias, allItems as any);
-      
+
       if (res === 'SEGURO' || res.toLowerCase() === 'seguro') {
-        Alert.alert('✅ Asesor AI', 'Los alimentos coinciden que son SEGUROS para ti según tus alergias/restricciones registradas.');
+        Alert.alert('Asesor AI', 'Los alimentos coinciden que son SEGUROS para ti según tus alergias/restricciones registradas.');
       } else {
-        Alert.alert('⚠️ Advertencia Dietética', res);
+        Alert.alert('Advertencia Dietética', res);
       }
     } catch (e) {
       Alert.alert('Error', 'No se pudo conectar al Asesor Médico.');
@@ -183,9 +183,9 @@ export default function CartScreen({ navigation }: Props) {
       // 1. Guardar pedido en Supabase con la firma correcta
       const pedidoEnCurso = {
         negocio: chatbotOrder.negocio as any,
-        items:   chatbotOrder.items,
+        items: chatbotOrder.items,
         direccionEntrega: chatbotOrder.direccionEntrega,
-        notas:   chatbotOrder.notas,
+        notas: chatbotOrder.notas,
       };
 
       // ✅ Fix: nueva firma con sucursalId, domicilioId, userId
@@ -199,22 +199,22 @@ export default function CartScreen({ navigation }: Props) {
 
       // 2. Construir datos del ticket
       const ticketData: TicketData = {
-        ordenId:          result.pedidoId,
-        orderNumber:      result.order.orderNumber,
-        negocioNombre:    chatbotOrder.negocio.nombre,
+        ordenId: result.pedidoId,
+        orderNumber: result.order.orderNumber,
+        negocioNombre: chatbotOrder.negocio.nombre,
         negocioDireccion: chatbotOrder.negocio.direccion,
-        usuarioNombre:    profile
+        usuarioNombre: profile
           ? `${profile.nombre ?? ''} ${profile.apellido ?? ''}`.trim() || 'Cliente'
           : 'Cliente',
-        usuarioEmail:     session?.email ?? '',
-        usuarioTelefono:  profile?.telefono,
+        usuarioEmail: session?.email ?? '',
+        usuarioTelefono: profile?.telefono,
         direccionEntrega: chatbotOrder.direccionEntrega,
-        notas:            chatbotOrder.notas,
-        items:            chatbotOrder.items,
-        subtotal:         result.order.subtotal ?? subtotal,
-        costoEnvio:       12,
-        total:            result.order.total,
-        fecha:            new Date().toLocaleString('es-MX', {
+        notas: chatbotOrder.notas,
+        items: chatbotOrder.items,
+        subtotal: result.order.subtotal ?? subtotal,
+        costoEnvio: 12,
+        total: result.order.total,
+        fecha: new Date().toLocaleString('es-MX', {
           dateStyle: 'medium', timeStyle: 'short',
         }),
       };
@@ -235,9 +235,9 @@ export default function CartScreen({ navigation }: Props) {
       // 7. Navegar a confirmación
       navigation.navigate('OrderConfirmation', {
         orders: [{
-          orderNumber:  result.order.orderNumber,
+          orderNumber: result.order.orderNumber,
           negocioNombre: chatbotOrder.negocio.nombre,
-          total:        result.order.total,
+          total: result.order.total,
         }],
         totalGeneral: result.order.total,
       });
@@ -258,14 +258,14 @@ export default function CartScreen({ navigation }: Props) {
       return;
     }
     const restaurants = cart.map(r => ({
-      sucursalId:   r.sucursal_id,
-      negocioId:    r.negocio_id,
+      sucursalId: r.sucursal_id,
+      negocioId: r.negocio_id,
       negocioNombre: r.nombre,
-      costoEnvio:   12,
-      items:        r.items.map(i => ({
-        name:     i.nombre,
+      costoEnvio: 12,
+      items: r.items.map(i => ({
+        name: i.nombre,
         quantity: i.cantidad,
-        price:    i.precio_unitario,
+        price: i.precio_unitario,
       })),
     }));
     navigation.navigate('OrderSummary', { restaurants });
@@ -322,10 +322,10 @@ export default function CartScreen({ navigation }: Props) {
       {chatbotOrder && (
         <View style={[styles.chatbotBanner, { backgroundColor: isDark ? 'rgba(34,197,94,0.1)' : '#F0FDF4', borderBottomColor: isDark ? 'transparent' : '#BBF7D0' }]}>
           <Text style={[styles.chatbotBannerText, { color: isDark ? colors.green : '#15803d' }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <MaterialIcons name="smart-toy" size={16} color={isDark ? '#818CF8' : '#4F46E5'} />
-                <Text style={[styles.chatbotBadgeText, { color: isDark ? '#818CF8' : '#4F46E5' }]}>Pedido del chatbot — confirma para generar tu ticket PDF</Text>
-              </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <MaterialIcons name="smart-toy" size={16} color={isDark ? '#818CF8' : '#4F46E5'} />
+              <Text style={[styles.chatbotBadgeText, { color: isDark ? '#818CF8' : '#4F46E5' }]}>Pedido del chatbot — confirma para generar tu ticket PDF</Text>
+            </View>
           </Text>
         </View>
       )}
@@ -353,8 +353,8 @@ export default function CartScreen({ navigation }: Props) {
         </View>
 
         {cart.length > 0 && (
-          <TouchableOpacity 
-            style={[styles.aiDietBtn, isCheckingAlergias && { opacity: 0.7 }]} 
+          <TouchableOpacity
+            style={[styles.aiDietBtn, isCheckingAlergias && { opacity: 0.7 }]}
             onPress={handleCheckAlergias}
             disabled={isCheckingAlergias}
           >
@@ -411,48 +411,49 @@ export default function CartScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container:                  { flex: 1, backgroundColor: '#F9FAFB' },
-  header:                     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  backButton:                 { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle:                { fontSize: 18, fontWeight: 'bold', color: '#000' },
-  clearButton:                { paddingHorizontal: 8 },
-  clearButtonText:            { fontSize: 14, color: '#EF4444', fontWeight: '600' },
-  chatbotBanner:              { backgroundColor: '#F0FDF4', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#BBF7D0' },
-  chatbotBannerText:          { fontSize: 13, color: '#15803d', fontWeight: '500' },
-  content:                    { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
-  restaurantCard:             { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  restaurantHeader:           { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  restaurantLogo:             { width: 44, height: 44, borderRadius: 10, marginRight: 10 },
-  restaurantLogoPlaceholder:  { backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  restaurantInfo:             { flex: 1 },
-  restaurantName:             { fontSize: 15, fontWeight: 'bold', color: '#000' },
-  restaurantMeta:             { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  restaurantTime:             { fontSize: 12, color: '#22c55e', fontWeight: '500' },
-  restaurantSubtotal:         { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
-  subtotalLabel:              { fontSize: 14, color: '#6B7280' },
-  subtotalValue:              { fontSize: 14, fontWeight: '600', color: '#000' },
-  itemRow:                    { flexDirection: 'row', marginBottom: 12 },
-  itemImage:                  { width: 64, height: 64, borderRadius: 10, marginRight: 12 },
-  itemImagePlaceholder:       { backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  itemInfo:                   { flex: 1 },
-  itemName:                   { fontSize: 14, fontWeight: '600', color: '#000' },
-  itemNotes:                  { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
-  itemFooter:                 { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  itemPrice:                  { fontSize: 15, fontWeight: 'bold', color: '#000' },
-  quantityControls:           { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F3F4F6', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  quantityBtn:                { width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
-  quantityBtnText:            { fontSize: 18, color: '#22c55e', fontWeight: 'bold' },
-  quantityText:               { fontSize: 15, fontWeight: 'bold', color: '#000', minWidth: 20, textAlign: 'center' },
-  summaryCard:                { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  summaryTitle:               { fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 12 },
-  summaryRow:                 { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  summaryLabel:               { fontSize: 14, color: '#6B7280' },
-  summaryValue:               { fontSize: 14, color: '#000' },
-  summaryDivider:             { height: 1, backgroundColor: '#F3F4F6', marginVertical: 8 },
-  summaryTotalLabel:          { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  summaryTotalValue:          { fontSize: 16, fontWeight: 'bold', color: '#22c55e' },
-  ticketNote:                 { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#BFDBFE' },
-  ticketNoteText:             { fontSize: 12, color: '#1D4ED8', lineHeight: 18 },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  backButton: { width: 40, height: 40, justifyContent: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
+  clearButton: { paddingHorizontal: 8 },
+  clearButtonText: { fontSize: 14, color: '#EF4444', fontWeight: '600' },
+  chatbotBanner: { backgroundColor: '#F0FDF4', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#BBF7D0' },
+  chatbotBannerText: { fontSize: 13, color: '#15803d', fontWeight: '500' },
+  chatbotBadgeText: { fontSize: 13, color: '#15803d', fontWeight: '500' },
+  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
+  restaurantCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  restaurantHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  restaurantLogo: { width: 44, height: 44, borderRadius: 10, marginRight: 10 },
+  restaurantLogoPlaceholder: { backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  restaurantInfo: { flex: 1 },
+  restaurantName: { fontSize: 15, fontWeight: 'bold', color: '#000' },
+  restaurantMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  restaurantTime: { fontSize: 12, color: '#22c55e', fontWeight: '500' },
+  restaurantSubtotal: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  subtotalLabel: { fontSize: 14, color: '#6B7280' },
+  subtotalValue: { fontSize: 14, fontWeight: '600', color: '#000' },
+  itemRow: { flexDirection: 'row', marginBottom: 12 },
+  itemImage: { width: 64, height: 64, borderRadius: 10, marginRight: 12 },
+  itemImagePlaceholder: { backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  itemInfo: { flex: 1 },
+  itemName: { fontSize: 14, fontWeight: '600', color: '#000' },
+  itemNotes: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
+  itemFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  itemPrice: { fontSize: 15, fontWeight: 'bold', color: '#000' },
+  quantityControls: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F3F4F6', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  quantityBtn: { width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
+  quantityBtnText: { fontSize: 18, color: '#22c55e', fontWeight: 'bold' },
+  quantityText: { fontSize: 15, fontWeight: 'bold', color: '#000', minWidth: 20, textAlign: 'center' },
+  summaryCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  summaryTitle: { fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 12 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  summaryLabel: { fontSize: 14, color: '#6B7280' },
+  summaryValue: { fontSize: 14, color: '#000' },
+  summaryDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 8 },
+  summaryTotalLabel: { fontSize: 16, fontWeight: 'bold', color: '#000' },
+  summaryTotalValue: { fontSize: 16, fontWeight: 'bold', color: '#22c55e' },
+  ticketNote: { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#BFDBFE' },
+  ticketNoteText: { fontSize: 12, color: '#1D4ED8', lineHeight: 18 },
   aiDietBtn: {
     backgroundColor: '#0891b2',
     marginHorizontal: 16,
@@ -469,16 +470,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
-  checkoutContainer:          { padding: 16, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
-  checkoutButton:             { borderRadius: 16, overflow: 'hidden' },
-  checkoutButtonDisabled:     { opacity: 0.7 },
-  checkoutGradient:           { paddingVertical: 16, alignItems: 'center' },
-  checkoutButtonText:         { fontSize: 16, fontWeight: 'bold', color: '#FFF' },
-  emptyState:                 { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
-  emptyStateIcon:             { fontSize: 64, marginBottom: 16 },
-  emptyStateTitle:            { fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 8 },
-  emptyStateText:             { fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
-  emptyStateButton:           { borderRadius: 30, overflow: 'hidden' },
-  emptyStateButtonGradient:   { paddingHorizontal: 32, paddingVertical: 14 },
-  emptyStateButtonText:       { fontSize: 16, fontWeight: 'bold', color: '#FFF' },
+  legalText: {
+    fontSize: 11,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 12,
+  },
+
+  checkoutContainer: { padding: 16, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  checkoutButton: { borderRadius: 16, overflow: 'hidden' },
+  checkoutButtonDisabled: { opacity: 0.7 },
+  checkoutGradient: { paddingVertical: 16, alignItems: 'center' },
+  checkoutButtonText: { fontSize: 16, fontWeight: 'bold', color: '#FFF' },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
+  emptyStateIcon: { fontSize: 64, marginBottom: 16 },
+  emptyStateTitle: { fontSize: 20, fontWeight: 'bold', color: '#000', marginBottom: 8 },
+  emptyStateText: { fontSize: 15, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
+  emptyStateButton: { borderRadius: 30, overflow: 'hidden' },
+  emptyStateButtonGradient: { paddingHorizontal: 32, paddingVertical: 14 },
+  emptyStateButtonText: { fontSize: 16, fontWeight: 'bold', color: '#FFF' },
 });

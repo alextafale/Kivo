@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Rect, Polyline } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -113,13 +114,13 @@ const DeliveryIcon = () => (
 
 // ─── Categorías ──────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { label: 'Todos', emoji: '🍽️' },
-  { label: 'Tacos', emoji: '🌮' },
-  { label: 'Coffee', emoji: '☕' },
-  { label: 'Healthy', emoji: '🥗' },
-  { label: 'Fast Food', emoji: '🍔' },
-  { label: 'Asian', emoji: '🍜' },
-  { label: 'Pizza', emoji: '🍕' },
+  { label: 'Todos', icon: 'silverware-fork-knife' },
+  { label: 'Tacos', icon: 'taco' },
+  { label: 'Coffee', icon: 'coffee' },
+  { label: 'Healthy', icon: 'leaf' },
+  { label: 'Fast Food', icon: 'hamburger' },
+  { label: 'Asian', icon: 'noodles' },
+  { label: 'Pizza', icon: 'pizza' },
 ];
 
 // ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
@@ -309,7 +310,10 @@ export default function HomeFeed() {
             {isAIThinking ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.aiButtonText}>IA ✨</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <MaterialIcons name="auto-awesome" size={14} color="#fff" />
+              <Text style={styles.aiButtonText}>IA</Text>
+            </View>
             )}
           </TouchableOpacity>
         </View>
@@ -328,13 +332,16 @@ export default function HomeFeed() {
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             >
               <View style={styles.chatbotBannerLeft}>
-                <Text style={styles.chatbotBannerTitle}>🤖 Asistente IA</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MaterialIcons name="smart-toy" size={18} color="#FFF" />
+                  <Text style={styles.chatbotBannerTitle}>Asistente IA</Text>
+                </View>
                 <Text style={styles.chatbotBannerSub}>
                   Dime qué se te antoja y hago tu pedido
                 </Text>
               </View>
               <View style={styles.chatbotBannerRight}>
-                <Text style={styles.chatbotBannerEmoji}>🛵</Text>
+                <MaterialIcons name="moped" size={36} color="rgba(255,255,255,0.9)" />
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -356,7 +363,11 @@ export default function HomeFeed() {
                 ]}
                 onPress={() => setSelectedCategory(cat.label)}
               >
-                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+                <MaterialCommunityIcons 
+                  name={cat.icon as any} 
+                  size={16} 
+                  color={selectedCategory === cat.label ? '#fff' : colors.green} 
+                />
                 <Text style={[
                   styles.categoryText,
                   { color: colors.titleText },
@@ -372,7 +383,7 @@ export default function HomeFeed() {
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.titleText }]}>
               {semanticResultIds !== null 
-                ? `IA: Resultados para "${searchQuery}" ✨` 
+                ? `IA: Resultados para "${searchQuery}"` 
                 : searchQuery
                   ? `Resultados para "${searchQuery}"`
                   : usarCercanos
@@ -400,7 +411,7 @@ export default function HomeFeed() {
           )}
           {!loadingFinal && !error && !ciudad && (
             <View style={styles.centerMessage}>
-              <Text style={{ fontSize: 40 }}>📍</Text>
+              <MaterialIcons name="location-off" size={40} color="#9CA3AF" />
               <Text style={[styles.emptyText, { color: colors.labelText }]}>
                 Agrega un domicilio para ver los negocios disponibles.
               </Text>
@@ -414,7 +425,7 @@ export default function HomeFeed() {
           )}
           {!loadingFinal && !error && ciudad && filteredData.length === 0 && (
             <View style={styles.centerMessage}>
-              <Text style={{ fontSize: 40 }}>🔍</Text>
+              <MaterialIcons name="search-off" size={40} color="#9CA3AF" />
               <Text style={[styles.emptyText, { color: colors.labelText }]}>
                 {searchQuery ? `Sin resultados para "${searchQuery}"` : `Sin negocios en ${ciudad} para esta categoría`}
               </Text>
@@ -437,7 +448,7 @@ export default function HomeFeed() {
                       <Image source={{ uri: negocio.banner_url }} style={styles.cardImage} />
                     ) : (
                       <View style={[styles.cardImage, styles.cardImagePlaceholder, { backgroundColor: colors.border }]}>
-                        <Text style={{ fontSize: 40 }}>🍽️</Text>
+                        <MaterialIcons name="restaurant" size={40} color="#9CA3AF" />
                       </View>
                     )}
                     {negocio.calificacion != null && (
