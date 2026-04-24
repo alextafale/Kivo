@@ -120,6 +120,10 @@ export default function OrderSummary({ navigation, route }: Props) {
           const body = {
             sucursal_id: restaurant.sucursalId,
             domicilio_id: selectedDomicilio.id,
+            direccion_entrega: getDireccion(selectedDomicilio),
+            direccion_ubicacion: selectedDomicilio.coordenadas 
+                ? `POINT(${selectedDomicilio.coordenadas.longitud} ${selectedDomicilio.coordenadas.latitud})`
+                : null,
             notas: notas.trim() || null,
             propina: 0,
             items: restaurant.items.map(item => ({
