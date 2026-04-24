@@ -17,7 +17,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
-import { AntDesign } from "@expo/vector-icons"
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from '../../../application/context/AuthContext'
@@ -49,7 +48,7 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onRate, size = 36 }) =>
     <View style={styles.starsRow}>
       {[1, 2, 3, 4, 5].map((star) => (
         <TouchableOpacity key={star} onPress={() => onRate(star)} activeOpacity={0.7}>
-          <AntDesign name={star <= rating ? "star" : "staro"} any size={size} color={star <= rating ? "#2ECC40" : "#D0D0D0"} />
+          <Ionicons name={star <= rating ? "star" : "star-outline"} size={size} color={star <= rating ? "#2ECC40" : "#D0D0D0"} />
         </TouchableOpacity>
       ))}
     </View>
@@ -252,7 +251,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.pageBg }]}>
         <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.backBtnBg }]} activeOpacity={0.7} onPress={() => navigation.goBack()}>
-          <Text style={[styles.backArrow, { color: colors.titleText }]}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.titleText} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.titleText }]}>Rate Your Order</Text>
         <View style={{ width: 40 }} />
@@ -322,9 +321,9 @@ export default function RateOrderScreen({ navigation, route }: Props) {
                   onPress={() => setShowPicker(true)}
                   activeOpacity={0.8}
                 >
-                  <AntDesign
-                    name="plus"
-                    size={24}
+                  <Ionicons
+                    name="add"
+                    size={28}
                     color={colors.subtitleText}
                   />
                   <Text style={[styles.addImageText, { color: colors.subtitleText }]}>Add</Text>
@@ -436,7 +435,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
                 takePhoto();
               }}
             >
-              <AntDesign name="camera" size={48} color="#000" />
+              <Ionicons name="camera" size={42} color="#1F2937" />
               <Text style={styles.optionText}>Camera</Text>
             </TouchableOpacity>
 
@@ -448,7 +447,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
                 pickImage();
               }}
             >
-              <AntDesign name="picture" size={48} color="#000" />
+              <Ionicons name="images" size={42} color="#1F2937" />
               <Text style={styles.optionText}>Galery</Text>
             </TouchableOpacity>
 
