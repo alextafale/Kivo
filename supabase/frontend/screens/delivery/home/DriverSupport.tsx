@@ -12,14 +12,21 @@ import {
   Platform,
   Animated,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle } from 'react-native-svg';
+import * as Location from 'expo-location';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
-// ✅ FIX: Importar el servicio de Ollama en lugar de llamar al backend de Render
-import { askDriverSupport, type DriverSupportMessage } from '../../../../services/driverSupportService';
+import {
+  askDriverSupport,
+  buildWhatsAppMessage,
+  SUPPORT_WHATSAPP,
+  type DriverSupportMessage,
+  type SupportAction,
+} from '../../../../services/driverSupportService';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'DriverSupport'>;
@@ -54,6 +61,13 @@ const BotIcon = () => (
   </Svg>
 );
 
+const LocationIcon = () => (
+  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+    <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
+    <Circle cx="12" cy="9" r="2.5" />
+  </Svg>
+);
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface Message {
@@ -61,6 +75,7 @@ interface Message {
   text: string;
   sender: 'user' | 'bot';
   timestamp: Date;
+  action?: SupportAction | null; // Botón de acción adjunto al mensaje del bot
 }
 
 // ─── Quick Suggestions ────────────────────────────────────────────────────────
@@ -112,6 +127,81 @@ const TypingIndicator = () => {
   );
 };
 
+// ─── Action Button ────────────────────────────────────────────────────────────
+
+const ActionButton = ({ action }: { action: SupportAction }) => {
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handlePress = async () => {
+    if (sent || loading) return;
+    setLoading(true);
+
+    try {
+      // 1. Pedir permiso de ubicación
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        // Sin permiso: abrir WhatsApp sin coordenadas
+        const url = `whatsapp://send?phone=${SUPPORT_WHATSAPP}&text=${encodeURIComponent(action.whatsappTemplate + '\n\n⚠️ Ubicación no disponible')}`;
+        await Linking.openURL(url);
+        setSent(true);
+        return;
+      }
+
+      // 2. Obtener coordenadas actuales
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      // 3. Construir mensaje con el link de Maps
+      const mensaje = buildWhatsAppMessage(
+        action.whatsappTemplate,
+        { latitude: location.coords.latitude, longitude: location.coords.longitude },
+      );
+
+      // 4. Abrir WhatsApp — fallback a wa.me si no hay app nativa
+      const waUrl = `whatsapp://send?phone=${SUPPORT_WHATSAPP}&text=${encodeURIComponent(mensaje)}`;
+      const webUrl = `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
+
+      const canOpen = await Linking.canOpenURL(waUrl);
+      await Linking.openURL(canOpen ? waUrl : webUrl);
+
+      setSent(true);
+    } catch (err) {
+      console.error('[KivoSOS] Error abriendo WhatsApp:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={0.85}
+      disabled={sent || loading}
+      style={[styles.actionBtn, sent && styles.actionBtnSent]}
+    >
+      <LinearGradient
+        colors={sent ? ['#16A34A', '#15803D'] : ['#DC2626', '#991B1B']}
+        style={styles.actionBtnGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <>
+            {!sent && <LocationIcon />}
+            <Text style={styles.actionBtnText}>
+              {sent ? '✓ Soporte notificado' : action.label}
+            </Text>
+          </>
+        )}
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+};
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function DriverSupport({ navigation }: Props) {
@@ -121,11 +211,11 @@ export default function DriverSupport({ navigation }: Props) {
       text: 'Hola! Soy KivoSOS, tu asistente de soporte logístico.\n\nEstoy aquí para ayudarte en cualquier situación durante tus entregas. ¿Qué está pasando?',
       sender: 'bot',
       timestamp: new Date(),
+      action: null,
     },
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  // ✅ FIX: Historial con el tipo correcto de DriverSupportMessage
   const [history, setHistory] = useState<DriverSupportMessage[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const flatListRef = useRef<FlatList>(null);
@@ -152,21 +242,21 @@ export default function DriverSupport({ navigation }: Props) {
     scrollToBottom();
 
     try {
-      // ✅ FIX: Llamar directo a Ollama vía driverSupportService
-      const botText = await askDriverSupport(text, history);
+      // Llamar a Ollama vía driverSupportService — devuelve { text, action }
+      const response = await askDriverSupport(text, history);
 
-      // Actualizar historial para mantener contexto en siguientes mensajes
       setHistory(prev => [
         ...prev,
         { role: 'user', content: text },
-        { role: 'assistant', content: botText },
+        { role: 'assistant', content: response.text },
       ]);
 
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
-        text: botText,
+        text: response.text,
         sender: 'bot',
         timestamp: new Date(),
+        action: response.action,  // puede ser null o un SupportAction
       };
 
       setIsTyping(false);
@@ -179,9 +269,10 @@ export default function DriverSupport({ navigation }: Props) {
         ...prev,
         {
           id: (Date.now() + 1).toString(),
-          text: 'No pude conectarme con KivoSOS. Revisa que estés en la misma red que el servidor, e intenta de nuevo.',
+          text: 'No pude conectarme con KivoSOS. Revisa que estés en la misma red que el servidor e intenta de nuevo.',
           sender: 'bot',
           timestamp: new Date(),
+          action: null,
         },
       ]);
     }
@@ -201,10 +292,7 @@ export default function DriverSupport({ navigation }: Props) {
           </View>
         )}
         <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
-          <View style={[
-            styles.bubble,
-            isUser ? styles.userBubble : styles.botBubble,
-          ]}>
+          <View style={[styles.bubble, isUser ? styles.userBubble : styles.botBubble]}>
             <Text style={[styles.msgText, { color: isUser ? '#fff' : '#1a1a1a' }]}>
               {item.text}
             </Text>
@@ -212,6 +300,13 @@ export default function DriverSupport({ navigation }: Props) {
               {formatTime(item.timestamp)}
             </Text>
           </View>
+
+          {/* Botón de acción — solo en mensajes del bot que lo requieran */}
+          {!isUser && item.action && (
+            <View style={styles.actionBtnWrapper}>
+              <ActionButton action={item.action} />
+            </View>
+          )}
         </View>
       </View>
     );
@@ -244,7 +339,6 @@ export default function DriverSupport({ navigation }: Props) {
         <View style={{ width: 40 }} />
       </LinearGradient>
 
-      {/* Divider */}
       <View style={styles.headerDivider} />
 
       {/* Messages */}
@@ -299,7 +393,6 @@ export default function DriverSupport({ navigation }: Props) {
               maxLength={400}
             />
           </View>
-
           <TouchableOpacity
             onPress={() => handleSend()}
             style={styles.sendBtn}
@@ -329,7 +422,6 @@ export default function DriverSupport({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF5F5' },
 
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -344,9 +436,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.15)',
   },
-  headerCenter: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-  },
+  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   botAvatarHeader: {
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: 'rgba(255,255,255,0.15)',
@@ -359,24 +449,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#4ADE80',
     borderWidth: 2, borderColor: '#B91C1C',
   },
-  headerTitle: {
-    fontSize: 16, fontWeight: '800',
-    color: '#fff', letterSpacing: 0.3,
-  },
-  headerSub: {
-    fontSize: 11, color: 'rgba(255,255,255,0.7)',
-    marginTop: 1,
-  },
+  headerTitle: { fontSize: 16, fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
+  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
 
-  // Messages
-  list: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    gap: 16,
-  },
-  messageContainer: {
-    flexDirection: 'row', alignItems: 'flex-end', gap: 10,
-  },
+  list: { paddingHorizontal: 16, paddingVertical: 20, gap: 16 },
+  messageContainer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
   userRow: { justifyContent: 'flex-end' },
   botRow: { justifyContent: 'flex-start' },
 
@@ -388,30 +465,32 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
 
-  bubble: {
-    maxWidth: '80%',
-    borderRadius: 20,
-    paddingHorizontal: 14, paddingVertical: 10,
-  },
-  userBubble: {
-    backgroundColor: '#DC2626',
-    borderBottomRightRadius: 4,
-  },
+  bubble: { maxWidth: '80%', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10 },
+  userBubble: { backgroundColor: '#DC2626', borderBottomRightRadius: 4 },
   botBubble: {
     backgroundColor: '#fff',
     borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    borderWidth: 1, borderColor: '#FECACA',
     shadowColor: '#EF4444',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOpacity: 0.08, shadowRadius: 6, elevation: 2,
   },
   msgText: { fontSize: 14.5, lineHeight: 22 },
   msgTime: { fontSize: 10, marginTop: 5 },
 
-  // Typing
+  // Action button — aparece debajo del bubble del bot
+  actionBtnWrapper: { marginTop: 8, alignSelf: 'flex-start' },
+  actionBtn: { borderRadius: 14, overflow: 'hidden', elevation: 4, shadowColor: '#DC2626', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.35, shadowRadius: 6 },
+  actionBtnSent: { elevation: 2, shadowOpacity: 0.15 },
+  actionBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  actionBtnText: { color: '#fff', fontSize: 13.5, fontWeight: '700' },
+
   typingContainer: {
     flexDirection: 'row', alignItems: 'flex-end',
     paddingHorizontal: 16, paddingBottom: 8, gap: 10,
@@ -423,71 +502,42 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#FECACA',
   },
   typingDots: { flexDirection: 'row', gap: 5 },
-  typingDot: {
-    width: 7, height: 7, borderRadius: 4,
-    backgroundColor: '#EF4444',
-  },
+  typingDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#EF4444' },
 
-  // Suggestions
   suggestionsContainer: {
-    paddingTop: 10,
-    paddingBottom: 6,
-    borderTopWidth: 1,
-    borderTopColor: '#FECACA',
+    paddingTop: 10, paddingBottom: 6,
+    borderTopWidth: 1, borderTopColor: '#FECACA',
     backgroundColor: '#fff',
   },
   suggestionsLabel: {
     fontSize: 11, color: '#9CA3AF', fontWeight: '600',
-    paddingHorizontal: 16, marginBottom: 8,
-    letterSpacing: 0.3,
+    paddingHorizontal: 16, marginBottom: 8, letterSpacing: 0.3,
   },
   suggestionsScroll: { paddingHorizontal: 16, gap: 8 },
   suggestionChip: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 20,
+    backgroundColor: '#FEF2F2', borderRadius: 20,
     paddingHorizontal: 14, paddingVertical: 8,
     borderWidth: 1, borderColor: '#FECACA',
   },
-  suggestionChipText: {
-    fontSize: 12, color: '#DC2626',
-    fontWeight: '600',
-  },
+  suggestionChipText: { fontSize: 12, color: '#DC2626', fontWeight: '600' },
 
-  // Input
   inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 12,
+    flexDirection: 'row', alignItems: 'flex-end',
+    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12,
     backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#FECACA',
+    borderTopWidth: 1, borderTopColor: '#FECACA',
     gap: 10,
   },
   inputWrap: {
-    flex: 1,
-    backgroundColor: '#FFF5F5',
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderWidth: 1.5,
-    borderColor: '#FECACA',
-    maxHeight: 120,
+    flex: 1, backgroundColor: '#FFF5F5',
+    borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10,
+    borderWidth: 1.5, borderColor: '#FECACA', maxHeight: 120,
   },
-  input: {
-    fontSize: 14.5,
-    color: '#1F2937',
-    lineHeight: 20,
-  },
+  input: { fontSize: 14.5, color: '#1F2937', lineHeight: 20 },
   sendBtn: {
     borderRadius: 22, overflow: 'hidden',
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#DC2626', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
   },
-  sendGradient: {
-    width: 44, height: 44,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  sendGradient: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

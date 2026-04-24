@@ -2,8 +2,10 @@
 // Servicio de Qwen para el SOS del repartidor — llama directo a Ollama
 
 // ─── Constante de URL ────────────────────────────────────────────────────────
-// Misma URL que usa geminiService.ts. Cámbiala si usas ngrok.
 const OLLAMA_URL = 'http://192.168.1.93:11434/api/chat';
+
+// Número de WhatsApp del equipo de soporte Kivo (formato internacional sin +)
+export const SUPPORT_WHATSAPP = '523411234567'; // ← cambia al número real
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -12,59 +14,79 @@ export interface DriverSupportMessage {
     content: string;
 }
 
+export interface SupportAction {
+    label: string;            // Texto del botón, ej: "📍 Notificar a soporte ahora"
+    whatsappTemplate: string; // Texto del mensaje (sin ubicación, se añade al presionar)
+}
+
+export interface SupportResponse {
+    text: string;
+    action: SupportAction | null; // null = situación menor, no requiere soporte humano
+}
+
 // ─── System Prompt ────────────────────────────────────────────────────────────
 
-const DRIVER_SYSTEM_PROMPT = `Eres KivoSOS, el coordinador logístico de la plataforma Kivo (servicio de delivery en La Piedad, Michoacán, México).
-
+const DRIVER_SYSTEM_PROMPT = `Eres KivoSOS, el coordinador logístico de la plataforma Kivo (delivery en La Piedad, Michoacán, México).
 Tu función es asistir EXCLUSIVAMENTE a repartidores de Kivo durante sus entregas activas.
 
-═══════ POLÍTICAS DE KIVO QUE DEBES CONOCER ═══════
+═══════ POLÍTICAS DE KIVO ═══════
 
 CLIENTE NO CONTESTA:
 - Intenta llamarle al menos 2 veces.
-- Si no contesta en 5 minutos desde la llegada, el repartidor puede retirarse con el pedido.
-- El pedido se marca como "intento fallido" y soporte contacta al cliente.
-- El repartidor NO pierde su pago en este caso.
+- Si no contesta en 5 minutos, puedes retirarte con el pedido.
+- El pedido se marca como "intento fallido". No pierdes tu pago.
+- NO requiere notificar a soporte (el repartidor lo resuelve solo).
 
 RESTAURANTE CERRADO AL LLEGAR:
-- Toma foto como evidencia.
-- Notifica a soporte inmediatamente desde la app.
-- No esperes más de 5 minutos. El pedido se cancela con pago completo al repartidor.
+- Toma foto como evidencia y notifica a soporte.
+- No esperes más de 5 minutos.
+- Pago completo al repartidor garantizado.
 
 COMIDA DERRAMADA / DAÑADA:
-- No entregues el pedido en mal estado.
-- Toma fotos del daño.
-- Contacta soporte: se gestiona reembolso al cliente y pago parcial al repartidor.
+- No entregues el pedido en mal estado. Toma fotos.
+- Notifica a soporte para gestionar reembolso al cliente.
 
 ACCIDENTE VIAL:
 - Tu seguridad es primero. Detente en lugar seguro.
-- Si hay heridos, llama al 911 inmediatamente.
+- Si hay heridos, llama al 911 INMEDIATAMENTE.
 - Notifica a soporte con tu ubicación. El pedido se reasigna automáticamente.
-- Kivo cubre el reporte del incidente.
 
 PEDIDO MUY LEJOS / FUERA DE ZONA:
-- Si la dirección está fuera de la zona de cobertura acordada, puedes rechazar la entrega.
+- Puedes rechazar la entrega si está fuera de la zona acordada.
 - Notifica a soporte para reasignación.
 
-MAL CLIMA (lluvia, granizo):
-- La decisión de continuar o pausar es tuya.
-- Si decides pausar, notifica a soporte. No hay penalización por clima extremo.
+MAL CLIMA:
+- La decisión de continuar es tuya. No hay penalización por clima extremo.
 
-═══════ REGLAS DE RESPUESTA ═══════
-- Respuestas cortas y directas. Máximo 4 oraciones.
-- Español mexicano natural. Tono de coordinador profesional, no robótico.
-- Si la situación es urgente (accidente, violencia), prioriza siempre llamar al 911.
-- No inventes políticas que no están listadas arriba.
-- Si no sabes la respuesta, di: "Esta situación requiere soporte humano. Escríbenos al WhatsApp de soporte Kivo."
-- Nunca respondas preguntas que no sean sobre entregas o situaciones de repartidor.`;
+═══════ FORMATO DE RESPUESTA (CRÍTICO) ═══════
+Responde SIEMPRE con un JSON válido. Sin texto fuera del JSON. Sin bloques markdown.
+
+Formato base:
+{"text":"Tu respuesta aquí. Corta y directa. Máximo 3 oraciones.","action":null}
+
+Cuando la situación requiere contactar a soporte (accidente, comida dañada, restaurante cerrado, emergencia, zona incorrecta):
+{"text":"Tu respuesta aquí.","action":{"label":"📍 Notificar a soporte con mi ubicación","whatsappTemplate":"🚨 ALERTA KIVO\\n\\nSituación: [descripción específica de la emergencia]\\nSe requiere atención inmediata."}}
+
+CUÁNDO poner action (soporte humano necesario):
+- Accidente vial
+- Comida derramada o dañada
+- Restaurante cerrado al llegar
+- Pedido fuera de zona
+- Cualquier emergencia de seguridad
+
+CUÁNDO NO poner action (repartidor lo resuelve solo):
+- Cliente no contesta (tiene política clara, puede retirarse)
+- Preguntas sobre políticas
+- Situaciones menores de entrega
+
+El whatsappTemplate debe describir la situación ESPECÍFICA del repartidor, no genérica.`;
 
 // ─── Función principal ────────────────────────────────────────────────────────
 
 export async function askDriverSupport(
     userMessage: string,
     history: DriverSupportMessage[],
-): Promise<string> {
-    // Limitar historial a los últimos 6 mensajes para reducir tokens
+): Promise<SupportResponse> {
     const recentHistory = history.slice(-6);
 
     const messages: DriverSupportMessage[] = [
@@ -81,8 +103,8 @@ export async function askDriverSupport(
             messages,
             stream: false,
             options: {
-                temperature: 0.25,   // Bajo: respuestas consistentes y confiables
-                num_predict: 250,    // Corto: respuestas directas
+                temperature: 0.2,
+                num_predict: 300,
                 repeat_penalty: 1.15,
                 top_p: 0.9,
             },
@@ -96,5 +118,41 @@ export async function askDriverSupport(
     }
 
     const data = await response.json();
-    return data.message?.content?.trim() ?? 'No pude obtener respuesta. Intenta de nuevo.';
+    const raw = data.message?.content?.trim() ?? '';
+
+    return parseResponse(raw);
+}
+
+// ─── Parser: extrae JSON de la respuesta de Qwen ─────────────────────────────
+
+function parseResponse(raw: string): SupportResponse {
+    try {
+        // Limpiar bloques markdown que Qwen a veces añade
+        const clean = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+        const start = clean.indexOf('{');
+        if (start === -1) throw new Error('Sin JSON');
+
+        const parsed = JSON.parse(clean.slice(start));
+
+        return {
+            text: parsed.text ?? 'No pude procesar la respuesta. Intenta de nuevo.',
+            action: parsed.action ?? null,
+        };
+    } catch {
+        // Fallback: tratar la respuesta como texto plano sin acción
+        console.warn('[KivoSOS] Respuesta no era JSON, usando texto plano');
+        return { text: raw || 'No pude obtener respuesta. Intenta de nuevo.', action: null };
+    }
+}
+
+// ─── Construcción del mensaje de WhatsApp con ubicación ──────────────────────
+
+export function buildWhatsAppMessage(
+    template: string,
+    coords: { latitude: number; longitude: number },
+    driverName?: string,
+): string {
+    const mapsLink = `https://maps.google.com/?q=${coords.latitude},${coords.longitude}`;
+    const nombre = driverName ? `\nRepartidor: ${driverName}` : '';
+    return `${template}${nombre}\n\n📍 Ubicación en tiempo real:\n${mapsLink}`;
 }
