@@ -126,6 +126,7 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   const negocioId  = adminAccess?.negocioId;
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isMagicLoading, setIsMagicLoading] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('0');
@@ -196,6 +197,45 @@ export default function MenuItemEditor({ navigation, route }: Props) {
   }, [sucursalId, itemId, session?.accessToken]); // ✅ se re-ejecuta si el token cambia
 
   const mark = () => setHasChanges(true);
+
+  // ✨ Botón Magia — llama al backend y rellena descripción, tags y tiempo
+  const handleMagic = async () => {
+    if (!name.trim()) {
+      Alert.alert('Primero escribe el nombre del platillo', 'Escribe el nombre antes de usar la magia ✨');
+      return;
+    }
+    setIsMagicLoading(true);
+    try {
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') ?? '';
+      const res = await fetch(`${apiUrl}/api/v1/chatbot/menu-magic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dish_name: name, category, price }),
+      });
+      if (!res.ok) throw new Error('Error en el servidor');
+      const data = await res.json();
+
+      if (data.descripcion) {
+        setDescription(data.descripcion);
+        mark();
+      }
+      if (Array.isArray(data.tags) && data.tags.length > 0) {
+        // Filtrar solo tags válidos de nuestra lista
+        const validTags = ['Vegetarian', 'Vegan', 'Spicy', 'Gluten-Free', 'Bestseller', 'New', 'Featured'];
+        const filteredTags = data.tags.filter((t: string) => validTags.includes(t));
+        if (filteredTags.length > 0) setTags(filteredTags);
+        mark();
+      }
+      if (data.prep_time) {
+        const num = parseInt(data.prep_time, 10);
+        if (!isNaN(num)) { setPrepTime(String(num)); mark(); }
+      }
+    } catch (e) {
+      Alert.alert('Error', 'No se pudo conectar con la IA. Inténtalo de nuevo.');
+    } finally {
+      setIsMagicLoading(false);
+    }
+  };
 
   const toggleTag = (tag: string) => {
     setTags((prev) =>
@@ -434,7 +474,24 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
             {/* ── Basic Info ── */}
             <View style={styles.sectionBlock}>
-              <Text style={[styles.blockTitle, { color: colors.subtitleText }]}>Basic Info</Text>
+              <View style={styles.basicInfoHeader}>
+                <Text style={[styles.blockTitle, { color: colors.subtitleText }]}>Basic Info</Text>
+                <TouchableOpacity
+                  style={[styles.magicBtn, isMagicLoading && styles.magicBtnLoading]}
+                  onPress={handleMagic}
+                  activeOpacity={0.8}
+                  disabled={isMagicLoading}
+                >
+                  {isMagicLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Text style={styles.magicBtnIcon}>✨</Text>
+                      <Text style={styles.magicBtnText}>Magia IA</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
               <View style={[styles.card, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
                 <FieldLabel label="Item Name" required />
                 <TextInput
@@ -446,7 +503,14 @@ export default function MenuItemEditor({ navigation, route }: Props) {
                   returnKeyType="next"
                 />
                 <View style={styles.fieldGap} />
-                <FieldLabel label="Description" />
+                <View style={styles.descriptionLabelRow}>
+                  <FieldLabel label="Description" />
+                  {description.length > 0 && (
+                    <View style={styles.aiGeneratedBadge}>
+                      <Text style={styles.aiGeneratedText}>✨ IA</Text>
+                    </View>
+                  )}
+                </View>
                 <TextInput
                   style={[styles.input, styles.textArea, { backgroundColor: isDark ? colors.border : '#F9FAFB', borderColor: isDark ? colors.border : '#E5E7EB', color: colors.titleText }]}
                   value={description}
@@ -579,6 +643,8 @@ export default function MenuItemEditor({ navigation, route }: Props) {
 
 const GREEN = '#22c55e';
 const LIGHT_GREEN = '#F0FDF4';
+const MAGIC_PURPLE = '#7C3AED';
+const MAGIC_BLUE = '#2563EB';
 
 const styles = StyleSheet.create({
   container: {
@@ -709,13 +775,61 @@ const styles = StyleSheet.create({
   sectionBlock: {
     marginBottom: 20,
   },
+  basicInfoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   blockTitle: {
     fontSize: 11,
     fontWeight: '800',
     color: '#9CA3AF',
     letterSpacing: 1.2,
-    marginBottom: 10,
     paddingLeft: 2,
+  },
+  magicBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: MAGIC_PURPLE,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    shadowColor: MAGIC_PURPLE,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  magicBtnLoading: {
+    opacity: 0.75,
+  },
+  magicBtnIcon: {
+    fontSize: 13,
+  },
+  magicBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.2,
+  },
+  descriptionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  aiGeneratedBadge: {
+    backgroundColor: '#F3E8FF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  aiGeneratedText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: MAGIC_PURPLE,
   },
   fieldLabelRow: {
     flexDirection: 'row',

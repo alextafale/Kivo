@@ -67,6 +67,13 @@ const MoneyIcon = () => (
   </Svg>
 )
 
+const SOSButtonIcon = () => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+    <Circle cx="12" cy="12" r="10" />
+    <Path d="M12 8v4M12 16h.01" />
+  </Svg>
+)
+
 // ─── Estado config ────────────────────────────────────────────────────────────
 
 const ESTADO_CONFIG: Record<DriverEstado, { label: string; color: string; bg: string; dot: string; desc: string }> = {
@@ -530,7 +537,36 @@ export default function DriverDashboard({ navigation }: Props) {
             )}
           </View>
 
-          {/* ── LOGOUT ───────────────────────────────────────────────────────── */}
+          {/* ── SOS SUPPORT ────────────────────────────────────── */}
+          <View style={[styles.section, { marginTop: 4 }]}>
+            <TouchableOpacity
+              style={styles.sosCard}
+              onPress={() => navigation.navigate('DriverSupport')}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#7F1D1D', '#DC2626']}
+                style={styles.sosCardGrad}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.sosCardLeft}>
+                  <View style={styles.sosIconWrap}>
+                    <SOSButtonIcon />
+                  </View>
+                  <View>
+                    <Text style={styles.sosTitle}>KivoSOS</Text>
+                    <Text style={styles.sosSub}>Soporte instantáneo con IA</Text>
+                  </View>
+                </View>
+                <View style={styles.sosArrow}>
+                  <Text style={{ color: '#fff', fontSize: 18 }}>›</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* ── LOGOUT ─────────────────────────────────────────── */}
           <View style={[styles.section, { marginTop: 8 }]}>
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
               <Text style={styles.logoutText}>Cerrar sesión</Text>
@@ -640,4 +676,12 @@ const styles = StyleSheet.create({
   logoutText: { fontSize: 14, fontWeight: '700', color: '#EF4444' },
 
   versionText: { textAlign: 'center', marginTop: 20, fontSize: 11, color: '#D1D5DB', letterSpacing: 0.4 },
+  // SOS Card
+  sosCard: { borderRadius: 18, overflow: 'hidden', shadowColor: '#DC2626', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  sosCardGrad: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
+  sosCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  sosIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  sosTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  sosSub: { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  sosArrow: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
 })

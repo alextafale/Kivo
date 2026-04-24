@@ -57,6 +57,7 @@ import OrderDetailsBusiness from '../screens/business/orders/OrderDetailsBusines
 import DriverOnboarding from '../screens/delivery/home/DriverOnboarding'
 import DriverDashboard from '../screens/delivery/onboarding/Driverdashboard'
 import DriverProfile from '../screens/delivery/profile/DriverProfile'
+import DriverSupport from '../screens/delivery/home/DriverSupport'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 import type { Order, OrderItem } from '../types/order'
@@ -155,6 +156,7 @@ export type RootStackParamList = {
   // Repartidor
   DriverDashboard: undefined
   DriverProfile: { repartidor: RepartidorInfo }
+  DriverSupport: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -242,6 +244,7 @@ export default function StackNavigation() {
         {/* ── Repartidor ─────────────────────────────────────────────────── */}
         <Stack.Screen name="DriverDashboard" component={DriverDashboard} />
         <Stack.Screen name="DriverProfile" component={DriverProfile} />
+        <Stack.Screen name="DriverSupport" component={DriverSupport} />
       </Stack.Navigator>
     </NavigationContainer>
   )

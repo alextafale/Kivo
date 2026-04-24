@@ -1,6 +1,3 @@
-// screens/client/orders/OrderTracking.tsx
-// Conectado a Supabase Realtime — el estado avanza solo cuando el negocio lo cambia
-
 import React, { useEffect, useRef } from 'react'
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
@@ -13,6 +10,7 @@ import { useOrderRealtime } from '../../../application/hooks/useOrderRealTime'
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'
 import { useRepartidorUbicacion } from '../../../application/hooks/useRepartidorUbicacion'
 import { useTheme } from '../../../application/context/ThemeContext'
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons'
 
 const { width } = Dimensions.get('window')
 
@@ -24,16 +22,17 @@ interface Step {
   key: OrderStatus
   label: string
   sublabel: string
-  emoji: string
+  icon: string
+  iconLib: 'material' | 'community'
 }
 
 const STEPS: Step[] = [
-  { key: 'confirmed', label: 'Pedido confirmado', sublabel: 'El restaurante aceptó tu orden', emoji: '✅' },
-  { key: 'preparing', label: 'Preparando', sublabel: 'El restaurante está cocinando', emoji: '👨‍🍳' },
-  { key: 'ready', label: 'Listo para recoger', sublabel: 'Esperando al repartidor', emoji: '📦' },
-  { key: 'picked_up', label: 'Recogido', sublabel: 'El repartidor tiene tu pedido', emoji: '🛍️' },
-  { key: 'on_the_way', label: 'En camino', sublabel: 'Tu repartidor va en camino', emoji: '🛵' },
-  { key: 'delivered', label: '¡Entregado!', sublabel: '¡Que lo disfrutes!', emoji: '🎉' },
+  { key: 'confirmed',  label: 'Pedido confirmado',    sublabel: 'El restaurante aceptó tu orden',    icon: 'check-circle',       iconLib: 'community' },
+  { key: 'preparing',  label: 'Preparando',           sublabel: 'El restaurante está cocinando',     icon: 'chef-hat',           iconLib: 'community' },
+  { key: 'ready',      label: 'Listo para recoger',   sublabel: 'Esperando al repartidor',           icon: 'package-variant',    iconLib: 'community' },
+  { key: 'picked_up',  label: 'Recogido',             sublabel: 'El repartidor tiene tu pedido',     icon: 'shopping',           iconLib: 'community' },
+  { key: 'on_the_way', label: 'En camino',            sublabel: 'Tu repartidor va en camino',        icon: 'moped',              iconLib: 'material'  },
+  { key: 'delivered',  label: '¡Entregado!',          sublabel: '¡Que lo disfrutes!',               icon: 'celebration',        iconLib: 'material'  },
 ]
 
 const STATUS_ORDER: OrderStatus[] = ['confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered']
@@ -141,7 +140,12 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
         <View style={[styles.etaBanner, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}>
           <View style={styles.etaLeft}>
             <Text style={[styles.etaLabel, { color: colors.subtitleText }]}>Estado actual</Text>
-            <Text style={[styles.etaStep, { color: colors.titleText }]}>{STEPS[currentIndex]?.emoji} {STEPS[currentIndex]?.label}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {STEPS[currentIndex]?.iconLib === 'material'
+                ? <MaterialIcons name={STEPS[currentIndex]?.icon as any} size={22} color={isDark ? '#4ade80' : '#22c55e'} />
+                : <MaterialCommunityIcons name={STEPS[currentIndex]?.icon as any} size={22} color={isDark ? '#4ade80' : '#22c55e'} />}
+              <Text style={[styles.etaStep, { color: colors.titleText }]}>{STEPS[currentIndex]?.label}</Text>
+            </View>
             <Text style={[styles.etaSub, { color: colors.subtitleText }]}>{STEPS[currentIndex]?.sublabel}</Text>
           </View>
           <View style={[styles.etaDivider, { backgroundColor: colors.border }]} />
@@ -167,19 +171,19 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
             showsUserLocation
             showsMyLocationButton={false}
           >
-            <Marker
+                    <Marker
               coordinate={{ latitude: ubicacion.lat, longitude: ubicacion.lng }}
               title="Tu repartidor"
               description={ubicacion.velocidad_kmh ? `${ubicacion.velocidad_kmh.toFixed(0)} km/h` : ''}
             >
               <View style={styles.markerContainer}>
-                <Text style={styles.markerEmoji}>🛵</Text>
+                <MaterialIcons name="moped" size={32} color="#22c55e" />
               </View>
             </Marker>
           </MapView>
         ) : (
-          <View style={[styles.mapPlaceholder, { backgroundColor: isDark ? colors.cardBg : '#E4EDE0' }]}>
-            <Text style={styles.mapEmoji}>🗺️</Text>
+                  <View style={[styles.mapPlaceholder, { backgroundColor: isDark ? colors.cardBg : '#E4EDE0' }]}>
+            <MaterialCommunityIcons name="map-marker-path" size={40} color={isDark ? '#4ade80' : '#3A5C30'} />
             <Text style={[styles.mapText, isDark && { color: '#4ade80' }]}>
               {order?.status === 'on_the_way' || order?.status === 'picked_up'
                 ? 'Esperando ubicación del repartidor...'
@@ -204,9 +208,11 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
               return (
                 <View key={step.key} style={styles.stepRow}>
                   <View style={styles.stepIndicatorCol}>
-                    {isActive ? (
+                                {isActive ? (
                       <Animated.View style={[styles.stepCircle, styles.stepCircleActive, { transform: [{ scale: pulseAnim }] }]}>
-                        <Text style={styles.stepEmoji}>{step.emoji}</Text>
+                        {step.iconLib === 'material'
+                          ? <MaterialIcons name={step.icon as any} size={18} color="#fff" />
+                          : <MaterialCommunityIcons name={step.icon as any} size={18} color="#fff" />}
                       </Animated.View>
                     ) : (
                       <View style={[
@@ -215,9 +221,11 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
                         isDone && [styles.stepCircleDone, { backgroundColor: isDark ? '#22c55e30' : '#E8FFF0' }],
                         isPending && [styles.stepCirclePending, { backgroundColor: colors.pageBg, borderColor: colors.border }]
                       ]}>
-                        <Text style={[styles.stepEmoji, isPending && { opacity: 0.4 }]}>
-                          {isDone ? '✓' : step.emoji}
-                        </Text>
+                        {isDone
+                          ? <MaterialIcons name="check" size={18} color={isDark ? '#4ade80' : '#22c55e'} />
+                          : step.iconLib === 'material'
+                            ? <MaterialIcons name={step.icon as any} size={18} color={isPending ? '#9CA3AF' : '#374151'} />
+                            : <MaterialCommunityIcons name={step.icon as any} size={18} color={isPending ? '#9CA3AF' : '#374151'} />}
                       </View>
                     )}
                   </View>
@@ -244,9 +252,12 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
 
         {/* Dirección de entrega */}
         {initialOrder.deliveryAddress && (
-          <View style={[styles.addressCard, { backgroundColor: colors.cardBg }]}>
+                    <View style={[styles.addressCard, { backgroundColor: colors.cardBg }]}>
             <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Dirección de entrega</Text>
-            <Text style={[styles.addressText, { color: colors.subtitleText }]}>📍 {initialOrder.deliveryAddress}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <MaterialIcons name="location-on" size={16} color="#22c55e" />
+              <Text style={[styles.addressText, { color: colors.subtitleText, flex: 1 }]}>{initialOrder.deliveryAddress}</Text>
+            </View>
           </View>
         )}
 

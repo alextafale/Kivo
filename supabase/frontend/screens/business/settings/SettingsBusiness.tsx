@@ -75,6 +75,20 @@ const LockIcon = () => (
   </Svg>
 );
 
+const BrainIcon = () => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round">
+    <Path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+    <Path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
+    <Path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4" />
+    <Path d="M17.599 6.5a3 3 0 0 0 .399-1.375" />
+    <Path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" />
+    <Path d="M3.477 10.896a4 4 0 0 1 .585-.396" />
+    <Path d="M19.938 10.5a4 4 0 0 1 .585.396" />
+    <Path d="M6 18a4 4 0 0 1-1.967-.516" />
+    <Path d="M19.967 17.484A4 4 0 0 1 18 18" />
+  </Svg>
+);
+
 // ─── Días de la semana ────────────────────────────────────────────────────────
 
 const DIAS: HorarioDia['dia'][] = [
@@ -183,6 +197,53 @@ export default function SettingsScreen({ navigation }: Props) {
   const [delivered, setDelivered] = useState(0);
   const [failed, setFailed] = useState(0);
   const [deliveryRate, setDeliveryRate] = useState(0);
+
+  // AI Review Insights
+  const [aiReviewAnalysis, setAiReviewAnalysis] = useState<string | null>(null);
+  const [aiReviewLoading, setAiReviewLoading] = useState(false);
+  const [aiReviewCount, setAiReviewCount] = useState(0);
+
+  const fetchReviewAnalysis = useCallback(async () => {
+    if (!sucursalId || !session?.accessToken) return;
+    setAiReviewLoading(true);
+    setAiReviewAnalysis(null);
+    try {
+      // 1. Obtener reseñas de la sucursal
+      const res = await fetch(
+        `${process.env.API_BASE_URL}/reviews?sucursal_id=${sucursalId}`,
+        { headers: { Authorization: `Bearer ${session.accessToken}` } }
+      );
+      let reviews: any[] = [];
+      if (res.ok) {
+        reviews = await res.json();
+      }
+
+      if (reviews.length === 0) {
+        setAiReviewAnalysis('Aún no tienes reseñas suficientes para analizar. 😊 ¡Sigue atendiendo a tus clientes!');
+        setAiReviewCount(0);
+        return;
+      }
+
+      // 2. Enviar al endpoint de análisis de Qwen
+      const apiBase = process.env.API_BASE_URL?.replace('/api/v1', '') ?? '';
+      const analysisRes = await fetch(`${apiBase}/api/v1/chatbot/review-analysis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reviews: reviews.slice(0, 30),
+          negocio_nombre: nombreEdit || undefined,
+        }),
+      });
+      if (!analysisRes.ok) throw new Error('Error en análisis');
+      const data = await analysisRes.json();
+      setAiReviewAnalysis(data.analysis);
+      setAiReviewCount(data.total_reviews);
+    } catch (e) {
+      setAiReviewAnalysis('No se pudo generar el análisis. Intenta de nuevo más tarde.');
+    } finally {
+      setAiReviewLoading(false);
+    }
+  }, [sucursalId, session?.accessToken, nombreEdit]);
 
 
 
@@ -642,6 +703,52 @@ export default function SettingsScreen({ navigation }: Props) {
           </View>
         </View>
 
+
+        {/* AI Review Insights */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#111827' }]}>📝 AI Review Insights</Text>
+          </View>
+          <View style={[styles.aiReviewCard, { backgroundColor: isDark ? '#1a0a2e' : '#FAF5FF', borderColor: isDark ? '#4c1d95' : '#DDD6FE' }]}>
+            <View style={styles.aiReviewHeader}>
+              <View style={styles.aiReviewIconWrap}>
+                <BrainIcon />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.aiReviewTitle, { color: isDark ? '#E9D5FF' : '#6D28D9' }]}>Análisis de Reseñas con IA</Text>
+                <Text style={[styles.aiReviewSubtitle, { color: isDark ? '#A78BFA' : '#7C3AED' }]}>
+                  {aiReviewCount > 0 ? `Basado en ${aiReviewCount} reseñas recientes` : 'Qwen analiza tus calificaciones'}
+                </Text>
+              </View>
+            </View>
+
+            {aiReviewAnalysis ? (
+              <View style={[styles.aiReviewResult, { backgroundColor: isDark ? '#2d1b5e' : '#F5F3FF' }]}>
+                <Text style={[styles.aiReviewText, { color: isDark ? '#E9D5FF' : '#4C1D95' }]}>{aiReviewAnalysis}</Text>
+              </View>
+            ) : (
+              <Text style={[styles.aiReviewPrompt, { color: isDark ? '#A78BFA' : '#8B5CF6' }]}>
+                Toca el botón para obtener un resumen inteligente de lo que tus clientes piensan.
+              </Text>
+            )}
+
+            <TouchableOpacity
+              style={[styles.aiReviewBtn, aiReviewLoading && { opacity: 0.7 }]}
+              onPress={fetchReviewAnalysis}
+              disabled={aiReviewLoading}
+              activeOpacity={0.8}
+            >
+              {aiReviewLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.aiReviewBtnText}>
+                  {aiReviewAnalysis ? '🔄 Actualizar análisis' : '✨ Analizar ahora'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Logout */}
         <View style={styles.section}>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton} activeOpacity={0.75}>
@@ -729,6 +836,42 @@ const styles = StyleSheet.create({
   saveButtonText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FEF2F2', borderWidth: 1.5, borderColor: '#FECACA', borderRadius: 16, paddingVertical: 16 },
   logoutButtonText: { fontSize: 16, fontWeight: '700', color: '#EF4444' },
+  // AI Review Insights
+  aiReviewCard: {
+    borderRadius: 20, padding: 18, borderWidth: 1.5,
+    backgroundColor: '#FAF5FF', borderColor: '#DDD6FE',
+  },
+  aiReviewHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14,
+  },
+  aiReviewIconWrap: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: '#EDE9FE', alignItems: 'center', justifyContent: 'center',
+  },
+  aiReviewTitle: {
+    fontSize: 14, fontWeight: '800', color: '#6D28D9', marginBottom: 2,
+  },
+  aiReviewSubtitle: {
+    fontSize: 11, color: '#7C3AED',
+  },
+  aiReviewPrompt: {
+    fontSize: 13, color: '#8B5CF6', lineHeight: 18, marginBottom: 14,
+  },
+  aiReviewResult: {
+    borderRadius: 12, padding: 14, marginBottom: 14, backgroundColor: '#F5F3FF',
+  },
+  aiReviewText: {
+    fontSize: 13, color: '#4C1D95', lineHeight: 20,
+  },
+  aiReviewBtn: {
+    backgroundColor: '#7C3AED', borderRadius: 14,
+    paddingVertical: 13, alignItems: 'center',
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+  },
+  aiReviewBtnText: {
+    fontSize: 14, fontWeight: '800', color: '#fff',
+  },
   avatarSection: {
     alignItems: 'center',
     paddingVertical: 35,

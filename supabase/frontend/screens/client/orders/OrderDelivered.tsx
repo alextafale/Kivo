@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useTheme } from '../../../application/context/ThemeContext'
+import { MaterialIcons } from '@expo/vector-icons'
 
 type OrderDeliveredNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderDelivered'>
 type OrderDeliveredRouteProp = RouteProp<RootStackParamList, 'OrderDelivered'>
@@ -73,7 +74,9 @@ export default function OrderDelivered({ navigation, route }: Props) {
         {/* Icono animado */}
         <Animated.View style={[styles.iconContainer, { backgroundColor: isDark ? '#15803d40' : '#F0FDF4', transform: [{ scale: scaleAnim }] }]}>
           <CheckIcon />
-          <Text style={styles.iconEmoji}>🎉</Text>
+          <View style={styles.celebrationBadge}>
+            <MaterialIcons name="celebration" size={22} color="#F59E0B" />
+          </View>
         </Animated.View>
 
         <Text style={[styles.title, { color: colors.titleText }]}>¡Pedido Entregado!</Text>
@@ -169,7 +172,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   iconContainer: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginBottom: 24, position: 'relative' },
-  iconEmoji: { position: 'absolute', bottom: -4, right: -4, fontSize: 32 },
+  celebrationBadge: { position: 'absolute', bottom: -4, right: -4, width: 36, height: 36, borderRadius: 18, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 26, fontWeight: 'bold', color: '#000', marginBottom: 8, textAlign: 'center' },
   subtitle: { fontSize: 16, color: '#6B7280', marginBottom: 32, textAlign: 'center' },
   summaryCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },

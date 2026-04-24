@@ -299,17 +299,21 @@ export default function MenuEditor({ navigation }: Props) {
   const filteredSections = sections
     .map((sec) => ({
       ...sec,
-      items: sec.items.filter((item) =>
-        item.name.toLowerCase().includes(searchText.toLowerCase())
-      ),
+      items: searchText
+        ? sec.items.filter((item) =>
+            item.name.toLowerCase().includes(searchText.toLowerCase())
+          )
+        : sec.items,
     }))
     .filter((sec) => {
       // Filtrar por categoría activa (píldora seleccionada)
       if (activeCategory !== 'All Items' && sec.title !== activeCategory.toUpperCase()) {
         return false;
       }
-      // Mantener la lógica del buscador
-      return sec.items.length > 0 || searchText === '';
+      // Si hay búsqueda activa, solo mostrar secciones con resultados
+      if (searchText) return sec.items.length > 0;
+      // Sin búsqueda: mostrar todas las secciones (incluso vacías)
+      return true;
     });
 
   const handleMoverCategoria = async (index: number, direction: 'up' | 'down') => {
