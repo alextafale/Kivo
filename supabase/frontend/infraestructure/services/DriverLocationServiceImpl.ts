@@ -52,16 +52,21 @@ export class DriverLocationServiceImpl implements IDriverLocationService {
             if (!this.lastCoords) return
             const { latitude, longitude } = this.lastCoords
 
-            const { error } = await supabase.from('repartidor_ubicacion').upsert({
-                repartidor_id: repartidorId,
-                pedido_id: pedidoId,
-                // PostGIS POINT: longitude primero
-                ubicacion: `POINT(${longitude} ${latitude})`,
-                registrado_en: new Date().toISOString(),
-            }, { onConflict: 'repartidor_id' })
+            try {
+                const { error } = await supabase.from('repartidor_ubicacion').upsert({
+                    repartidor_id: repartidorId,
+                    pedido_id: pedidoId,
+                    // PostGIS POINT: longitude primero
+                    ubicacion: `POINT(${longitude} ${latitude})`,
+                    registrado_en: new Date().toISOString(),
+                }, { onConflict: 'repartidor_id' })
 
-            if (error) {
-                console.error('[DriverLocation] Error publicando ubicación:', error.message)
+                if (error) {
+                    console.warn('[DriverLocation] Error Supabase (red?):', error.message)
+                }
+            } catch (e) {
+                // Captura error de red (TypeError: Network request failed)
+                console.info('[DriverLocation] Fallo conexión temporal')
             }
         }, TRACKING_INTERVAL_MS)
     }
