@@ -27,7 +27,7 @@ function fromRow(row: any): Domicilio {
   return {
     id:               row.id,
     userId:           row.user_id,
-    alias:         row.etiqueta          ?? 'Casa',
+    alias:         row.alias             ?? 'Casa',
     calle:            row.calle,
     numeroExt:        row.numero_ext        ?? null,
     numeroInt:        row.numero_int        ?? null,
@@ -47,7 +47,7 @@ function fromRow(row: any): Domicilio {
 
 function toRow(data: DomicilioCreate | DomicilioUpdate): Record<string, any> {
   const row: Record<string, any> = {}
-  if (data.alias         !== undefined) row.etiqueta          = data.alias
+  if (data.alias         !== undefined) row.alias             = data.alias
   if (data.calle            !== undefined) row.calle             = data.calle
   if (data.numeroExt        !== undefined) row.numero_ext        = data.numeroExt    || null
   if (data.numeroInt        !== undefined) row.numero_int        = data.numeroInt    || null

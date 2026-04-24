@@ -16,6 +16,7 @@ import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../do
 import { useDriverLocation } from '../../../application/hooks/useDriverLocation'
 import { supabase } from '../../../config/supabaseConfig'
 import { MaterialIcons } from '@expo/vector-icons'
+import DriverBottomNavBar, { DriverTabName } from '../../../components/business/DriverBottomNavBar'
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'DriverDashboard'>
@@ -90,6 +91,7 @@ const ESTADOS: DriverEstado[] = ['offline', 'available', 'busy']
 export default function DriverDashboard({ navigation }: Props) {
   console.log("Estas en DriverDashboard")
   const { session, logout } = useAuth()
+  const [activeDriverTab, setActiveDriverTab] = useState<DriverTabName>('Home')
 
   const [repartidor, setRepartidor] = useState<RepartidorInfo | null>(null)
   const [fotoUri, setFotoUri] = useState<string | null>(null)
@@ -587,6 +589,14 @@ export default function DriverDashboard({ navigation }: Props) {
           <View style={{ height: 32 }} />
         </Animated.View>
       </ScrollView>
+
+      {/* ── BOTTOM NAV ──────────────────────────────────────────────────────── */}
+      <DriverBottomNavBar
+        activeTab={activeDriverTab}
+        onTabChange={setActiveDriverTab}
+        navigation={navigation}
+        repartidor={repartidor}
+      />
     </SafeAreaView>
   )
 }
@@ -600,7 +610,7 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 14, color: '#EF4444', fontWeight: '700', textAlign: 'center', paddingHorizontal: 32 },
   retryBtn: { marginTop: 20, paddingHorizontal: 28, paddingVertical: 12, backgroundColor: '#22c55e', borderRadius: 20 },
   retryBtnText: { color: '#fff', fontWeight: '700' },
-  scroll: { paddingBottom: 40 },
+  scroll: { paddingBottom: 100 },
 
   // ── Header ────────────────────────────────────────────────────────────────
   header: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12 },
