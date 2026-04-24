@@ -9,7 +9,7 @@ function parsePoint(geo: unknown): Coordinates | null {
     if (typeof geo === 'string') {
         const match = geo.match(/POINT\(([^ ]+) ([^ )]+)\)/)
         if (match) {
-            return { longitude: parseFloat(match[1]), latitude: parseFloat(match[2]) }
+            return { latitude: parseFloat(match[2]), longitude: parseFloat(match[1]) }
         }
     }
     // A veces viene como objeto {type: 'Point', coordinates: [lng, lat]}
