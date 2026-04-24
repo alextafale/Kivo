@@ -22,7 +22,7 @@ import { RootStackParamList } from '../../../navigation/StacNavigation'
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from '../../../application/context/AuthContext'
 import { useTheme } from '../../../application/context/ThemeContext'
-
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 
 const TAGS = ["Delicious Food", "Fast Delivery", "Great Packaging", "Eco-friendly"];
 type RateOrderNavigationProp = NativeStackNavigationProp<RootStackParamList, 'RateOrder'>
@@ -49,7 +49,7 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onRate, size = 36 }) =>
     <View style={styles.starsRow}>
       {[1, 2, 3, 4, 5].map((star) => (
         <TouchableOpacity key={star} onPress={() => onRate(star)} activeOpacity={0.7}>
-          <AntDesign name={star <= rating ? "star" : "staro"} size={size} color={star <= rating ? "#2ECC40" : "#D0D0D0"} />
+          <AntDesign name={star <= rating ? "star" : "staro"} any size={size} color={star <= rating ? "#2ECC40" : "#D0D0D0"} />
         </TouchableOpacity>
       ))}
     </View>
