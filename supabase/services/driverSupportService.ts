@@ -65,7 +65,7 @@ Formato base:
 {"text":"Tu respuesta aquí. Corta y directa. Máximo 3 oraciones.","action":null}
 
 Cuando la situación requiere contactar a soporte (accidente, comida dañada, restaurante cerrado, emergencia, zona incorrecta):
-{"text":"Tu respuesta aquí.","action":{"label":"📍 Notificar a soporte con mi ubicación","whatsappTemplate":"🚨 ALERTA KIVO\\n\\nSituación: [descripción específica de la emergencia]\\nSe requiere atención inmediata."}}
+{"text":"Tu respuesta aquí.","action":{"label":" Notificar a soporte con mi ubicación","whatsappTemplate":"🚨 ALERTA KIVO\\n\\nSituación: [descripción específica de la emergencia]\\nSe requiere atención inmediata."}}
 
 CUÁNDO poner action (soporte humano necesario):
 - Accidente vial
@@ -154,5 +154,5 @@ export function buildWhatsAppMessage(
 ): string {
     const mapsLink = `https://maps.google.com/?q=${coords.latitude},${coords.longitude}`;
     const nombre = driverName ? `\nRepartidor: ${driverName}` : '';
-    return `${template}${nombre}\n\n📍 Ubicación en tiempo real:\n${mapsLink}`;
+    return `${template}${nombre}\n\n Ubicación en tiempo real:\n${mapsLink}`;
 }
