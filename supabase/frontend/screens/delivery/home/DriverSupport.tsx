@@ -18,6 +18,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
+// ✅ FIX: Importar el servicio de Ollama en lugar de llamar al backend de Render
+import { askDriverSupport, type DriverSupportMessage } from '../../../../services/driverSupportService';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'DriverSupport'>;
@@ -59,11 +61,6 @@ interface Message {
   text: string;
   sender: 'user' | 'bot';
   timestamp: Date;
-}
-
-interface QwenMessage {
-  role: string;
-  content: string;
 }
 
 // ─── Quick Suggestions ────────────────────────────────────────────────────────
@@ -128,7 +125,8 @@ export default function DriverSupport({ navigation }: Props) {
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [history, setHistory] = useState<QwenMessage[]>([]);
+  // ✅ FIX: Historial con el tipo correcto de DriverSupportMessage
+  const [history, setHistory] = useState<DriverSupportMessage[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const flatListRef = useRef<FlatList>(null);
 
@@ -154,19 +152,10 @@ export default function DriverSupport({ navigation }: Props) {
     scrollToBottom();
 
     try {
-      const apiBase = process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') ?? '';
-      const res = await fetch(`${apiBase}/api/v1/chatbot/driver-support`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history }),
-      });
+      // ✅ FIX: Llamar directo a Ollama vía driverSupportService
+      const botText = await askDriverSupport(text, history);
 
-      if (!res.ok) throw new Error('Error del servidor');
-
-      const data = await res.json();
-      const botText = data.content;
-
-      // Actualizar historial para próximas llamadas
+      // Actualizar historial para mantener contexto en siguientes mensajes
       setHistory(prev => [
         ...prev,
         { role: 'user', content: text },
@@ -183,13 +172,14 @@ export default function DriverSupport({ navigation }: Props) {
       setIsTyping(false);
       setMessages(prev => [...prev, botMsg]);
       scrollToBottom();
-    } catch {
+    } catch (error) {
+      console.error('[KivoSOS] Error al enviar mensaje:', error);
       setIsTyping(false);
       setMessages(prev => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
-          text: 'No pude conectarme. Revisa tu internet e intenta de nuevo.',
+          text: 'No pude conectarme con KivoSOS. Revisa que estés en la misma red que el servidor, e intenta de nuevo.',
           sender: 'bot',
           timestamp: new Date(),
         },
@@ -213,9 +203,7 @@ export default function DriverSupport({ navigation }: Props) {
         <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
           <View style={[
             styles.bubble,
-            isUser
-              ? styles.userBubble
-              : styles.botBubble,
+            isUser ? styles.userBubble : styles.botBubble,
           ]}>
             <Text style={[styles.msgText, { color: isUser ? '#fff' : '#1a1a1a' }]}>
               {item.text}
