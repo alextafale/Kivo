@@ -9,8 +9,9 @@ import {
     Alert,
     Platform,
     TouchableOpacity,
+    Linking,
 } from 'react-native'
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps'
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps'
 import { useNavigation } from '@react-navigation/native'
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons'
 import type { ActiveOrder, Coordinates } from '../../../domain/entities/ActiveOrder'
@@ -47,7 +48,7 @@ const PhaseHeader = ({ order }: { order: ActiveOrder }) => {
                 <Text style={styles.phaseTitle}>
                     {isTooBusiness ? 'Recoger pedido' : 'Entregar al cliente'}
                 </Text>
-                <Text style={styles.phaseSubtitle} numberOfLines={1}>
+                <Text style={styles.phaseSubtitle}>
                     {isTooBusiness ? order.negocioDireccion : order.direccionEntrega}
                 </Text>
             </View>
@@ -119,8 +120,24 @@ const OrderDetails = ({ order }: { order: ActiveOrder }) => (
             <Text style={styles.infoValue}>{formatCurrency(order.costoEnvio)}</Text>
         </View>
         <View style={[styles.infoRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
+            <TouchableOpacity 
+                style={styles.navButtonSmall}
+                onPress={() => {
+                    const lat = order.phase === 'to_business' ? order.negocioUbicacion.latitude : order.clienteUbicacion?.latitude
+                    const lng = order.phase === 'to_business' ? order.negocioUbicacion.longitude : order.clienteUbicacion?.longitude
+                    const label = order.phase === 'to_business' ? order.negocioNombre : order.clienteNombre
+                    
+                    const url = Platform.select({
+                        ios: `maps://?daddr=${lat},${lng}&q=${label}`,
+                        android: `google.navigation:q=${lat},${lng}`
+                    })
+                    if (url) Linking.openURL(url)
+                }}
+            >
+                <MaterialIcons name="navigation" size={18} color="#fff" />
+                <Text style={styles.navButtonText}>Iniciar GPS</Text>
+            </TouchableOpacity>
         </View>
     </View>
 )
@@ -137,8 +154,35 @@ const RouteMap = ({
     order: ActiveOrder
 }) => {
     const mapRef = useRef<MapView>(null)
+    const [routeCoords, setRouteCoords] = React.useState<Coordinates[]>([])
 
-    // Centrar mapa cuando cambia la ubicación del repartidor
+    // Trazar ruta real por calles (Gratis usando OSRM)
+    useEffect(() => {
+        if (!driverLocation || !destination) return
+
+        const fetchRoute = async () => {
+            try {
+                const url = `https://router.project-osrm.org/route/v1/driving/${driverLocation.longitude},${driverLocation.latitude};${destination.longitude},${destination.latitude}?overview=full&geometries=geojson`
+                const res = await fetch(url)
+                const json = await res.json()
+                
+                if (json.routes && json.routes[0]) {
+                    const coords = json.routes[0].geometry.coordinates.map((c: number[]) => ({
+                        latitude: c[1],
+                        longitude: c[0]
+                    }))
+                    setRouteCoords(coords)
+                }
+            } catch (e) {
+                console.error('[RouteMap] Error trazando ruta real:', e)
+                // Fallback a línea recta si falla la API
+                setRouteCoords([driverLocation, destination])
+            }
+        }
+
+        fetchRoute()
+    }, [driverLocation?.latitude, driverLocation?.longitude, destination?.latitude, destination?.longitude])
+
     useEffect(() => {
         if (driverLocation && mapRef.current) {
             mapRef.current.animateCamera(
@@ -157,9 +201,15 @@ const RouteMap = ({
                 style={styles.map}
                 provider={PROVIDER_GOOGLE}
                 initialRegion={{ ...initialRegion, ...DELTA }}
-                showsUserLocation={false} // usamos marker propio para mayor control
+                showsUserLocation={false} 
                 showsMyLocationButton={false}
+                mapType="none" // Para que no cargue Google/Apple maps de fondo
             >
+                <UrlTile
+                    urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    maximumZ={19}
+                    flipY={false}
+                />
                 {/* Marcador del repartidor */}
                 {driverLocation && (
                     <Marker
@@ -191,13 +241,12 @@ const RouteMap = ({
                     />
                 )}
 
-                {/* Línea repartidor → destino */}
-                {driverLocation && destination && (
+                {/* Línea repartidor → destino (Ruta Real) */}
+                {routeCoords.length > 0 && (
                     <Polyline
-                        coordinates={[driverLocation, destination]}
+                        coordinates={routeCoords}
                         strokeColor={order.phase === 'to_business' ? KIVO_GREEN : ORANGE}
-                        strokeWidth={3}
-                        lineDashPattern={[8, 4]}
+                        strokeWidth={5}
                     />
                 )}
             </MapView>
@@ -208,14 +257,60 @@ const RouteMap = ({
 const ActionButton = ({
     order,
     isUpdating,
+    onStartTrip,
     onPickup,
     onDelivered,
 }: {
     order: ActiveOrder
     isUpdating: boolean
+    onStartTrip: () => void
     onPickup: () => void
     onDelivered: () => void
 }) => {
+    // 1. Camino al negocio (pero no ha iniciado viaje)
+    if (order.phase === 'to_business' && order.estado === 'confirmed') {
+        return (
+            <Pressable
+                style={[styles.actionBtn, { backgroundColor: '#4285F4' }]} 
+                onPress={onStartTrip}
+                disabled={isUpdating}
+            >
+                {isUpdating ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <View style={styles.btnRow}>
+                        <MaterialIcons name="navigation" size={22} color="#fff" />
+                        <Text style={styles.actionBtnText}> Iniciar viaje al negocio</Text>
+                    </View>
+                )}
+            </Pressable>
+        )
+    }
+
+    // 2. En el negocio (alistando)
+    if (order.phase === 'to_business' && (order.estado === 'preparing' || order.estado === 'on_the_way')) {
+        // Si ya va en camino pero no está listo
+        if (order.estado === 'on_the_way') {
+             return (
+                <View style={[styles.actionBtn, { backgroundColor: '#F3F4F6' }]}>
+                    <View style={styles.btnRow}>
+                        <MaterialIcons name="store" size={22} color={TEXT_SECONDARY} />
+                        <Text style={[styles.actionBtnText, { color: TEXT_SECONDARY }]}> Llegando al negocio...</Text>
+                    </View>
+                </View>
+            )
+        }
+        return (
+            <View style={[styles.actionBtn, { backgroundColor: '#F3F4F6' }]}>
+                <View style={styles.btnRow}>
+                    <MaterialIcons name="hourglass-empty" size={20} color={TEXT_SECONDARY} />
+                    <Text style={[styles.actionBtnText, { color: TEXT_SECONDARY }]}> El negocio está preparando el pedido...</Text>
+                </View>
+            </View>
+        )
+    }
+
+    // 3. Listo para recoger
     if (order.phase === 'to_business' && order.estado === 'ready') {
         return (
             <Pressable
@@ -235,6 +330,27 @@ const ActionButton = ({
         )
     }
 
+    // 4. Recogido (pero no ha iniciado viaje al cliente)
+    if (order.phase === 'to_customer' && order.estado === 'picked_up') {
+        return (
+            <Pressable
+                style={[styles.actionBtn, { backgroundColor: '#4285F4' }]} 
+                onPress={onStartTrip}
+                disabled={isUpdating}
+            >
+                {isUpdating ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <View style={styles.btnRow}>
+                        <MaterialIcons name="navigation" size={22} color="#fff" />
+                        <Text style={styles.actionBtnText}> Iniciar viaje al cliente</Text>
+                    </View>
+                )}
+            </Pressable>
+        )
+    }
+
+    // 5. En camino al cliente o entregando
     if (order.phase === 'to_customer') {
         return (
             <Pressable
@@ -247,24 +363,14 @@ const ActionButton = ({
                 ) : (
                     <View style={styles.btnRow}>
                         <MaterialIcons name="inventory" size={22} color="#fff" />
-                        <Text style={styles.actionBtnText}> Pedido entregado</Text>
+                        <Text style={styles.actionBtnText}> Marcar como entregado</Text>
                     </View>
                 )}
             </Pressable>
         )
     }
 
-    // Estado preparing o confirmed — todavía no está listo
-    return (
-        <View style={[styles.actionBtn, { backgroundColor: '#F3F4F6' }]}>
-            <View style={styles.btnRow}>
-                <MaterialIcons name="hourglass-empty" size={20} color={TEXT_SECONDARY} />
-                <Text style={[styles.actionBtnText, { color: TEXT_SECONDARY }]}>
-                    Esperando que el negocio aliste el pedido...
-                </Text>
-            </View>
-        </View>
-    )
+    return null
 }
 
 // ─── Screen principal ─────────────────────────────────────────────────────────
@@ -282,8 +388,13 @@ export const DriverRoutesScreen = () => {
         error,
         destination,
         confirmPickup,
+        confirmOnTheWay,
         confirmDelivered,
     } = useDriverRoute(repartidorId)
+
+    const handleStartTrip = () => {
+        confirmOnTheWay()
+    }
 
     const handlePickup = () => {
         Alert.alert(
@@ -382,6 +493,7 @@ export const DriverRoutesScreen = () => {
                 <ActionButton
                     order={order}
                     isUpdating={isUpdating}
+                    onStartTrip={handleStartTrip}
                     onPickup={handlePickup}
                     onDelivered={handleDelivered}
                 />
@@ -486,10 +598,9 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     phaseSubtitle: {
-        color: 'rgba(255,255,255,0.85)',
-        fontSize: 12,
-        marginTop: 2,
-        maxWidth: 260,
+        color: 'rgba(255,255,255,0.95)',
+        fontSize: 14,
+        marginTop: 4,
     },
 
     // Map
@@ -622,9 +733,23 @@ const styles = StyleSheet.create({
         color: TEXT_PRIMARY,
     },
     totalValue: {
-        fontSize: 15,
-        fontWeight: '700',
+        fontSize: 18,
+        fontWeight: '800',
         color: KIVO_GREEN,
+    },
+    navButtonSmall: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#4285F4', // Google Maps Blue
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+        gap: 6,
+    },
+    navButtonText: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '700',
     },
 
     // Error

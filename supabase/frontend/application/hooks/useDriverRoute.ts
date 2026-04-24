@@ -14,6 +14,7 @@ type UseDriverRouteReturn = {
     error: string | null
     destination: Coordinates | null
     confirmPickup: () => Promise<void>
+    confirmOnTheWay: () => Promise<void>
     confirmDelivered: () => Promise<void>
 }
 
@@ -96,6 +97,19 @@ export const useDriverRoute = (userId: string | null): UseDriverRouteReturn => {
         }
     }, [order])
 
+    const confirmOnTheWay = useCallback(async () => {
+        if (!order) return
+        setIsUpdating(true)
+        setError(null)
+        try {
+            await orderRepo.markOnTheWay(order.id)
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Error al iniciar viaje')
+        } finally {
+            setIsUpdating(false)
+        }
+    }, [order])
+
     const confirmDelivered = useCallback(async () => {
         if (!order) return
         setIsUpdating(true)
@@ -117,6 +131,7 @@ export const useDriverRoute = (userId: string | null): UseDriverRouteReturn => {
         error,
         destination,
         confirmPickup,
+        confirmOnTheWay,
         confirmDelivered,
     }
 }
