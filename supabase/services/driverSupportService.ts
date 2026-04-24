@@ -5,7 +5,7 @@
 const OLLAMA_URL = 'http://192.168.1.93:11434/api/chat';
 
 // Número de WhatsApp del equipo de soporte Kivo (formato internacional sin +)
-export const SUPPORT_WHATSAPP = '523411234567'; // ← cambia al número real
+export const SUPPORT_WHATSAPP = '523521065471'; // ← cambia al número real
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
