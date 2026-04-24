@@ -58,7 +58,7 @@ import DriverOnboarding from '../screens/delivery/home/DriverOnboarding'
 import DriverDashboard from '../screens/delivery/onboarding/Driverdashboard'
 import DriverProfile from '../screens/delivery/profile/DriverProfile'
 import DriverSupport from '../screens/delivery/home/DriverSupport'
-
+import { DriverRoutesScreen } from '../components/ui/screens/DriverRoutesScreen'
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 import type { Order, OrderItem } from '../types/order'
 import type { Domicilio } from '../domain/entities/Domicilio'
@@ -139,7 +139,7 @@ export type RootStackParamList = {
     direccionEntrega: string
   }
   DeliveryAddresses: undefined
-  AddAddress: { domicilioId?: Domicilio } | undefined
+  AddAddress: { domicilio?: Domicilio } | undefined
   AddCard: undefined
   PaymentsMethod: undefined
   orderTracking: { order: Order }
@@ -157,6 +157,7 @@ export type RootStackParamList = {
   DriverDashboard: undefined
   DriverProfile: { repartidor: RepartidorInfo }
   DriverSupport: undefined
+  DriverRoutesScreen: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -245,6 +246,7 @@ export default function StackNavigation() {
         <Stack.Screen name="DriverDashboard" component={DriverDashboard} />
         <Stack.Screen name="DriverProfile" component={DriverProfile} />
         <Stack.Screen name="DriverSupport" component={DriverSupport} />
+        <Stack.Screen name="DriverRoutesScreen" component={DriverRoutesScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
