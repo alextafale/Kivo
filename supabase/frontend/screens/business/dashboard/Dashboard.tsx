@@ -372,6 +372,7 @@ export default function BusinessDashboard({ navigation }: Props) {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         navigation={navigation}
+        ordersBadge={activeOrdersCount > 0 ? activeOrdersCount : undefined}
       />
     </SafeAreaView>
   );

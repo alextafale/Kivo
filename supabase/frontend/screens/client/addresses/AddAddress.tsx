@@ -27,7 +27,7 @@ const getEtiquetaIcon = (etiqueta: string): string => {
 
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AddAddress'>;
-type Route = RouteProp<{ AddAddress: { domicilio?: Domicilio } }, 'AddAddress'>;
+type Route = RouteProp<RootStackParamList, 'AddAddress'>;
 type Props = { navigation: Nav; route: Route };
 
 const { height } = Dimensions.get('window');

@@ -188,7 +188,7 @@ export default function DeliveryAddresses({ navigation }: Props) {
   }, [deleteDomicilio]);
 
   const handleEdit = useCallback((d: Domicilio) => {
-    navigation.navigate('AddAddress', { domicilio: d } as any);
+    navigation.navigate('AddAddress', { domicilio: d });
   }, [navigation]);
 
   // Predeterminado siempre primero
@@ -217,7 +217,7 @@ export default function DeliveryAddresses({ navigation }: Props) {
         </View>
         <TouchableOpacity
           style={[styles.addHeaderBtn, { backgroundColor: isDark ? '#15803d40' : '#dcfce7' }]}
-          onPress={() => navigation.navigate('AddAddress', {} as any)}
+          onPress={() => navigation.navigate('AddAddress', undefined)}
         >
           <PlusIcon color={isDark ? '#4ade80' : '#22c55e'} />
         </TouchableOpacity>
@@ -256,7 +256,7 @@ export default function DeliveryAddresses({ navigation }: Props) {
               <Text style={[styles.emptySub, { color: colors.subtitleText }]}>Agrega tu primera dirección de entrega</Text>
               <TouchableOpacity
                 style={styles.emptyBtn}
-                onPress={() => navigation.navigate('AddAddress', {} as any)}
+                onPress={() => navigation.navigate('AddAddress', undefined)}
               >
                 <LinearGradient
                   colors={['#22c55e', '#16a34a']}
@@ -283,7 +283,7 @@ export default function DeliveryAddresses({ navigation }: Props) {
 
               <TouchableOpacity
                 style={[styles.addMoreBtn, { backgroundColor: colors.cardBg, borderColor: isDark ? colors.border : '#dcfce7' }]}
-                onPress={() => navigation.navigate('AddAddress', {} as any)}
+                onPress={() => navigation.navigate('AddAddress', undefined)}
                 activeOpacity={0.8}
               >
                 <View style={[styles.addMoreIcon, { backgroundColor: colors.iconBg }]}><PlusIcon color={isDark ? '#4ade80' : '#22c55e'} /></View>
@@ -299,7 +299,7 @@ export default function DeliveryAddresses({ navigation }: Props) {
       {domicilios.length > 0 && (
         <TouchableOpacity
           style={styles.fab}
-          onPress={() => navigation.navigate('AddAddress', {} as any)}
+          onPress={() => navigation.navigate('AddAddress', undefined)}
           activeOpacity={0.85}
         >
           <LinearGradient
