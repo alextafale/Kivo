@@ -5,11 +5,11 @@ from typing import List
 from pydantic import BaseModel
 from db.database import SessionLocal
 from core.dependencies import get_current_user, get_current_user_id
-from schemas.pedidos import PedidoIn, PedidoOut
+from schemas.pedidos import PedidoIn, PedidoOut, ConfirmarPedidoIn
 from schemas.enums import PedidoEstado
 from schemas.pedido_items import PedidoItemOut
 
-from services.pedidos import get_pedido, get_pedidos, get_pedidos_negocio, change_estado_pedido, create_pedido, get_metricas_negocio
+from services.pedidos import get_pedido, get_pedidos, get_pedidos_negocio, change_estado_pedido, create_pedido, get_metricas_negocio, confirmar_entrega_cliente
 from services.pedido_items import get_pedidos_items_by_pedido_id
 
 router = APIRouter(tags=["Pedidos"])
@@ -141,3 +141,13 @@ def obtener_metricas_negocio(
         negocio_id,
         _get_user_id(user)
     )
+
+@router.post("/pedidos/{pedido_id}/confirmar-entrega")
+def confirmar_entrega(
+    pedido_id: str,
+    confirmacion: ConfirmarPedidoIn,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    
+    return confirmar_entrega_cliente(db, pedido_id, _get_user_id(user), confirmacion)

@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
+import { useAuth } from '../../../application/context/AuthContext'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useTheme } from '../../../application/context/ThemeContext'
 import { MaterialIcons } from '@expo/vector-icons'
@@ -43,11 +44,32 @@ const StarIcon = ({ color }: { color: string }) => (
 export default function OrderDelivered({ navigation, route }: Props) {
   console.log("Estas en order delivered");
   const { colors, isDark } = useTheme();
-  const { id, orderNumber, restaurantName, total, deliveryAddress } = route.params
+  const [confirming, setConfirming] = useState(false);
+  const { id, orderNumber, restaurantName, total, deliveryAddress, statusOrder } = route.params
   const rating = route.params.rating || 0;
+  const { session } = useAuth();
 
   const scaleAnim = useRef(new Animated.Value(0)).current
   const opacityAnim = useRef(new Animated.Value(0)).current
+
+  const handleConfirmOrder = async () => {
+    try {
+      setConfirming(true);
+      await fetch(`${process.env.API_BASE_URL}/pedidos/${id}/confirmar-entrega`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session!.accessToken}`,
+        },
+        body: JSON.stringify({ tiene_problema: false }),
+      })
+      navigation.navigate('Orders')
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setConfirming(false);
+    }
+  }
 
   useEffect(() => {
     Animated.parallel([
@@ -128,14 +150,14 @@ export default function OrderDelivered({ navigation, route }: Props) {
       <View style={styles.footer}>
 
         {rating === 0 ? (
-            <View>
-              <TouchableOpacity
-                style={styles.rateButton}
-                onPress={() => navigation.navigate('RateOrder', { id })}
-              >
-                <Text style={styles.rateButtonText}>Calificar Pedido</Text>
-              </TouchableOpacity>
-            </View>
+          <View>
+            <TouchableOpacity
+              style={styles.rateButton}
+              onPress={() => navigation.navigate('RateOrder', { id })}
+            >
+              <Text style={styles.rateButtonText}>Calificar Pedido</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <TouchableOpacity
             style={styles.ordersButton}
@@ -152,7 +174,18 @@ export default function OrderDelivered({ navigation, route }: Props) {
           </TouchableOpacity>
         )}
 
-
+        {statusOrder === 'pending_confirmation' && (
+          <TouchableOpacity
+            style={[styles.confirmButton, { borderColor: isDark ? '#374151' : '#E5E7EB' }]}
+            disabled={confirming}
+            onPress={handleConfirmOrder}
+          >
+            <MaterialIcons name="check-circle-outline" size={18} color={isDark ? '#9CA3AF' : '#6B7280'} />
+            <Text style={[styles.confirmButtonText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+              {confirming ? 'Confirmando...' : 'Confirmar Pedido'}
+            </Text>
+          </TouchableOpacity>
+        )}
 
 
         <TouchableOpacity
@@ -214,5 +247,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     fontWeight: '600',
-  }
+  },
+  confirmButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  confirmButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
 })

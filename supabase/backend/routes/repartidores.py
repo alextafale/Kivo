@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, File, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import datetime,timezone
-
+from typing import Optional
+from core.cloudinary import upload_image
 
 from db.database import get_db
 from core.dependencies import get_current_user
@@ -16,6 +17,7 @@ from schemas.repartidores import (
     UbicacionUpdate,
     PedidoEstadoUpdate,
 )
+
 from services.repartidores import (
     registrar_repartidor,
     actualizar_estado,
@@ -28,6 +30,7 @@ from services.repartidores import (
     tomar_pedido,          # ← nuevo
     actualizar_ubicacion,
     avanzar_estado_pedido,
+    marcar_entregado_con_foto
 )
 from services.notification_service import send_push_notification
 
@@ -190,3 +193,64 @@ def get_ubicacion_repartidor(
         raise HTTPException(status_code=404, detail="Ubicación no encontrada")
 
     return dict(row)
+
+
+@router.post("/pedidos/{pedido_id}/entregar")
+async def entregar_pedido(
+    pedido_id: str,
+    foto: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    user_id: str = Depends(require_driver),
+):
+    result = marcar_entregado_con_foto(db, user_id, pedido_id, foto=foto)
+
+    pedido_info = db.execute(
+        text("""
+            SELECT p.user_id, p.order_number, pr.expo_push_token 
+            FROM pedidos p JOIN profiles pr ON pr.id = p.user_id 
+            WHERE p.id = :id
+        """),
+        {"id": pedido_id}
+    ).mappings().first()
+
+    if pedido_info and pedido_info.get("expo_push_token"):
+        await send_push_notification(
+            expo_push_token=pedido_info["expo_push_token"],
+            estado="pending_confirmation",
+            order_number=pedido_info["order_number"],
+            pedido_id=pedido_id,
+        )
+
+    return result
+
+
+@router.get(
+    "/pedidos/pendientes-confirmacion",
+    summary="Ver pedidos entregados esperando confirmación del cliente",
+    description="Pedidos que el repartidor entregó pero el cliente aún no ha confirmado."
+)
+def pedidos_pendientes_confirmacion(db: Session = Depends(get_db), user_id: str = Depends(require_driver)):
+    # El dashboard del repartidor puede mostrar estos pedidos para que el repartidor sepa que están en espera.
+    rows = db.execute(
+        text("""
+            SELECT
+                p.id,
+                p.order_number,
+                p.direccion_entrega,
+                p.total,
+                p.entregado_en,
+                p.foto_entrega_url,
+                n.nombre AS negocio_nombre,
+                -- minutos que lleva esperando confirmación
+                EXTRACT(EPOCH FROM (NOW() - p.entregado_en)) / 60 AS minutos_esperando
+            FROM pedidos p
+            JOIN negocios n ON n.id = p.negocio_id
+            JOIN repartidores r ON r.id = p.repartidor_id
+            WHERE r.user_id = :user_id
+              AND p.estado = 'pending_confirmation'
+            ORDER BY p.entregado_en DESC
+        """),
+        {"user_id": user_id}
+    ).mappings().all()
+ 
+    return [dict(row) for row in rows]

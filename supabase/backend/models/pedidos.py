@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import (Column, String, Numeric, Integer, Text, TIMESTAMP, func)
+from sqlalchemy import (Column, String, Numeric, Integer, Text, TIMESTAMP, Boolean, func)
 from sqlalchemy.dialects.postgresql import UUID
 from db.database import Base
 from sqlalchemy import Enum as SAEnum
@@ -16,6 +16,7 @@ class Pedido(Base):
     repartidor_id        = Column(UUID(as_uuid=True), nullable=True)
     domicilio_id         = Column(UUID(as_uuid=True), nullable=True)
     direccion_entrega    = Column(Text, nullable=True)
+    direccion_ubicacion  = Column(Text, nullable=True)
     estado               = Column(SAEnum(PedidoEstado, name="pedido_estado"), nullable=False)
     notas                = Column(Text, nullable=True)
     cupon_id             = Column(UUID(as_uuid=True), nullable=True)
@@ -31,8 +32,13 @@ class Pedido(Base):
     entregado_en         = Column(TIMESTAMP(timezone=True), nullable=True)
     cancelado_en         = Column(TIMESTAMP(timezone=True), nullable=True)
     motivo_cancelacion   = Column(Text, nullable=True)
+    foto_entrega_url     = Column(Text, nullable=True)
+    foto_entrega_at      = Column(TIMESTAMP(timezone=True), nullable=True)
     creado_en            = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     actualizado_en       = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    confirmado_por_cliente = Column(Boolean, default=False)
+    confirmado_en        = Column(TIMESTAMP(timezone=True), nullable=True)
+    tiene_problema       = Column(Boolean, default=False)
 
     __table_args__ = (
         {"schema": "public"},

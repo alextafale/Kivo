@@ -7,7 +7,7 @@ from models.sucursales import Sucursal
 from models.domicilios import Domicilio
 from models.negocio_admin import NegocioAdmin
 from models.profiles import Profile
-from schemas.pedidos import PedidoIn
+from schemas.pedidos import PedidoIn,ConfirmarPedidoIn
 from exceptions.domicilios import DomicilioNoExistente
 from exceptions.sucursal import SucursalNoExistente
 from exceptions.pedidos import PedidoNoExistente
@@ -228,3 +228,40 @@ def get_metricas_negocio(db: Session, negocio_id: str, user_id: str):
     """), {"negocio_id": negocio_id}).mappings().first()
 
     return dict(result)
+
+def confirmar_entrega_cliente(
+    db: Session,
+    pedido_id: str,
+    user_id: str,
+    confirmacion:ConfirmarPedidoIn
+) -> dict:
+    # El cliente confirma la entrega de su pedido.
+    pedido = db.query(Pedido).filter(
+        Pedido.id == pedido_id,
+        Pedido.user_id == user_id,
+        Pedido.estado == 'pending_confirmation'
+    ).first()
+ 
+    if not pedido:
+        raise PedidoNoExistente()
+ 
+    now = func.now()
+ 
+    pedido.estado = 'delivered'
+    pedido.confirmado_por_cliente = True
+    pedido.confirmado_en = now
+    pedido.tiene_problema = confirmacion.tiene_problema
+ 
+    if confirmacion.tiene_problema and confirmacion.descripcion_problema:
+        pedido.motivo_cancelacion = confirmacion.descripcion_problema
+ 
+    db.commit()
+ 
+    return {
+        "ok": True,
+        "estado": "delivered",
+        "confirmado_por_cliente": True,
+        "tiene_problema": confirmacion.tiene_problema
+    }
+ 
+ 

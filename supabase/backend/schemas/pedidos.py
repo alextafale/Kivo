@@ -7,6 +7,11 @@ from schemas.enums import PedidoEstado
 from schemas.pedido_items import PedidoItemIn, PedidoItemOut
 
 
+
+class ConfirmarPedidoIn(BaseModel):
+    tiene_problema: bool
+    descripcion_problema: Optional[str] = None
+
 class PedidoIn(BaseModel):
     sucursal_id: UUID
     domicilio_id: UUID

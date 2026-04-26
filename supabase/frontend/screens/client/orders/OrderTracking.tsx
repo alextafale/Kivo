@@ -16,7 +16,7 @@ const { width } = Dimensions.get('window')
 
 type Props = NativeStackScreenProps<RootStackParamList, 'orderTracking'>
 
-type OrderStatus = 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'on_the_way' | 'delivered'
+type OrderStatus = 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'on_the_way' | 'pending_confirmation' | 'delivered'
 
 interface Step {
   key: OrderStatus
@@ -27,15 +27,16 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { key: 'confirmed',  label: 'Pedido confirmado',    sublabel: 'El restaurante aceptó tu orden',    icon: 'check-circle',       iconLib: 'community' },
-  { key: 'preparing',  label: 'Preparando',           sublabel: 'El restaurante está cocinando',     icon: 'chef-hat',           iconLib: 'community' },
-  { key: 'ready',      label: 'Listo para recoger',   sublabel: 'Esperando al repartidor',           icon: 'package-variant',    iconLib: 'community' },
-  { key: 'picked_up',  label: 'Recogido',             sublabel: 'El repartidor tiene tu pedido',     icon: 'shopping',           iconLib: 'community' },
-  { key: 'on_the_way', label: 'En camino',            sublabel: 'Tu repartidor va en camino',        icon: 'moped',              iconLib: 'material'  },
-  { key: 'delivered',  label: '¡Entregado!',          sublabel: '¡Que lo disfrutes!',               icon: 'celebration',        iconLib: 'material'  },
+  { key: 'confirmed', label: 'Pedido confirmado', sublabel: 'El restaurante aceptó tu orden', icon: 'check-circle', iconLib: 'community' },
+  { key: 'preparing', label: 'Preparando', sublabel: 'El restaurante está cocinando', icon: 'chef-hat', iconLib: 'community' },
+  { key: 'ready', label: 'Listo para recoger', sublabel: 'Esperando al repartidor', icon: 'package-variant', iconLib: 'community' },
+  { key: 'picked_up', label: 'Recogido', sublabel: 'El repartidor tiene tu pedido', icon: 'shopping', iconLib: 'community' },
+  { key: 'on_the_way', label: 'En camino', sublabel: 'Tu repartidor va en camino', icon: 'moped', iconLib: 'material' },
+  { key: 'pending_confirmation', label: 'Pendiente de confirmación', sublabel: 'Confirma que recibiste tu pedido', icon: 'alert-circle', iconLib: 'community' },
+  { key: 'delivered', label: '¡Entregado!', sublabel: '¡Que lo disfrutes!', icon: 'celebration', iconLib: 'material' },
 ]
 
-const STATUS_ORDER: OrderStatus[] = ['confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered']
+const STATUS_ORDER: OrderStatus[] = ['confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'pending_confirmation', 'delivered']
 
 // Mapeo de estados del backend a los pasos del timeline
 const ESTADO_A_STEP: Record<string, OrderStatus> = {
@@ -44,6 +45,7 @@ const ESTADO_A_STEP: Record<string, OrderStatus> = {
   ready: 'ready',
   picked_up: 'picked_up',
   on_the_way: 'on_the_way',
+  pending_confirmation: 'pending_confirmation',
   delivered: 'delivered',
 }
 
@@ -90,7 +92,7 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
 
     console.log('Estado del pedido:', prevStatusRef.current, '->', order.status)
 
-    if (order.status === 'delivered' && prevStatusRef.current !== 'delivered') {
+    if (order.status === 'pending_confirmation' && prevStatusRef.current !== 'pending_confirmation') {
       console.log('Navegando a OrderDelivered...')
       // Un pequeño retraso para permitir que la barra llegue al final
       setTimeout(() => {
@@ -100,6 +102,7 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
           restaurantName: initialOrder.restaurantName ?? '',
           total: initialOrder.total ?? 0,
           deliveryAddress: initialOrder.deliveryAddress ?? '',
+          statusOrder: order.status
         })
       }, 500)
     }
@@ -158,38 +161,42 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
         </View>
 
         {/* Mapa en vivo */}
-        {ubicacion ? (
-          <MapView
-            style={styles.map}
-            provider={PROVIDER_GOOGLE}
-            region={{
-              latitude: ubicacion.lat,
-              longitude: ubicacion.lng,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-            showsUserLocation
-            showsMyLocationButton={false}
-          >
-                    <Marker
-              coordinate={{ latitude: ubicacion.lat, longitude: ubicacion.lng }}
-              title="Tu repartidor"
-              description={ubicacion.velocidad_kmh ? `${ubicacion.velocidad_kmh.toFixed(0)} km/h` : ''}
-            >
-              <View style={styles.markerContainer}>
-                <MaterialIcons name="moped" size={32} color="#22c55e" />
-              </View>
-            </Marker>
-          </MapView>
-        ) : (
-                  <View style={[styles.mapPlaceholder, { backgroundColor: isDark ? colors.cardBg : '#E4EDE0' }]}>
-            <MaterialCommunityIcons name="map-marker-path" size={40} color={isDark ? '#4ade80' : '#3A5C30'} />
-            <Text style={[styles.mapText, isDark && { color: '#4ade80' }]}>
-              {order?.status === 'on_the_way' || order?.status === 'picked_up'
-                ? 'Esperando ubicación del repartidor...'
-                : 'El mapa aparecerá cuando el repartidor esté en camino'}
-            </Text>
+        {order?.status === 'pending_confirmation' ? (
+          <View style={styles.mapPlaceholder}>
+            <Text>Tu pedido ha sido entregado</Text>
           </View>
+        ) : ubicacion ? (
+        <MapView
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          region={{
+            latitude: ubicacion.lat,
+            longitude: ubicacion.lng,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }}
+          showsUserLocation
+          showsMyLocationButton={false}
+        >
+          <Marker
+            coordinate={{ latitude: ubicacion.lat, longitude: ubicacion.lng }}
+            title="Tu repartidor"
+            description={ubicacion.velocidad_kmh ? `${ubicacion.velocidad_kmh.toFixed(0)} km/h` : ''}
+          >
+            <View style={styles.markerContainer}>
+              <MaterialIcons name="moped" size={32} color="#22c55e" />
+            </View>
+          </Marker>
+        </MapView>
+        ) : (
+        <View style={[styles.mapPlaceholder, { backgroundColor: isDark ? colors.cardBg : '#E4EDE0' }]}>
+          <MaterialCommunityIcons name="map-marker-path" size={40} color={isDark ? '#4ade80' : '#3A5C30'} />
+          <Text style={[styles.mapText, isDark && { color: '#4ade80' }]}>
+            {order?.status === 'on_the_way' || order?.status === 'picked_up'
+              ? 'Esperando ubicación del repartidor...'
+              : 'El mapa aparecerá cuando el repartidor esté en camino'}
+          </Text>
+        </View>
         )}
 
         {/* Timeline de estados */}
@@ -208,7 +215,7 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
               return (
                 <View key={step.key} style={styles.stepRow}>
                   <View style={styles.stepIndicatorCol}>
-                                {isActive ? (
+                    {isActive ? (
                       <Animated.View style={[styles.stepCircle, styles.stepCircleActive, { transform: [{ scale: pulseAnim }] }]}>
                         {step.iconLib === 'material'
                           ? <MaterialIcons name={step.icon as any} size={18} color="#fff" />
@@ -252,7 +259,7 @@ export default function OrderTrackingScreen({ route, navigation }: Props) {
 
         {/* Dirección de entrega */}
         {initialOrder.deliveryAddress && (
-                    <View style={[styles.addressCard, { backgroundColor: colors.cardBg }]}>
+          <View style={[styles.addressCard, { backgroundColor: colors.cardBg }]}>
             <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Dirección de entrega</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <MaterialIcons name="location-on" size={16} color="#22c55e" />

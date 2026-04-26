@@ -1,16 +1,19 @@
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status,UploadFile
+from typing import Optional
+from core.cloudinary import upload_image
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from exceptions.isDriver import RepartidorYaExiste, RepartidorNoEncontrado
+from exceptions.pedidos import PedidoNoExistente
 from schemas.repartidores import RepartidorRegistro, RepartidorEstadoUpdate
 from schemas.repartidores import UbicacionUpdate,PedidoEstadoUpdate
 
 ESTADOS_VALIDOS = {
     'picked_up': 'on_the_way',
-    'on_the_way': 'delivered',
+    'on_the_way': 'pending_confirmation',
 }
 
 # ── Registro ──────────────────────────────────────────────────────────────────
@@ -259,16 +262,23 @@ def avanzar_estado_pedido(db: Session, user_id: str, pedido_id: str, data: Pedid
     """
     Avanza el estado del pedido solo si el repartidor es el asignado
     y el estado es válido en el flujo.
+    
+    Flujo del repartidor:
+      picked_up → on_the_way → pending_confirmation
+    
+    Cuando llega a pending_confirmation:
+    - Se registra entregado_en
+    - El repartidor vuelve a 'available' (ya hizo su parte)
+    - Queda esperando confirmación del cliente (15 min)
     """
     repartidor = db.execute(
         text("SELECT id FROM repartidores WHERE user_id = :user_id AND activo = TRUE LIMIT 1"),
         {"user_id": user_id}
     ).fetchone()
-
+ 
     if not repartidor:
         raise HTTPException(status_code=404, detail="Repartidor no encontrado")
-
-    # Verificar que el pedido pertenece a este repartidor
+ 
     pedido = db.execute(
         text("""
             SELECT id, estado FROM pedidos
@@ -276,20 +286,22 @@ def avanzar_estado_pedido(db: Session, user_id: str, pedido_id: str, data: Pedid
         """),
         {"pedido_id": pedido_id, "repartidor_id": str(repartidor.id)}
     ).mappings().first()
-
+ 
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido no encontrado o no asignado a ti")
-
-    # Validar que el estado solicitado es el siguiente correcto
+ 
     estado_siguiente = ESTADOS_VALIDOS.get(pedido['estado'])
     if data.estado != estado_siguiente:
         raise HTTPException(
             status_code=400,
             detail=f"No puedes cambiar de '{pedido['estado']}' a '{data.estado}'"
         )
-
+ 
     now = datetime.now(timezone.utc)
-    if data.estado == 'delivered':
+ 
+    if data.estado == 'pending_confirmation':
+        # El repartidor marcó como entregado — queda en espera de confirmación del cliente
+        # El repartidor vuelve a available (ya terminó su trabajo)
         db.execute(
             text("""
                 UPDATE repartidores SET estado = 'available', actualizado_en = :now
@@ -300,10 +312,12 @@ def avanzar_estado_pedido(db: Session, user_id: str, pedido_id: str, data: Pedid
         db.execute(
             text("""
                 UPDATE pedidos
-                SET estado = :estado, actualizado_en = :now, entregado_en = :now
+                SET estado = 'pending_confirmation',
+                    entregado_en = :now,
+                    actualizado_en = :now
                 WHERE id = :pedido_id
             """),
-            {"estado": data.estado, "now": now, "pedido_id": pedido_id}
+            {"now": now, "pedido_id": pedido_id}
         )
     else:
         db.execute(
@@ -314,6 +328,66 @@ def avanzar_estado_pedido(db: Session, user_id: str, pedido_id: str, data: Pedid
             """),
             {"estado": data.estado, "now": now, "pedido_id": pedido_id}
         )
-
+ 
     db.commit()
     return {"ok": True, "pedido_id": pedido_id, "estado": data.estado}
+
+def marcar_entregado_con_foto(
+    db: Session,
+    user_id: str,
+    pedido_id: str,
+    foto: Optional[UploadFile] = None
+) -> dict:
+    repartidor = db.execute(
+        text("SELECT id FROM repartidores WHERE user_id = :user_id AND activo = TRUE LIMIT 1"),
+        {"user_id": user_id}
+    ).fetchone()
+
+    if not repartidor:
+        raise HTTPException(status_code=404, detail="Repartidor no encontrado")
+
+    pedido = db.execute(
+        text("""
+            SELECT id, estado FROM pedidos
+            WHERE id = :pedido_id 
+              AND repartidor_id = :repartidor_id
+              AND estado = 'on_the_way'
+        """),
+        {"pedido_id": pedido_id, "repartidor_id": str(repartidor.id)}
+    ).mappings().first()
+
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado o no está en 'on_the_way'")
+
+    now = datetime.now(timezone.utc)
+
+    # Subir foto si viene, igual que haces con logo/banner
+    foto_url = None
+    if foto is not None:
+        foto_url = upload_image(foto)
+
+    db.execute(
+        text("""
+            UPDATE pedidos
+            SET estado = 'pending_confirmation',
+                entregado_en = :now,
+                foto_entrega_url = COALESCE(:foto_url, foto_entrega_url),
+                foto_entrega_at = CASE WHEN :foto_url IS NOT NULL THEN :now ELSE foto_entrega_at END,
+                actualizado_en = :now
+            WHERE id = :pedido_id
+        """),
+        {"now": now, "foto_url": foto_url, "pedido_id": pedido_id}
+    )
+
+    db.execute(
+        text("UPDATE repartidores SET estado = 'available', actualizado_en = :now WHERE id = :repartidor_id"),
+        {"now": now, "repartidor_id": str(repartidor.id)}
+    )
+
+    db.commit()
+    return {
+        "ok": True,
+        "pedido_id": pedido_id,
+        "estado": "pending_confirmation",
+        "foto_subida": foto_url is not None
+    }

@@ -58,6 +58,7 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onRate, size = 36 }) =>
 
 export default function RateOrderScreen({ navigation, route }: Props) {
   const orderId = route.params.id;
+  
   const { colors, isDark } = useTheme();
   const [orderNumber, setOrderNumber] = useState("");
   const [total, setTotal] = useState(0);
@@ -65,6 +66,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
   const { session } = useAuth();
   const [branchId, setBranchId] = useState("");
   const [driverId, setDriverId] = useState("");
+  const [status, setStatus] = useState("");
 
 
   const [overallRating, setOverallRating] = useState(4);
@@ -151,10 +153,12 @@ export default function RateOrderScreen({ navigation, route }: Props) {
 
         if (response.ok) {
           const data = await response.json();
+          console.log(data);
           setBranchId(data.sucursal_id);
           setDriverId(data.repartidor_id);
           setOrderNumber(data.order_number);
           setTotal(data.total);
+          setStatus(data.estado);
         } else {
           console.log('Error al obtener el pedido');
         }
@@ -164,9 +168,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
       }
     }
 
-
     getOrder();
-
 
   }, []);
 
@@ -199,10 +201,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
     return formData;
   };
 
-
-
-
-  const handleSubmit = async () => {
+  const handleSubmitReview = async () => {
     try {
       setIsSaving(true);
       if (!branchId) {
@@ -222,6 +221,17 @@ export default function RateOrderScreen({ navigation, route }: Props) {
           body: formData,
         }
       );
+
+      if (status === 'pending_confirmation') {
+        await fetch(`${process.env.API_BASE_URL}/pedidos/${orderId}/confirmar-entrega`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session!.accessToken}`,
+          },
+          body: JSON.stringify({ tiene_problema: false }),
+        })
+      }
 
 
       if (res.ok) {
@@ -461,7 +471,7 @@ export default function RateOrderScreen({ navigation, route }: Props) {
       <View style={[styles.footer, { backgroundColor: colors.pageBg }]}>
         <TouchableOpacity
           style={styles.submitBtn}
-          onPress={handleSubmit}
+          onPress={handleSubmitReview}
           activeOpacity={0.85}
           disabled={isSaving}
         >

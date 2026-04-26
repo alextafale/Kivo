@@ -116,6 +116,7 @@ export type RootStackParamList = {
     total: number;
     deliveryAddress: string;
     rating?: number;
+    statusOrder?: string;
   };
   RateOrder: {
     id: string;

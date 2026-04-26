@@ -5,6 +5,7 @@ import {
   ActivityIndicator, Alert, Image, Animated,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import * as ImagePicker from 'expo-image-picker'
 import { LinearGradient } from 'expo-linear-gradient'
 import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -105,7 +106,26 @@ export default function DriverDashboard({ navigation }: Props) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current
   const slideAnim = React.useRef(new Animated.Value(16)).current
 
+  const [fotoEntrega, setFotoEntrega] = useState<string | null>(null)
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const [pedidosPendientesConfirmacion, setPedidosPendientesConfirmacion] = useState<any[]>([])
 
+
+
+  const fetchPendientesConfirmacion = useCallback(async () => {
+    try {
+      const { data: { session: s } } = await supabase.auth.getSession()
+      if (!s?.access_token) return
+      const res = await fetch(
+        `${process.env.API_BASE_URL}/repartidores/pedidos/pendientes-confirmacion`,
+        { headers: { Authorization: `Bearer ${s.access_token}` } }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        setPedidosPendientesConfirmacion(data)
+      }
+    } catch { }
+  }, [])
 
   const fetchRepartidor = useCallback(async () => {
     if (!session?.userId) { setFetchError('Sin sesión'); return }
@@ -143,9 +163,20 @@ export default function DriverDashboard({ navigation }: Props) {
     } catch { }
   }, [])
 
+  useEffect(() => {
+    if (pedidosPendientesConfirmacion.length === 0) return
+    
+    const interval = setInterval(() => {
+      fetchPendientesConfirmacion()
+
+    }, 15000)
+
+    return () => clearInterval(interval)
+  }, [fetchPendientesConfirmacion, pedidosPendientesConfirmacion.length])
+
   const loadAll = useCallback(async () => {
-    await Promise.all([fetchRepartidor(), fetchPedidos()])
-  }, [fetchRepartidor, fetchPedidos])
+    await Promise.all([fetchRepartidor(), fetchPedidos(), fetchPendientesConfirmacion()])
+  }, [fetchRepartidor, fetchPedidos, fetchPendientesConfirmacion])
 
   useEffect(() => {
     loadAll().finally(() => {
@@ -161,6 +192,46 @@ export default function DriverDashboard({ navigation }: Props) {
     setRefreshing(true)
     await loadAll()
     setRefreshing(false)
+  }
+
+  const handleSeleccionarFoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a la cámara para la foto de evidencia.')
+      return
+    }
+
+    Alert.alert(
+      'Foto de evidencia',
+      '¿Cómo quieres tomar la foto?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cámara', onPress: async () => {
+            const result = await ImagePicker.launchCameraAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              quality: 0.7,
+              allowsEditing: true,
+              aspect: [4, 3],
+            })
+            if (!result.canceled && result.assets[0]) {
+              setFotoEntrega(result.assets[0].uri)
+            }
+          }
+        },
+        {
+          text: 'Galería', onPress: async () => {
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              quality: 0.7,
+            })
+            if (!result.canceled && result.assets[0]) {
+              setFotoEntrega(result.assets[0].uri)
+            }
+          }
+        },
+      ]
+    )
   }
 
   const handleEstado = async (nuevoEstado: DriverEstado) => {
@@ -263,6 +334,66 @@ export default function DriverDashboard({ navigation }: Props) {
         }
       },
     ])
+  }
+
+  const handleMarcarEntregado = async () => {
+    if (!pedidoActivoId) return
+
+    Alert.alert('Confirmar entrega',
+      fotoEntrega ? '¿Confirmas la entrega? Se enviará la foto.' : '¿Confirmas la entrega?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Confirmar', onPress: async () => {
+            try {
+              setSubiendoFoto(true)
+              const { data: { session: s } } = await supabase.auth.getSession()
+              if (!s?.access_token) return
+
+              const formData = new FormData()
+
+              // Solo agrega la foto si el repartidor tomó una
+              // Si no hay foto, el endpoint igual funciona (foto=None en FastAPI)
+              if (fotoEntrega) {
+                formData.append('foto', {
+                  uri: fotoEntrega,
+                  type: 'image/jpeg',
+                  name: 'entrega.jpg',
+                } as any)
+              }
+
+              const res = await fetch(
+                `${process.env.API_BASE_URL}/repartidores/pedidos/${pedidoActivoId}/entregar`,
+                {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${s.access_token}` },
+                  // Sin Content-Type — lo pone FormData automáticamente con el boundary
+                  body: formData,
+                }
+              )
+
+              if (!res.ok) {
+                const err = await res.json()
+                throw new Error(err.detail ?? 'Error al marcar como entregado')
+              }
+
+              setRepartidor(prev => prev ? { ...prev, estado: 'available' } : prev)
+              setPedidoActivoId(null)
+              setEstadoPedido(null)
+              setFotoEntrega(null)
+
+              Alert.alert('¡Entrega registrada!', 'El cliente tiene 15 minutos para confirmar.')
+              await Promise.all([fetchPedidos(), fetchPendientesConfirmacion()])
+
+            } catch (e: any) {
+              Alert.alert('Error', e.message)
+            } finally {
+              setSubiendoFoto(false)
+            }
+          }
+        },
+      ]
+    )
   }
 
   // Activa el GPS solo cuando el repartidor está en estado busy
@@ -442,7 +573,10 @@ export default function DriverDashboard({ navigation }: Props) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <MaterialIcons name={estadoPedido === 'picked_up' ? 'inventory-2' : 'moped'} size={16} color="#fff" />
+                    <MaterialIcons
+                      name={estadoPedido === 'picked_up' ? 'inventory-2' : 'moped'}
+                      size={16} color="#fff"
+                    />
                     <Text style={styles.activoTitle}>
                       {estadoPedido === 'picked_up' ? 'Pedido recogido' : 'En camino'}
                     </Text>
@@ -455,29 +589,146 @@ export default function DriverDashboard({ navigation }: Props) {
                 </View>
               </LinearGradient>
 
-              {/* Botón para avanzar estado */}
-              <TouchableOpacity
-                style={[
-                  styles.avanzarBtn,
-                  estadoPedido === 'delivered' && styles.avanzarBtnDisabled
-                ]}
-                onPress={handleAvanzarEstado}
-                disabled={estadoPedido === 'delivered'}
-              >
-                <LinearGradient
-                  colors={estadoPedido === 'on_the_way' ? ['#F59E0B', '#D97706'] : ['#22c55e', '#16a34a']}
-                  style={styles.avanzarBtnGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+              {/* ── FOTO DE EVIDENCIA (solo cuando va en camino) ── */}
+              {estadoPedido === 'on_the_way' && (
+                <View style={{ marginTop: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+                    Foto de evidencia (opcional)
+                  </Text>
+
+                  {fotoEntrega ? (
+                    <View style={{ position: 'relative' }}>
+                      <Image
+                        source={{ uri: fotoEntrega }}
+                        style={{ width: '100%', height: 160, borderRadius: 12, backgroundColor: '#F3F4F6' }}
+                        resizeMode="cover"
+                      />
+                      <TouchableOpacity
+                        style={{
+                          position: 'absolute', top: 8, right: 8,
+                          backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 16,
+                          width: 32, height: 32, alignItems: 'center', justifyContent: 'center'
+                        }}
+                        onPress={() => setFotoEntrega(null)}
+                      >
+                        <MaterialIcons name="close" size={18} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={{
+                        borderWidth: 1.5, borderColor: '#D1D5DB', borderStyle: 'dashed',
+                        borderRadius: 12, paddingVertical: 20, alignItems: 'center',
+                        backgroundColor: '#F9FAFB', gap: 6
+                      }}
+                      onPress={handleSeleccionarFoto}
+                    >
+                      <MaterialIcons name="add-a-photo" size={28} color="#9CA3AF" />
+                      <Text style={{ fontSize: 13, color: '#9CA3AF', fontWeight: '500' }}>
+                        Tomar foto de evidencia
+                      </Text>
+                      <Text style={{ fontSize: 11, color: '#D1D5DB' }}>
+                        No es obligatoria
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
+              {/* ── BOTÓN AVANZAR ESTADO ── */}
+              {estadoPedido !== 'on_the_way' ? (
+                // picked_up → on_the_way (botón normal)
+                <TouchableOpacity
+                  style={styles.avanzarBtn}
+                  onPress={handleAvanzarEstado}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <MaterialIcons name={estadoPedido === 'picked_up' ? 'moped' : 'check-circle'} size={18} color="#fff" />
-                    <Text style={styles.avanzarBtnText}>
-                      {estadoPedido === 'picked_up' ? 'Ya voy en camino' : 'Pedido entregado'}
-                    </Text>
+                  <LinearGradient
+                    colors={['#22c55e', '#16a34a']}
+                    style={styles.avanzarBtnGradient}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <MaterialIcons name="moped" size={18} color="#fff" />
+                      <Text style={styles.avanzarBtnText}>Ya voy en camino</Text>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ) : (
+                // on_the_way → marcar entregado (con foto opcional)
+                <TouchableOpacity
+                  style={[styles.avanzarBtn, subiendoFoto && styles.avanzarBtnDisabled]}
+                  onPress={handleMarcarEntregado}
+                  disabled={subiendoFoto}
+                >
+                  <LinearGradient
+                    colors={['#F59E0B', '#D97706']}
+                    style={styles.avanzarBtnGradient}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  >
+                    {subiendoFoto ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <MaterialIcons name="check-circle" size={18} color="#fff" />
+                        <Text style={styles.avanzarBtnText}>
+                          {fotoEntrega ? 'Entregar con foto' : 'Marcar como entregado'}
+                        </Text>
+                      </View>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* ── Pedidos pendientes de confirmación del cliente ──────────────────── */}
+
+          {pedidosPendientesConfirmacion.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Esperando confirmación</Text>
+                <View style={[styles.countBadge, { backgroundColor: '#F59E0B' }]}>
+                  <Text style={styles.countBadgeText}>{pedidosPendientesConfirmacion.length}</Text>
+                </View>
+              </View>
+              <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>
+                El cliente tiene 15 min para confirmar. Si no responde, se confirma automáticamente.
+              </Text>
+
+              {pedidosPendientesConfirmacion.map((p) => {
+                const minutosRestantes = Math.max(0, 15 - Math.floor(p.minutos_esperando))
+                return (
+                  <View key={p.id} style={[styles.pedidoCard, { borderColor: '#FEF3C7', borderWidth: 1.5 }]}>
+                    <View style={styles.pedidoHeader}>
+                      <View style={[styles.pedidoNumeroWrap, { backgroundColor: '#FEF3C7' }]}>
+                        <Text style={[styles.pedidoNumero, { color: '#92400E' }]}>{p.order_number}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <MaterialIcons name="schedule" size={14} color="#F59E0B" />
+                        <Text style={{ fontSize: 12, color: '#F59E0B', fontWeight: '700' }}>
+                          {minutosRestantes > 0 ? `~${minutosRestantes} min` : 'Auto-confirmando...'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.pedidoNegocio}>{p.negocio_nombre}</Text>
+
+                    <View style={styles.pedidoDireccionRow}>
+                      <LocationIcon />
+                      <Text style={styles.pedidoDireccion} numberOfLines={1}>
+                        {p.direccion_entrega}
+                      </Text>
+                    </View>
+
+                    {p.foto_entrega_url && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                        <MaterialIcons name="photo-camera" size={13} color="#9CA3AF" />
+                        <Text style={{ fontSize: 11, color: '#9CA3AF' }}>Con foto de evidencia</Text>
+                      </View>
+                    )}
                   </View>
-                </LinearGradient>
-              </TouchableOpacity>
+                )
+              })}
             </View>
           )}
 
@@ -493,13 +744,13 @@ export default function DriverDashboard({ navigation }: Props) {
             </View>
 
             {estado === 'offline' ? (
-                            <View style={styles.emptyCard}>
+              <View style={styles.emptyCard}>
                 <MaterialIcons name="bedtime" size={40} color="#9CA3AF" />
                 <Text style={styles.emptyTitle}>Estás offline</Text>
                 <Text style={styles.emptyText}>Cambia tu estado a "Disponible" para ver pedidos.</Text>
               </View>
             ) : pedidos.length === 0 ? (
-                            <View style={styles.emptyCard}>
+              <View style={styles.emptyCard}>
                 <MaterialIcons name="search" size={40} color="#9CA3AF" />
                 <Text style={styles.emptyTitle}>Sin pedidos por ahora</Text>
                 <Text style={styles.emptyText}>Jala hacia abajo para actualizar.</Text>

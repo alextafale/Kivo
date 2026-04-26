@@ -85,12 +85,13 @@ const statusConfig = {
   ready: { label: 'Listo', color: '#06B6D4', icon: CheckCircleIcon },
   picked_up: { label: 'Recogido', color: '#3B82F6', icon: TruckIcon },
   on_the_way: { label: 'En Camino', color: '#3B82F6', icon: TruckIcon },
+  pending_confirmation: { label: 'Por confirmar', color: '#F59E0B', icon: ClockIcon },
   delivered: { label: 'Entregado', color: '#22c55e', icon: CheckCircleIcon },
   cancelled: { label: 'Cancelado', color: '#EF4444', icon: XCircleIcon },
   refunded: { label: 'Reembolsado', color: '#6B7280', icon: XCircleIcon },
 };
 
-const filterTabs = ['Todos', 'En Progreso', 'Completados', 'Cancelados'];
+const filterTabs = ['Todos', 'En Progreso', 'Por confirmar', 'Completados', 'Cancelados'];
 
 // ─── Componente de tarjeta individual con Realtime ────────────────────────────
 
@@ -127,14 +128,15 @@ function OrderCard({
       style={[styles.orderCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
       activeOpacity={order.status === 'delivered' ? 0.7 : 1}
       onPress={() => {
-        if (order.status === 'delivered') {
+        if (order.status === 'delivered' || order.status === 'pending_confirmation') {
           navigation.navigate('OrderDelivered', {
             id: order.id,
             orderNumber: order.orderNumber,
             restaurantName: order.restaurantName,
             total: order.total,
             deliveryAddress: order.deliveryAddress,
-            rating: rating
+            rating: rating,
+            statusOrder: order.status
           });
         }
       }}
@@ -203,24 +205,26 @@ function OrderCard({
         </TouchableOpacity>
       )}
 
-      {(order.status === 'delivered'  && rating === 0) && (
+      {((order.status === 'delivered' || order.status === 'pending_confirmation') && rating === 0) && (
         <View>
           <TouchableOpacity style={[styles.reorderButton, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
             <Text style={[styles.reorderButtonText, { color: colors.titleText }]}>Volver a Pedir</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.reportProblemBtn}
-            onPress={() => navigation.navigate('ReportarProblema', {
-              orderId: order.id,
-              orderNumber: order.orderNumber,
-              total: order.total,
-            })}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <MaterialIcons name="warning" size={16} color="#F97316" />
-              <Text style={styles.reportProblemText}>Reportar un problema</Text>
-            </View>
-          </TouchableOpacity>
+          {order.status === 'pending_confirmation' && (
+            <TouchableOpacity
+              style={styles.reportProblemBtn}
+              onPress={() => navigation.navigate('ReportarProblema', {
+                orderId: order.id,
+                orderNumber: order.orderNumber,
+                total: order.total,
+              })}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <MaterialIcons name="warning" size={16} color="#F97316" />
+                <Text style={styles.reportProblemText}>Reportar un problema</Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </TouchableOpacity>
@@ -279,6 +283,7 @@ export default function Orders({ navigation }: Props) {
     if (selectedFilter !== 'Todos') {
       const statusMap: Record<string, Order['status']> = {
         'En Progreso': 'on_the_way',
+        'Por confirmar': 'pending_confirmation',
         'Completados': 'delivered',
         'Cancelados': 'cancelled',
       };

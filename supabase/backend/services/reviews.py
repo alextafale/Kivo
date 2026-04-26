@@ -50,6 +50,7 @@ def get_reviews_by_user_id(user_id: UUID, db: Session) -> List[ReviewOut]:
         raise SinPermiso()
 
     reviews = db.query(Review).filter(Review.user_id == user_id).all()
+
     return reviews
 
 def create_review(db: Session, review_in: ReviewCreate, imagenes:List[UploadFile]) -> ReviewOut:
