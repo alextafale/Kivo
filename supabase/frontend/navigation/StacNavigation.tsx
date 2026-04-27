@@ -117,6 +117,7 @@ export type RootStackParamList = {
     deliveryAddress: string;
     rating?: number;
     statusOrder?: string;
+
   };
   RateOrder: {
     id: string;
@@ -247,7 +248,6 @@ export default function StackNavigation() {
         <Stack.Screen name="DriverDashboard" component={DriverDashboard} />
         <Stack.Screen name="DriverProfile" component={DriverProfile} />
         <Stack.Screen name="DriverSupport" component={DriverSupport} />
-        <Stack.Screen name="DriverRoutesScreen" component={DriverRoutesScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )
