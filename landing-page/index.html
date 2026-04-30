@@ -238,22 +238,24 @@
     <section id="how-it-works" class="sticky-wrapper">
       <div class="sticky-container">
         <!-- Text Content that morphs -->
-        <div class="morph-content">
+        <div class="morph-content" style="display: flex; flex-direction: column; justify-content: center;">
           <h2 style="font-size: 3.5rem; margin-bottom: 50px; letter-spacing: -0.05em;">3 Perfiles.<br><span class="highlight">1 Sola App.</span></h2>
           
-          <div class="morph-step active">
-            <h3 style="font-size: 2rem; margin-bottom: 20px; color: var(--primary-color);">01. El Cliente</h3>
-            <p style="font-size: 1.2rem; color: var(--text-muted);">Pide con tu voz o por chat. Sin navegar menús infinitos. Kivo aprende lo que te gusta y te lo lleva más rápido que nadie.</p>
-          </div>
-          
-          <div class="morph-step">
-            <h3 style="font-size: 2rem; margin-bottom: 20px; color: #3b82f6;">02. El Negocio</h3>
-            <p style="font-size: 1.2rem; color: var(--text-muted);">Gestiona pedidos en tiempo real. Activa o desactiva platillos con un toque y mantén el control total con solo un 12% de comisión.</p>
-          </div>
-          
-          <div class="morph-step">
-            <h3 style="font-size: 2rem; margin-bottom: 20px; color: #a855f7;">03. El Repartidor</h3>
-            <p style="font-size: 1.2rem; color: var(--text-muted);">Conéctate cuando quieras. Recibe rutas optimizadas por IA, conserva el 100% de tus propinas y no pagues comisiones ocultas.</p>
+          <div style="position: relative; height: 150px; width: 100%;">
+            <div class="morph-step active">
+              <h3 style="font-size: 2rem; margin-bottom: 20px; color: var(--primary-color);">01. El Cliente</h3>
+              <p style="font-size: 1.2rem; color: var(--text-muted);">Pide con tu voz o por chat. Sin navegar menús infinitos. Kivo aprende lo que te gusta y te lo lleva más rápido que nadie.</p>
+            </div>
+            
+            <div class="morph-step">
+              <h3 style="font-size: 2rem; margin-bottom: 20px; color: #3b82f6;">02. El Negocio</h3>
+              <p style="font-size: 1.2rem; color: var(--text-muted);">Gestiona pedidos en tiempo real. Activa o desactiva platillos con un toque y mantén el control total con solo un 12% de comisión.</p>
+            </div>
+            
+            <div class="morph-step">
+              <h3 style="font-size: 2rem; margin-bottom: 20px; color: #a855f7;">03. El Repartidor</h3>
+              <p style="font-size: 1.2rem; color: var(--text-muted);">Conéctate cuando quieras. Recibe rutas optimizadas por IA, conserva el 100% de tus propinas y no pagues comisiones ocultas.</p>
+            </div>
           </div>
         </div>
 
@@ -428,30 +430,37 @@
     </section>
 
     <!-- Roadmap Section -->
-    <section class="roadmap" style="padding: 150px 0; background: #0b1120;">
-      <div class="container">
+    <section class="roadmap" style="padding: 150px 0; background: #0b1120; position: relative; overflow: hidden;">
+      <div class="glow-orb" style="background: rgba(34,197,94,0.1); width: 600px; height: 600px; top: 10%; right: -20%;"></div>
+      <div class="container" style="position: relative; z-index: 2;">
         <div class="section-header fade-in-up">
           <h2>Nuestra Ruta Hacia el <span class="highlight">Lanzamiento</span></h2>
           <p>Kivo evoluciona todos los días. Así es como llegaremos a tus manos.</p>
         </div>
-        <div class="timeline" style="position: relative; max-width: 800px; margin: 60px auto 0; border-left: 4px solid rgba(34,197,94,0.3); padding-left: 40px;">
+        <div class="timeline" style="position: relative; max-width: 800px; margin: 60px auto 0; border-left: 2px dashed rgba(255,255,255,0.1); padding-left: 40px;">
           
-          <div class="timeline-item fade-in-left delay-1" style="margin-bottom: 60px; position: relative;">
-            <div style="position: absolute; left: -52px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--primary-color); box-shadow: 0 0 15px var(--primary-color);"></div>
-            <h3 style="color: var(--primary-color); margin-bottom: 10px;">Fase 1: Alpha Cerrada (Actual)</h3>
-            <p style="color: var(--text-muted);">Pruebas internas del motor de Inteligencia Artificial y optimización de rutas con un grupo cerrado de restaurantes piloto.</p>
+          <div class="timeline-item fade-in-left delay-1 glass-deep glare-wrapper" style="margin-bottom: 40px; position: relative; padding: 30px; border-radius: 20px; background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2);">
+            <div class="glare-fx"></div>
+            <div style="position: absolute; left: -51px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; border-radius: 50%; background: var(--primary-color); box-shadow: 0 0 20px var(--primary-color);"></div>
+            <span style="background: rgba(34, 197, 94, 0.2); color: var(--primary-color); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; display: inline-block;">Fase Actual</span>
+            <h3 style="font-size: 1.8rem; margin-bottom: 10px;">Fase 1: Alpha Cerrada</h3>
+            <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6;">Pruebas internas del motor de Inteligencia Artificial y optimización de rutas con un grupo cerrado de restaurantes piloto en entornos controlados.</p>
           </div>
           
-          <div class="timeline-item fade-in-left delay-2" style="margin-bottom: 60px; position: relative;">
-            <div style="position: absolute; left: -52px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: #3b82f6;"></div>
-            <h3 style="color: #3b82f6; margin-bottom: 10px;">Fase 2: Beta Pública Comercial</h3>
-            <p style="color: var(--text-muted);">Apertura a los primeros 500 usuarios y negocios en la lista de espera. Ajustes de UI/UX en vivo y calibración de mapas.</p>
+          <div class="timeline-item fade-in-left delay-2 glass-deep glare-wrapper" style="margin-bottom: 40px; position: relative; padding: 30px; border-radius: 20px; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2);">
+            <div class="glare-fx"></div>
+            <div style="position: absolute; left: -51px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 10px rgba(59,130,246,0.5);"></div>
+            <span style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; display: inline-block;">Próximamente</span>
+            <h3 style="font-size: 1.8rem; margin-bottom: 10px;">Fase 2: Beta Pública Comercial</h3>
+            <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6;">Apertura a los primeros 500 usuarios y negocios en la lista de espera. Ajustes de UI/UX en vivo, calibración de mapas y pulido final de pagos.</p>
           </div>
           
-          <div class="timeline-item fade-in-left delay-3" style="position: relative;">
-            <div style="position: absolute; left: -52px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: #64748b;"></div>
-            <h3 style="color: #cbd5e1; margin-bottom: 10px;">Fase 3: Lanzamiento Oficial V1</h3>
-            <p style="color: var(--text-muted);">Despliegue total en App Store y Google Play. Campañas masivas y apertura de registros libres para todas las ciudades operativas.</p>
+          <div class="timeline-item fade-in-left delay-3 glass-deep glare-wrapper" style="position: relative; padding: 30px; border-radius: 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);">
+            <div class="glare-fx"></div>
+            <div style="position: absolute; left: -51px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; border-radius: 50%; background: #64748b;"></div>
+            <span style="background: rgba(255, 255, 255, 0.1); color: #cbd5e1; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; display: inline-block;">Futuro</span>
+            <h3 style="font-size: 1.8rem; margin-bottom: 10px; color: #cbd5e1;">Fase 3: Lanzamiento Oficial V1</h3>
+            <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6;">Despliegue total en App Store y Google Play. Campañas masivas, apertura de registros libres para todas las ciudades operativas y escalado del servidor.</p>
           </div>
 
         </div>
