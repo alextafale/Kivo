@@ -608,3 +608,106 @@ h1, h2, h3, h4 { color: var(--text-main); font-weight: 800; line-height: 1.2; te
 .fade-in-left { opacity: 0; transform: translateX(-150px) scale(0.9) skewX(10deg); transition: all 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .fade-in-right { opacity: 0; transform: translateX(150px) scale(0.9) skewX(-10deg); transition: all 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .fade-in-up.visible, .fade-in-left.visible, .fade-in-right.visible { opacity: 1; transform: translateY(0) scale(1) rotateX(0deg) skewX(0deg); }
+
+/* --- Advanced 3D & Magnetic Effects --- */
+.magnetic-btn {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.glare-wrapper {
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+.glare-fx {
+  position: absolute;
+  top: -50%; left: -50%; right: -50%; bottom: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 10;
+  transform: translateZ(10px);
+}
+
+.glare-wrapper:hover .glare-fx {
+  opacity: 1;
+}
+
+.floating-3d {
+  animation: float3d 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes float3d {
+  0% { transform: translateY(0px) rotateX(5deg) rotateY(-5deg); }
+  50% { transform: translateY(-20px) rotateX(-5deg) rotateY(5deg); }
+  100% { transform: translateY(0px) rotateX(5deg) rotateY(-5deg); }
+}
+
+/* Stagger Delays */
+.delay-1 { transition-delay: 0.1s !important; }
+.delay-2 { transition-delay: 0.2s !important; }
+.delay-3 { transition-delay: 0.3s !important; }
+.delay-4 { transition-delay: 0.4s !important; }
+.delay-5 { transition-delay: 0.5s !important; }
+
+/* --- Pricing Section --- */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 50px;
+}
+.pricing-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.pricing-card.featured {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+  transform: scale(1.05);
+  z-index: 1;
+}
+.pricing-price {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  margin: 20px 0;
+}
+
+/* --- Chat Demo Section --- */
+.chat-demo {
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  max-width: 400px;
+  margin: 0 auto;
+  box-shadow: var(--shadow-glow);
+}
+.chat-bubble {
+  padding: 15px 20px;
+  border-radius: 20px;
+  margin-bottom: 15px;
+  max-width: 80%;
+  font-size: 0.95rem;
+}
+.chat-bot {
+  background: rgba(255,255,255,0.05);
+  border-bottom-left-radius: 5px;
+}
+.chat-user {
+  background: var(--primary-color);
+  color: white;
+  margin-left: auto;
+  border-bottom-right-radius: 5px;
+}

@@ -68,13 +68,57 @@
           <h1 class="hero-title">Únete a <span class="highlight">Kivo</span> y transforma tu forma de pedir</h1>
           <p class="hero-subtitle">Selecciona tu perfil para comenzar a pedir, vender o entregar de forma conversacional y eficiente. La revolución del delivery está aquí.</p>
           <div class="hero-buttons">
-            <a href="/src/clientes.html" class="btn btn-primary btn-lg">Comenzar Ahora</a>
-            <a href="#features" class="btn btn-secondary btn-lg">Explorar Kivo</a>
+            <a href="/src/clientes.html" class="btn btn-primary btn-lg magnetic-btn">Comenzar Ahora</a>
+            <a href="#features" class="btn btn-secondary btn-lg magnetic-btn">Explorar Kivo</a>
           </div>
         </div>
-        <div class="hero-image fade-in-up delay-1">
+        <div class="hero-image fade-in-up delay-1 floating-3d glare-wrapper" style="border-radius: 20px;">
+          <div class="glare-fx"></div>
           <div class="blob-bg"></div>
           <img src="/Splash.png" alt="App Kivo" class="app-mockup glass-effect" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Chat Demo Section -->
+    <section class="live-chat" style="padding: 100px 0; background: var(--bg-color); position: relative; overflow: hidden;">
+      <div class="blob-bg" style="background: linear-gradient(135deg, #22c55e, #3b82f6); opacity: 0.1; left: 10%; top: 20%; width: 400px; height: 400px;"></div>
+      <div class="container" style="display: flex; gap: 60px; align-items: center; flex-wrap: wrap;">
+        <div class="chat-content fade-in-up" style="flex: 1; min-width: 300px;">
+          <h2 style="font-size: 3rem; margin-bottom: 20px;">Habla con Kivo, no con un menú</h2>
+          <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 30px;">Olvídate de buscar entre categorías infinitas. Solo escribe o manda un audio con lo que quieres, y nuestra IA se encarga del resto en segundos.</p>
+          <ul style="list-style: none; padding: 0;">
+            <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;"><span style="color: var(--primary-color);">✓</span> Reconocimiento de voz nativo</li>
+            <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;"><span style="color: var(--primary-color);">✓</span> Comprende lenguaje natural y jergas</li>
+            <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;"><span style="color: var(--primary-color);">✓</span> Sugerencias personalizadas al instante</li>
+          </ul>
+        </div>
+        <div class="chat-demo-container fade-in-left delay-2 floating-3d glare-wrapper" style="flex: 1; min-width: 300px;">
+          <div class="glare-fx"></div>
+          <div class="chat-demo">
+            <div style="text-align: center; margin-bottom: 20px; font-weight: 600; color: var(--text-muted); font-size: 0.9rem;">Hoy, 14:30</div>
+            
+            <div class="chat-bubble chat-user fade-in-up delay-1">
+              "Kivo, mándame una hamburguesa doble con queso y unas papas grandes de Burger King, pero sin cebolla por favor."
+            </div>
+            
+            <div class="chat-bubble chat-bot fade-in-up delay-2">
+              ¡Entendido! 🍔🍟 Una hamburguesa doble c/ queso (sin cebolla) y papas grandes de Burger King.<br><br>El total es de <strong>$185 MXN</strong> y llega en aprox. 25 min.<br><br>¿Confirmo el pedido al domicilio de tu oficina?
+            </div>
+
+            <div class="chat-bubble chat-user fade-in-up delay-3">
+              Sí, confirma y cóbralo a la tarjeta terminada en 4567.
+            </div>
+
+            <div class="chat-bubble chat-bot fade-in-up delay-4" style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--primary-color);">
+              <strong style="color: var(--primary-color);">¡Pedido Confirmado! ✅</strong><br>El restaurante ya lo está preparando. Puedes seguir el repartidor en tiempo real en tu mapa.
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 30px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+              <span style="color: var(--text-muted); opacity: 0.5;">Escribe o di tu pedido...</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -163,6 +207,46 @@
               </div>
             </li>
           </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Choose Kivo Section -->
+    <section class="why-kivo" style="padding: 120px 0; background: var(--bg-color); position: relative; overflow: hidden;">
+      <div class="blob-bg" style="width: 600px; height: 600px; opacity: 0.1; right: -10%; top: 10%; background: linear-gradient(135deg, #a855f7, #ec4899);"></div>
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2>¿Por qué elegir <span class="highlight">Kivo</span>?</h2>
+          <p>Hemos rediseñado por completo la experiencia de delivery para que sea justa, rápida y conversacional.</p>
+        </div>
+        
+        <div class="cards-container" style="margin-top: 60px;">
+          <div class="feature-card fade-in-up delay-1 glare-wrapper" style="background: rgba(34, 197, 94, 0.05); border-color: rgba(34, 197, 94, 0.2);">
+            <div class="glare-fx"></div>
+            <div class="card-icon-wrapper" style="background: rgba(34, 197, 94, 0.2);">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <h3 style="font-size: 1.5rem;">Cero Comisiones Ocultas</h3>
+            <p style="color: var(--text-muted);">Lo que ves es lo que pagas. Transparencia total para el cliente, el negocio y el repartidor.</p>
+          </div>
+          
+          <div class="feature-card fade-in-up delay-2 glare-wrapper" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.2);">
+            <div class="glare-fx"></div>
+            <div class="card-icon-wrapper" style="background: rgba(59, 130, 246, 0.2);">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3 style="font-size: 1.5rem;">Velocidad Extrema</h3>
+            <p style="color: var(--text-muted);">Nuestro algoritmo de rutas y el modelo conversacional reducen el tiempo de pedido y entrega en un 40%.</p>
+          </div>
+
+          <div class="feature-card fade-in-up delay-3 glare-wrapper" style="background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2);">
+            <div class="glare-fx"></div>
+            <div class="card-icon-wrapper" style="background: rgba(168, 85, 247, 0.2);">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <h3 style="font-size: 1.5rem;">Ecosistema Unificado</h3>
+            <p style="color: var(--text-muted);">Cambia entre tu perfil de consumidor, dueño de negocio o repartidor con un solo toque, sin descargar otras apps.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -284,6 +368,63 @@
             <p style="color: var(--text-muted);">Despliegue total en App Store y Google Play. Campañas masivas y apertura de registros libres para todas las ciudades operativas.</p>
           </div>
 
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" style="padding: 120px 0; background: var(--bg-color);">
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2>Precios Claros y <span class="highlight">Justos</span></h2>
+          <p>Construimos un modelo de negocio sostenible sin exprimir a nuestros socios.</p>
+        </div>
+        <div class="pricing-grid">
+          <!-- Client Pricing -->
+          <div class="pricing-card fade-in-up delay-1 glare-wrapper app-mockup">
+            <div class="glare-fx"></div>
+            <h3>Clientes</h3>
+            <p style="color: var(--text-muted);">Pide sin sobrecargas absurdas.</p>
+            <div class="pricing-price">$0</div>
+            <p style="margin-bottom: 30px;">Costo de suscripción</p>
+            <ul style="text-align: left; list-style: none; padding: 0; margin-bottom: 40px;">
+              <li style="margin-bottom: 10px;">✅ Menú al mismo precio que en el local</li>
+              <li style="margin-bottom: 10px;">✅ Tarifa de envío transparente</li>
+              <li style="margin-bottom: 10px;">✅ Soporte en tiempo real</li>
+            </ul>
+            <a href="/src/clientes.html" class="btn btn-secondary magnetic-btn" style="width: 100%;">Soy Cliente</a>
+          </div>
+          
+          <!-- Business Pricing -->
+          <div class="pricing-card featured fade-in-up delay-2 glare-wrapper app-mockup">
+            <div class="glare-fx"></div>
+            <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); background: var(--primary-color); color: white; padding: 5px 20px; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; font-size: 0.9rem; font-weight: bold;">Más Popular</div>
+            <h3>Negocios</h3>
+            <p style="color: var(--text-muted);">Crece tus ventas, no tus gastos.</p>
+            <div class="pricing-price">12%</div>
+            <p style="margin-bottom: 30px;">Comisión por venta exitosa</p>
+            <ul style="text-align: left; list-style: none; padding: 0; margin-bottom: 40px;">
+              <li style="margin-bottom: 10px;">✅ 0% de costo de activación</li>
+              <li style="margin-bottom: 10px;">✅ Cobro y depósito automatizado</li>
+              <li style="margin-bottom: 10px;">✅ Panel de métricas avanzadas</li>
+            </ul>
+            <a href="/src/negocios.html" class="btn btn-primary magnetic-btn" style="width: 100%;">Soy Negocio</a>
+          </div>
+          
+          <!-- Driver Pricing -->
+          <div class="pricing-card fade-in-up delay-3 glare-wrapper app-mockup">
+            <div class="glare-fx"></div>
+            <h3>Repartidores</h3>
+            <p style="color: var(--text-muted);">Gana el 100% de tu esfuerzo.</p>
+            <div class="pricing-price">0%</div>
+            <p style="margin-bottom: 30px;">Comisiones retenidas</p>
+            <ul style="text-align: left; list-style: none; padding: 0; margin-bottom: 40px;">
+              <li style="margin-bottom: 10px;">✅ Conservas el 100% de tus propinas</li>
+              <li style="margin-bottom: 10px;">✅ Rutas optimizadas con IA</li>
+              <li style="margin-bottom: 10px;">✅ Seguro activo en cada viaje</li>
+            </ul>
+            <a href="/src/repartidores.html" class="btn btn-secondary magnetic-btn" style="width: 100%;">Soy Repartidor</a>
+          </div>
         </div>
       </div>
     </section>

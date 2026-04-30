@@ -108,11 +108,21 @@ document.addEventListener('DOMContentLoaded', () => {
       
       el.style.transform = `perspective(1500px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
       el.style.transition = 'none';
+
+      const glare = el.querySelector('.glare-fx');
+      if (glare) {
+        glare.style.transform = `translate(${x - centerX}px, ${y - centerY}px)`;
+      }
     });
     
     el.addEventListener('mouseleave', () => {
       el.style.transform = `perspective(1500px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
       el.style.transition = 'transform 0.5s ease-out';
+      
+      const glare = el.querySelector('.glare-fx');
+      if (glare) {
+        glare.style.transform = `translate(0, 0)`;
+      }
     });
   });
 
@@ -124,6 +134,20 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       navbar.classList.remove('scrolled');
     }
+  });
+
+  // --- Magnetic Buttons ---
+  const magneticBtns = document.querySelectorAll('.magnetic-btn');
+  magneticBtns.forEach(btn => {
+    btn.addEventListener('mousemove', (e) => {
+      const rect = btn.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+      btn.style.transform = `translate(${x * 0.3}px, ${y * 0.3}px)`;
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.transform = 'translate(0px, 0px)';
+    });
   });
 
   // --- Scroll Animations (Intersection Observer) ---
