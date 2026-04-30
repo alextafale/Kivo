@@ -62,20 +62,55 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero">
-      <div class="container hero-container">
-        <div class="hero-content fade-in-up">
-          <h1 class="hero-title">Únete a <span class="highlight">Kivo</span> y transforma tu forma de pedir</h1>
-          <p class="hero-subtitle">Selecciona tu perfil para comenzar a pedir, vender o entregar de forma conversacional y eficiente. La revolución del delivery está aquí.</p>
+    <section class="hero" style="position: relative; overflow: hidden; min-height: 100vh; display: flex; align-items: center;">
+      <!-- Deep background glow -->
+      <div class="glow-orb parallax-layer-1" style="background: var(--primary-color); width: 800px; height: 800px; top: -20%; left: -10%;"></div>
+      <div class="glow-orb parallax-layer-2" style="background: #3b82f6; width: 600px; height: 600px; bottom: -10%; right: -5%; animation-delay: -4s;"></div>
+
+      <div class="container hero-container" style="position: relative; z-index: 10;">
+        <div class="hero-content fade-in-up" style="max-width: 600px;">
+          <h1 class="hero-title" style="font-size: 5rem; letter-spacing: -0.05em; line-height: 1.1; margin-bottom: 30px;">
+            El Delivery,<br><span class="highlight">Reimaginado.</span>
+          </h1>
+          <p class="hero-subtitle" style="font-size: 1.3rem; opacity: 0.8; margin-bottom: 40px;">
+            Pide, vende o reparte con Kivo. La primera plataforma conversacional que se adapta a ti con velocidad extrema y cero comisiones ocultas.
+          </p>
           <div class="hero-buttons">
-            <a href="/src/clientes.html" class="btn btn-primary btn-lg magnetic-btn">Comenzar Ahora</a>
-            <a href="#features" class="btn btn-secondary btn-lg magnetic-btn">Explorar Kivo</a>
+            <a href="/src/clientes.html" class="btn btn-primary btn-lg magnetic-btn" style="box-shadow: var(--shadow-glow);">Comenzar Ahora</a>
+            <a href="#features" class="btn btn-secondary btn-lg magnetic-btn">Descubrir Kivo</a>
           </div>
         </div>
-        <div class="hero-image fade-in-up delay-1 floating-3d glare-wrapper" style="border-radius: 20px;">
-          <div class="glare-fx"></div>
-          <div class="blob-bg"></div>
-          <img src="/Splash.png" alt="App Kivo" class="app-mockup glass-effect" />
+        
+        <!-- Cinematic Hero Image Wrapper -->
+        <div class="hero-image fade-in-up delay-1" style="position: relative;">
+          <!-- Orbital UI Widgets -->
+          <div class="parallax-orbit" style="position: absolute; top: 10%; left: -20%; z-index: 20;">
+            <div class="glass-deep" style="padding: 15px 25px; border-radius: 20px; display: flex; align-items: center; gap: 15px;">
+              <span style="font-size: 1.5rem;">⭐</span>
+              <div>
+                <div style="font-weight: bold; font-size: 1.1rem;">4.9/5</div>
+                <div style="font-size: 0.8rem; opacity: 0.7;">10k+ Reseñas</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="parallax-layer-3" style="position: absolute; bottom: 20%; right: -15%; z-index: 20;">
+            <div class="glass-deep" style="padding: 15px 25px; border-radius: 20px; display: flex; align-items: center; gap: 15px;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div>
+                <div style="font-weight: bold; font-size: 1.1rem;">Pedido Entregado</div>
+                <div style="font-size: 0.8rem; opacity: 0.7;">En 12 minutos</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Phone Mockup -->
+          <div class="floating-3d glare-wrapper" style="border-radius: 30px; box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);">
+            <div class="glare-fx"></div>
+            <img src="/Splash.png" alt="App Kivo" class="app-mockup" style="border-radius: 30px;" />
+          </div>
         </div>
       </div>
     </section>
@@ -220,32 +255,63 @@
           <p>Hemos rediseñado por completo la experiencia de delivery para que sea justa, rápida y conversacional.</p>
         </div>
         
-        <div class="cards-container" style="margin-top: 60px;">
-          <div class="feature-card fade-in-up delay-1 glare-wrapper" style="background: rgba(34, 197, 94, 0.05); border-color: rgba(34, 197, 94, 0.2);">
+        <div class="bento-grid">
+          <!-- Large Tile: Conversational UI -->
+          <div class="bento-item large fade-in-up delay-1 glare-wrapper" style="background: rgba(34, 197, 94, 0.05); border-color: rgba(34, 197, 94, 0.2);">
             <div class="glare-fx"></div>
-            <div class="card-icon-wrapper" style="background: rgba(34, 197, 94, 0.2);">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <div class="card-icon-wrapper" style="background: rgba(34, 197, 94, 0.2); margin-bottom: 20px;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
             </div>
-            <h3 style="font-size: 1.5rem;">Cero Comisiones Ocultas</h3>
-            <p style="color: var(--text-muted);">Lo que ves es lo que pagas. Transparencia total para el cliente, el negocio y el repartidor.</p>
-          </div>
-          
-          <div class="feature-card fade-in-up delay-2 glare-wrapper" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.2);">
-            <div class="glare-fx"></div>
-            <div class="card-icon-wrapper" style="background: rgba(59, 130, 246, 0.2);">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <h3 style="font-size: 2rem; margin-bottom: 10px;">IA Conversacional</h3>
+            <p style="color: var(--text-muted); font-size: 1.1rem; flex-grow: 1;">Nuestra IA entiende el lenguaje natural, reconoce audios y aprende tus gustos. No pierdas tiempo navegando; solo pide lo que quieres.</p>
+            <div style="margin-top: 20px; background: var(--bg-color); padding: 15px; border-radius: 15px; border: 1px solid var(--border-color);">
+              <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; background: var(--primary-color);"></div>
+                <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; font-size: 0.8rem; width: 70%;">Reordenando tu pedido favorito de los viernes. ETA: 20min.</div>
+              </div>
             </div>
-            <h3 style="font-size: 1.5rem;">Velocidad Extrema</h3>
-            <p style="color: var(--text-muted);">Nuestro algoritmo de rutas y el modelo conversacional reducen el tiempo de pedido y entrega en un 40%.</p>
           </div>
 
-          <div class="feature-card fade-in-up delay-3 glare-wrapper" style="background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2);">
+          <!-- Tall Tile: Speed & Map -->
+          <div class="bento-item tall fade-in-up delay-2 glare-wrapper" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.2);">
             <div class="glare-fx"></div>
-            <div class="card-icon-wrapper" style="background: rgba(168, 85, 247, 0.2);">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Velocidad Extrema</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Rutas optimizadas en tiempo real.</p>
+            <div style="flex-grow: 1; border-radius: 15px; background: #0f172a; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+              <!-- Simulated map route -->
+              <svg viewBox="0 0 100 200" style="width: 100%; height: 100%; opacity: 0.5;">
+                <path d="M20,20 Q80,50 50,100 T80,180" fill="none" stroke="#3b82f6" stroke-width="4" stroke-dasharray="200" stroke-dashoffset="200" style="animation: draw-route 3s infinite alternate ease-in-out;"></path>
+                <circle cx="20" cy="20" r="6" fill="#ef4444" />
+                <circle cx="80" cy="180" r="6" fill="var(--primary-color)" />
+              </svg>
             </div>
-            <h3 style="font-size: 1.5rem;">Ecosistema Unificado</h3>
-            <p style="color: var(--text-muted);">Cambia entre tu perfil de consumidor, dueño de negocio o repartidor con un solo toque, sin descargar otras apps.</p>
+            <style>@keyframes draw-route { to { stroke-dashoffset: 0; } }</style>
+          </div>
+
+          <!-- Wide Tile: Zero Fees -->
+          <div class="bento-item wide fade-in-up delay-3 glare-wrapper" style="background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2); display: flex; flex-direction: row; align-items: center; gap: 30px;">
+            <div class="glare-fx"></div>
+            <div style="flex: 1;">
+              <h3 style="font-size: 1.8rem; margin-bottom: 10px;">0% Comisiones Ocultas</h3>
+              <p style="color: var(--text-muted);">Lo que ves es lo que pagas. Un modelo justo para restaurantes y repartidores.</p>
+            </div>
+            <div style="font-size: 4rem; font-weight: 900; color: #a855f7; opacity: 0.5; transform: rotate(15deg);">0%</div>
+          </div>
+
+          <!-- Small Tile: 3 Profiles -->
+          <div class="bento-item fade-in-up delay-4 glare-wrapper" style="background: rgba(236, 72, 153, 0.05); border-color: rgba(236, 72, 153, 0.2);">
+            <div class="glare-fx"></div>
+            <div style="font-size: 2rem; margin-bottom: 10px;">🔄</div>
+            <h3 style="font-size: 1.2rem;">App Unificada</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Cliente, negocio y repartidor en una sola descarga.</p>
+          </div>
+          
+          <!-- Small Tile: Support -->
+          <div class="bento-item fade-in-up delay-5 glare-wrapper" style="background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.2);">
+            <div class="glare-fx"></div>
+            <div style="font-size: 2rem; margin-bottom: 10px;">🛡️</div>
+            <h3 style="font-size: 1.2rem;">Seguridad</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Pagos cifrados y soporte 24/7 en cada viaje.</p>
           </div>
         </div>
       </div>

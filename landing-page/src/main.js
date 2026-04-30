@@ -126,9 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- Navbar scroll effect ---
+  // --- Scroll Parallax & Navbar ---
   const navbar = document.querySelector('.navbar');
   window.addEventListener('scroll', () => {
+    // Parallax Variable
+    document.documentElement.style.setProperty('--scroll', window.scrollY);
+
+    // Navbar
     if (window.scrollY > 50) {
       navbar.classList.add('scrolled');
     } else {
