@@ -129,27 +129,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- Intersection Observer for extreme fade-in animations ---
-  const observerOptions = {
-    root: null,
-    rootMargin: '0px',
-    threshold: 0.1
-  };
+  // --- GSAP Animations ---
+  
+  // Hero animations
+  gsap.from('.hero-title', {
+    y: 100,
+    opacity: 0,
+    duration: 1.2,
+    ease: 'power4.out'
+  });
+  
+  gsap.from('.hero-subtitle', {
+    y: 50,
+    opacity: 0,
+    duration: 1.2,
+    delay: 0.3,
+    ease: 'power4.out'
+  });
+  
+  gsap.from('.hero-buttons', {
+    y: 50,
+    opacity: 0,
+    duration: 1.2,
+    delay: 0.5,
+    ease: 'power4.out'
+  });
+  
+  gsap.from('.hero-image', {
+    x: 100,
+    opacity: 0,
+    duration: 1.5,
+    delay: 0.2,
+    ease: 'power4.out'
+  });
 
-  const observer = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        // Let it reverse out if they scroll up to re-trigger it!
-      } else {
-        // Optional: remove visible class to re-animate on scroll
-        // entry.target.classList.remove('visible'); 
-      }
-    });
-  }, observerOptions);
+  // Scroll animations for sections
+  const sections = document.querySelectorAll('section');
+  sections.forEach(section => {
+    const header = section.querySelector('.section-header');
+    if (header) {
+      gsap.from(header, {
+        scrollTrigger: {
+          trigger: header,
+          start: 'top 80%',
+        },
+        y: 50,
+        opacity: 0,
+        duration: 1,
+        ease: 'power3.out'
+      });
+    }
 
-  const fadeElements = document.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right');
-  fadeElements.forEach(el => observer.observe(el));
+    const cards = section.querySelectorAll('.feature-card');
+    if (cards.length > 0) {
+      gsap.from(cards, {
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 70%',
+        },
+        y: 100,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: 'back.out(1.7)'
+      });
+    }
+
+    const howContent = section.querySelector('.how-content');
+    const howImage = section.querySelector('.how-image');
+    if (howContent && howImage) {
+      gsap.from(howContent, {
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 70%',
+        },
+        x: -100,
+        opacity: 0,
+        duration: 1,
+        ease: 'power3.out'
+      });
+      gsap.from(howImage, {
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 70%',
+        },
+        x: 100,
+        opacity: 0,
+        duration: 1,
+        ease: 'power3.out'
+      });
+    }
+  });
 
   // --- Smooth Page Transitions ---
   const links = document.querySelectorAll('a[href^="/"], a[href^="./"], a[href^="../"]');
