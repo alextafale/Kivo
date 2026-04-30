@@ -1,8 +1,4 @@
 // main.js
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- Custom Cursor ---
@@ -57,8 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const newTheme = currentTheme === 'light' ? 'dark' : 'light';
       setTheme(newTheme);
       
-      // GSAP Animation for theme switch (quick pulse)
-      gsap.to(themeToggle, { scale: 1.2, duration: 0.1, yoyo: true, repeat: 1 });
+      // Simple Animation for theme switch
+      themeToggle.style.transform = 'scale(1.2)';
+      setTimeout(() => themeToggle.style.transform = 'scale(1)', 200);
     });
   }
 
@@ -129,96 +126,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- GSAP Animations ---
-  
-  // Hero animations
-  gsap.from('.hero-title', {
-    y: 100,
-    opacity: 0,
-    duration: 1.2,
-    ease: 'power4.out'
-  });
-  
-  gsap.from('.hero-subtitle', {
-    y: 50,
-    opacity: 0,
-    duration: 1.2,
-    delay: 0.3,
-    ease: 'power4.out'
-  });
-  
-  gsap.from('.hero-buttons', {
-    y: 50,
-    opacity: 0,
-    duration: 1.2,
-    delay: 0.5,
-    ease: 'power4.out'
-  });
-  
-  gsap.from('.hero-image', {
-    x: 100,
-    opacity: 0,
-    duration: 1.5,
-    delay: 0.2,
-    ease: 'power4.out'
-  });
+  // --- Scroll Animations (Intersection Observer) ---
+  const observerOptions = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.1
+  };
 
-  // Scroll animations for sections
-  const sections = document.querySelectorAll('section');
-  sections.forEach(section => {
-    const header = section.querySelector('.section-header');
-    if (header) {
-      gsap.from(header, {
-        scrollTrigger: {
-          trigger: header,
-          start: 'top 80%',
-        },
-        y: 50,
-        opacity: 0,
-        duration: 1,
-        ease: 'power3.out'
-      });
-    }
+  const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
 
-    const cards = section.querySelectorAll('.feature-card');
-    if (cards.length > 0) {
-      gsap.from(cards, {
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 70%',
-        },
-        y: 100,
-        opacity: 0,
-        duration: 0.8,
-        stagger: 0.2,
-        ease: 'back.out(1.7)'
-      });
-    }
-
-    const howContent = section.querySelector('.how-content');
-    const howImage = section.querySelector('.how-image');
-    if (howContent && howImage) {
-      gsap.from(howContent, {
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 70%',
-        },
-        x: -100,
-        opacity: 0,
-        duration: 1,
-        ease: 'power3.out'
-      });
-      gsap.from(howImage, {
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 70%',
-        },
-        x: 100,
-        opacity: 0,
-        duration: 1,
-        ease: 'power3.out'
-      });
-    }
+  const elementsToAnimate = document.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right');
+  elementsToAnimate.forEach(el => {
+    observer.observe(el);
   });
 
   // --- Smooth Page Transitions ---
@@ -253,21 +179,23 @@ document.addEventListener('DOMContentLoaded', () => {
       // Simulate API call
       console.log('Waitlist submission:', email);
       
-      gsap.to(waitlistForm, {
-        opacity: 0,
-        y: -20,
-        duration: 0.5,
-        onComplete: () => {
-          waitlistForm.style.display = 'none';
-          waitlistSuccess.style.display = 'block';
-          gsap.from(waitlistSuccess, {
-            opacity: 0,
-            y: 20,
-            duration: 0.5,
-            ease: 'power3.out'
-          });
-        }
-      });
+      waitlistForm.style.transition = 'opacity 0.5s, transform 0.5s';
+      waitlistForm.style.opacity = '0';
+      waitlistForm.style.transform = 'translateY(-20px)';
+      
+      setTimeout(() => {
+        waitlistForm.style.display = 'none';
+        waitlistSuccess.style.display = 'block';
+        waitlistSuccess.style.opacity = '0';
+        waitlistSuccess.style.transform = 'translateY(20px)';
+        waitlistSuccess.style.transition = 'opacity 0.5s, transform 0.5s';
+        
+        // Force reflow
+        void waitlistSuccess.offsetWidth;
+        
+        waitlistSuccess.style.opacity = '1';
+        waitlistSuccess.style.transform = 'translateY(0)';
+      }, 500);
     });
   }
 
