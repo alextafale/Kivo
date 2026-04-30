@@ -90,7 +90,7 @@
           <!-- Orbital UI Widgets -->
           <div class="parallax-orbit" style="position: absolute; top: 10%; left: -20%; z-index: 20;">
             <div class="glass-deep" style="padding: 15px 25px; border-radius: 20px; display: flex; align-items: center; gap: 15px;">
-              <span style="font-size: 1.5rem;">⭐</span>
+              <span style="color: #facc15;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span>
               <div>
                 <div style="font-weight: bold; font-size: 1.1rem;">4.9/5</div>
                 <div style="font-size: 0.8rem; opacity: 0.7;">10k+ Reseñas</div>
@@ -161,7 +161,7 @@
             </div>
             
             <div class="chat-bubble chat-bot fade-in-up delay-2">
-              ¡Entendido! 🍔🍟 Una hamburguesa doble c/ queso (sin cebolla) y papas grandes de Burger King.<br><br>El total es de <strong>$185 MXN</strong> y llega en aprox. 25 min.<br><br>¿Confirmo el pedido al domicilio de tu oficina?
+              <span style="color: var(--primary-color);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline; vertical-align:middle; margin-right:5px;"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></span> ¡Entendido! Una hamburguesa doble c/ queso (sin cebolla) y papas grandes de Burger King.<br><br>El total es de <strong>$185 MXN</strong> y llega en aprox. 25 min.<br><br>¿Confirmo el pedido al domicilio de tu oficina?
             </div>
 
             <div class="chat-bubble chat-user fade-in-up delay-3">
@@ -169,7 +169,7 @@
             </div>
 
             <div class="chat-bubble chat-bot fade-in-up delay-4" style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--primary-color);">
-              <strong style="color: var(--primary-color);">¡Pedido Confirmado! ✅</strong><br>El restaurante ya lo está preparando. Puedes seguir el repartidor en tiempo real en tu mapa.
+              <strong style="color: var(--primary-color);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline; vertical-align:-3px; margin-right:5px;"><polyline points="20 6 9 17 4 12"></polyline></svg> ¡Pedido Confirmado!</strong><br>El restaurante ya lo está preparando. Puedes seguir el repartidor en tiempo real en tu mapa.
             </div>
             
             <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 30px;">
@@ -323,7 +323,7 @@
           <!-- Small Tile: 3 Profiles -->
           <div class="bento-item fade-in-up delay-4 glare-wrapper" style="background: rgba(236, 72, 153, 0.05); border-color: rgba(236, 72, 153, 0.2);">
             <div class="glare-fx"></div>
-            <div style="font-size: 2rem; margin-bottom: 10px;">🔄</div>
+            <div style="margin-bottom: 15px;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg></div>
             <h3 style="font-size: 1.2rem;">App Unificada</h3>
             <p style="color: var(--text-muted); font-size: 0.9rem;">Cliente, negocio y repartidor en una sola descarga.</p>
           </div>
@@ -331,7 +331,7 @@
           <!-- Small Tile: Support -->
           <div class="bento-item fade-in-up delay-5 glare-wrapper" style="background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.2);">
             <div class="glare-fx"></div>
-            <div style="font-size: 2rem; margin-bottom: 10px;">🛡️</div>
+            <div style="margin-bottom: 15px;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
             <h3 style="font-size: 1.2rem;">Seguridad</h3>
             <p style="color: var(--text-muted); font-size: 0.9rem;">Pagos cifrados y soporte 24/7 en cada viaje.</p>
           </div>
@@ -482,10 +482,10 @@
             <p style="color: var(--text-muted);">Pide sin sobrecargas absurdas.</p>
             <div class="pricing-price">$0</div>
             <p style="margin-bottom: 30px;">Costo de suscripción</p>
-            <ul style="text-align: left; list-style: none; padding: 0; margin-bottom: 40px;">
-              <li style="margin-bottom: 10px;">✅ Menú al mismo precio que en el local</li>
-              <li style="margin-bottom: 10px;">✅ Tarifa de envío transparente</li>
-              <li style="margin-bottom: 10px;">✅ Soporte en tiempo real</li>
+            <ul style="text-align: left; list-style: none; padding: 0; margin-bottom: 40px;" class="pricing-features">
+              <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Menú al mismo precio que en el local</span></li>
+              <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Tarifa de envío transparente</span></li>
+              <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Soporte en tiempo real</span></li>
             </ul>
             <a href="/src/clientes.html" class="btn btn-secondary magnetic-btn" style="width: 100%;">Soy Cliente</a>
           </div>
@@ -498,10 +498,10 @@
             <p style="color: var(--text-muted);">Crece tus ventas, no tus gastos.</p>
             <div class="pricing-price">12%</div>
             <p style="margin-bottom: 30px;">Comisión por venta exitosa</p>
-            <ul style="text-align: left; list-style: none; padding: 0; margin-bottom: 40px;">
-              <li style="margin-bottom: 10px;">✅ 0% de costo de activación</li>
-              <li style="margin-bottom: 10px;">✅ Cobro y depósito automatizado</li>
-              <li style="margin-bottom: 10px;">✅ Panel de métricas avanzadas</li>
+            <ul style="text-align: left; list-style: none; padding: 0; margin-bottom: 40px;" class="pricing-features">
+              <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>0% de costo de activación</span></li>
+              <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Cobro y depósito automatizado</span></li>
+              <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Panel de métricas avanzadas</span></li>
             </ul>
             <a href="/src/negocios.html" class="btn btn-primary magnetic-btn" style="width: 100%;">Soy Negocio</a>
           </div>
@@ -513,10 +513,10 @@
             <p style="color: var(--text-muted);">Gana el 100% de tu esfuerzo.</p>
             <div class="pricing-price">0%</div>
             <p style="margin-bottom: 30px;">Comisiones retenidas</p>
-            <ul style="text-align: left; list-style: none; padding: 0; margin-bottom: 40px;">
-              <li style="margin-bottom: 10px;">✅ Conservas el 100% de tus propinas</li>
-              <li style="margin-bottom: 10px;">✅ Rutas optimizadas con IA</li>
-              <li style="margin-bottom: 10px;">✅ Seguro activo en cada viaje</li>
+            <ul style="text-align: left; list-style: none; padding: 0; margin-bottom: 40px;" class="pricing-features">
+              <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Conservas el 100% de tus propinas</span></li>
+              <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Rutas optimizadas con IA</span></li>
+              <li style="margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Seguro activo en cada viaje</span></li>
             </ul>
             <a href="/src/repartidores.html" class="btn btn-secondary magnetic-btn" style="width: 100%;">Soy Repartidor</a>
           </div>
@@ -577,10 +577,18 @@
             <div class="logo-text">Kivo</div>
             <p>La revolución del delivery conversacional. Pide lo que quieras, gestiona tu negocio o reparte a tu propio ritmo.</p>
             <div class="social-links">
-              <a href="#" class="social-icon" title="Facebook">FB</a>
-              <a href="#" class="social-icon" title="Twitter">X</a>
-              <a href="#" class="social-icon" title="Instagram">IG</a>
-              <a href="#" class="social-icon" title="LinkedIn">IN</a>
+              <a href="#" class="social-icon" title="Facebook">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              </a>
+              <a href="#" class="social-icon" title="Twitter">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
+              </a>
+              <a href="#" class="social-icon" title="Instagram">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              </a>
+              <a href="#" class="social-icon" title="LinkedIn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+              </a>
             </div>
           </div>
 
