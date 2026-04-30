@@ -5,16 +5,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/StacNavigation';
 
-const PackageIcon = ({ active }: { active?: boolean }) => (
-  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-    stroke={active ? '#22c55e' : '#9CA3AF'}
-    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <Path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-    <Path d="M3.27 6.96L12 12.01l8.73-5.05" />
-    <Path d="M12 22.08V12" />
-  </Svg>
-);
-
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -69,7 +59,7 @@ const SupportIcon = ({ active }: { active?: boolean }) => (
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type DriverTabName = 'Home' | 'Entregas' | 'Pedidos' | 'Perfil' | 'Soporte';
+export type DriverTabName = 'Home' | 'Ruta' | 'Pedidos' | 'Perfil' | 'Soporte';
 
 type DriverBottomNavBarProps = {
   activeTab: DriverTabName;
@@ -92,7 +82,7 @@ export default function DriverBottomNavBar({
     if (tab === 'Home') navigation.navigate('DriverDashboard');
     if (tab === 'Perfil' && repartidor) navigation.navigate('DriverProfile', { repartidor });
     if (tab === 'Soporte') navigation.navigate('DriverSupport');
-    if (tab === 'Entregas') navigation.navigate('DriverRoutesScreen');
+    if (tab === 'Ruta') navigation.navigate('DriverRoutesScreen');
   };
 
   return (
@@ -113,26 +103,16 @@ export default function DriverBottomNavBar({
       {/* Entregas */}
       <TouchableOpacity
         style={styles.navItem}
-        onPress={() => handlePress('Entregas')}
+        onPress={() => handlePress('Ruta')}
         activeOpacity={0.7}
       >
-        <BikeIcon active={activeTab === 'Entregas'} />
-        <Text style={[styles.navText, activeTab === 'Entregas' && styles.navTextActive]}>
+        <BikeIcon active={activeTab === 'Ruta'} />
+        <Text style={[styles.navText, activeTab === 'Ruta' && styles.navTextActive]}>
           Ruta
         </Text>
       </TouchableOpacity>
 
-      {/* Pedidos */}
-      <TouchableOpacity
-        style={styles.navItem}
-        onPress={() => handlePress('Pedidos')}
-        activeOpacity={0.7}
-      >
-        <PackageIcon active={activeTab === 'Pedidos'} />
-        <Text style={[styles.navText, activeTab === 'Pedidos' && styles.navTextActive]}>
-          Pedidos
-        </Text>
-      </TouchableOpacity>
+
 
       {/* ── PEDIDOS — botón central elevado ── */}
       <View style={styles.navCenterWrap}>

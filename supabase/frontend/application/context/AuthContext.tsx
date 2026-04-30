@@ -1,5 +1,23 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import * as SecureStore from 'expo-secure-store'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Platform } from 'react-native'
+
+const setStorageItemAsync = async (key: string, value: string) => {
+  if (Platform.OS === 'web') {
+    await AsyncStorage.setItem(key, value)
+  } else {
+    await SecureStore.setItemAsync(key, value)
+  }
+}
+
+const deleteStorageItemAsync = async (key: string) => {
+  if (Platform.OS === 'web') {
+    await AsyncStorage.removeItem(key)
+  } else {
+    await SecureStore.deleteItemAsync(key)
+  }
+}
 import { AuthRepositoryImpl } from '../../infraestructure/repositories/AuthRepositoryImpl'
 import { AdminProfileRepositoryImpl } from '../../infraestructure/repositories/AdminProfileRepositoryImpl'
 import { supabase } from '../../config/supabaseConfig'
@@ -88,7 +106,7 @@ const restore = async () => {
         const active = await authRepo.getSession()
         if (active && !active.requiresMfa) {
           setSession(active)
-          await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(active))
+          await setStorageItemAsync(SESSION_KEY, JSON.stringify(active))
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null)
@@ -109,7 +127,7 @@ const restore = async () => {
       return
     }
     setSession(newSession)
-    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
+    await setStorageItemAsync(SESSION_KEY, JSON.stringify(newSession))
     await loadAdminAccess(newSession.role)
   }
 
@@ -118,7 +136,7 @@ const restore = async () => {
   const registerCustomer = async (email: string, password: string) => {
     const newSession = await authRepo.registerCustomer(email, password)
     setSession(newSession)
-    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
+    await setStorageItemAsync(SESSION_KEY, JSON.stringify(newSession))
     setAdminAccess(null)
   }
 
@@ -129,7 +147,7 @@ const restore = async () => {
   ) => {
     const newSession = await authRepo.registerBusiness(email, password, data)
     setSession(newSession)
-    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
+    await setStorageItemAsync(SESSION_KEY, JSON.stringify(newSession))
     setAdminAccess(null)
   }
 
@@ -140,7 +158,7 @@ const restore = async () => {
   ) => {
     const newSession = await authRepo.registerDriver(email, password, data)
     setSession(newSession)
-    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(newSession))
+    await setStorageItemAsync(SESSION_KEY, JSON.stringify(newSession))
     setAdminAccess(null)
   }
 
@@ -151,7 +169,7 @@ const restore = async () => {
     setSession(null)
     setMfaPendingSession(null)
     setAdminAccess(null)
-    await SecureStore.deleteItemAsync(SESSION_KEY)
+    await deleteStorageItemAsync(SESSION_KEY)
   }
 
   const signInWithOAuth = async (provider: OAuthProvider) => {
@@ -166,7 +184,7 @@ const restore = async () => {
         setMfaPendingSession(activeSession)
       } else {
         setSession(activeSession)
-        await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(activeSession))
+        await setStorageItemAsync(SESSION_KEY, JSON.stringify(activeSession))
         await loadAdminAccess(activeSession.role)
 
         const dest = activeSession.role === 'business_admin' ? 'BusinessDashboard' 
@@ -185,7 +203,7 @@ const restore = async () => {
       // Upon successful verification, AAL is elevated to aal2
       const fullSession = { ...mfaPendingSession, requiresMfa: false }
       setSession(fullSession)
-      await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(fullSession))
+      await setStorageItemAsync(SESSION_KEY, JSON.stringify(fullSession))
       await loadAdminAccess(fullSession.role)
       setMfaPendingSession(null)
 

@@ -59,6 +59,9 @@
       "eas": {
         "projectId": "66d69eb3-0d57-42f8-84f3-5998e544e941"
       }
+    },
+    "experiments": {
+      "baseUrl": "/app"
     }
   }
 }

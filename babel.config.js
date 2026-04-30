@@ -11,6 +11,11 @@ module.exports = function (api) {
         safe: false,
         allowUndefined: false,
       }],
+      ['module-resolver', {
+        alias: {
+          'react-native-maps': '@teovilla/react-native-web-maps',
+        },
+      }],
       '@babel/plugin-proposal-export-namespace-from',
     ],
   };
