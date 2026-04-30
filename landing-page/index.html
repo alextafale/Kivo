@@ -28,6 +28,9 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
+    <!-- V4 Flashlight Background -->
+    <div class="flashlight-bg"></div>
+
     <!-- Custom Cursor -->
     <div class="cursor-dot"></div>
     <div class="cursor-outline"></div>
@@ -70,7 +73,8 @@
       <div class="container hero-container" style="position: relative; z-index: 10;">
         <div class="hero-content fade-in-up" style="max-width: 600px;">
           <h1 class="hero-title" style="font-size: 5rem; letter-spacing: -0.05em; line-height: 1.1; margin-bottom: 30px;">
-            El Delivery,<br><span class="highlight">Reimaginado.</span>
+            <span class="text-reveal" data-text="El Delivery,">El Delivery,</span><br>
+            <span class="text-reveal highlight" data-text="Reimaginado." style="--reveal-delay: 0.2s;">Reimaginado.</span>
           </h1>
           <p class="hero-subtitle" style="font-size: 1.3rem; opacity: 0.8; margin-bottom: 40px;">
             Pide, vende o reparte con Kivo. La primera plataforma conversacional que se adapta a ti con velocidad extrema y cero comisiones ocultas.
@@ -114,6 +118,25 @@
         </div>
       </div>
     </section>
+
+    <!-- Infinite Tech Marquee -->
+    <div class="tech-marquee-wrapper">
+      <div class="tech-marquee-track">
+        <!-- Replicating content to ensure seamless loop -->
+        <h3 class="tech-logo" style="margin: 0;">STRIPE</h3>
+        <h3 class="tech-logo" style="margin: 0;">OPENAI</h3>
+        <h3 class="tech-logo" style="margin: 0;">SUPABASE</h3>
+        <h3 class="tech-logo" style="margin: 0;">GOOGLE MAPS</h3>
+        <h3 class="tech-logo" style="margin: 0;">AWS</h3>
+        <h3 class="tech-logo" style="margin: 0;">TWILIO</h3>
+        <h3 class="tech-logo" style="margin: 0;">STRIPE</h3>
+        <h3 class="tech-logo" style="margin: 0;">OPENAI</h3>
+        <h3 class="tech-logo" style="margin: 0;">SUPABASE</h3>
+        <h3 class="tech-logo" style="margin: 0;">GOOGLE MAPS</h3>
+        <h3 class="tech-logo" style="margin: 0;">AWS</h3>
+        <h3 class="tech-logo" style="margin: 0;">TWILIO</h3>
+      </div>
+    </div>
 
     <!-- Live Chat Demo Section -->
     <section class="live-chat" style="padding: 100px 0; background: var(--bg-color); position: relative; overflow: hidden;">
@@ -211,37 +234,34 @@
       </div>
     </section>
 
-    <!-- How it works -->
-    <section id="how-it-works" class="how-it-works">
-      <div class="container how-container">
-        <div class="how-image fade-in-up">
-          <img src="/AccountTypeSelection.png" alt="Selección de Cuenta" class="app-mockup glass-effect" />
+    <!-- V4 Sticky Morph Section -->
+    <section id="how-it-works" class="sticky-wrapper">
+      <div class="sticky-container">
+        <!-- Text Content that morphs -->
+        <div class="morph-content">
+          <h2 style="font-size: 3.5rem; margin-bottom: 50px; letter-spacing: -0.05em;">3 Perfiles.<br><span class="highlight">1 Sola App.</span></h2>
+          
+          <div class="morph-step active">
+            <h3 style="font-size: 2rem; margin-bottom: 20px; color: var(--primary-color);">01. El Cliente</h3>
+            <p style="font-size: 1.2rem; color: var(--text-muted);">Pide con tu voz o por chat. Sin navegar menús infinitos. Kivo aprende lo que te gusta y te lo lleva más rápido que nadie.</p>
+          </div>
+          
+          <div class="morph-step">
+            <h3 style="font-size: 2rem; margin-bottom: 20px; color: #3b82f6;">02. El Negocio</h3>
+            <p style="font-size: 1.2rem; color: var(--text-muted);">Gestiona pedidos en tiempo real. Activa o desactiva platillos con un toque y mantén el control total con solo un 12% de comisión.</p>
+          </div>
+          
+          <div class="morph-step">
+            <h3 style="font-size: 2rem; margin-bottom: 20px; color: #a855f7;">03. El Repartidor</h3>
+            <p style="font-size: 1.2rem; color: var(--text-muted);">Conéctate cuando quieras. Recibe rutas optimizadas por IA, conserva el 100% de tus propinas y no pagues comisiones ocultas.</p>
+          </div>
         </div>
-        <div class="how-content fade-in-up delay-1">
-          <h2>Todo en una sola aplicación</h2>
-          <ul class="steps">
-            <li>
-              <div class="step-icon">1</div>
-              <div class="step-text">
-                <h4>Descarga Kivo</h4>
-                <p>Disponible para iOS y Android.</p>
-              </div>
-            </li>
-            <li>
-              <div class="step-icon">2</div>
-              <div class="step-text">
-                <h4>Elige tu perfil</h4>
-                <p>Selecciona si eres Cliente, Negocio o Repartidor directamente desde el inicio.</p>
-              </div>
-            </li>
-            <li>
-              <div class="step-icon">3</div>
-              <div class="step-text">
-                <h4>Disfruta la experiencia</h4>
-                <p>Navega a través de una interfaz moderna y descubre una nueva forma de conectar.</p>
-              </div>
-            </li>
-          </ul>
+
+        <!-- Visuals that morph -->
+        <div class="morph-visual">
+          <img src="/chatbot.png" alt="Cliente" class="morph-image active glass-deep" style="border-radius: 30px; box-shadow: 0 30px 60px rgba(34, 197, 94, 0.2);" />
+          <img src="/restaurant.png" alt="Negocio" class="morph-image glass-deep" style="border-radius: 30px; box-shadow: 0 30px 60px rgba(59, 130, 246, 0.2);" />
+          <img src="/moto.png" alt="Repartidor" class="morph-image glass-deep" style="border-radius: 30px; box-shadow: 0 30px 60px rgba(168, 85, 247, 0.2);" />
         </div>
       </div>
     </section>

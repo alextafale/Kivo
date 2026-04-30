@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
       cursorDot.style.left = `${e.clientX}px`;
       cursorDot.style.top = `${e.clientY}px`;
       
+      // Update global CSS vars for Flashlight effect
+      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+      
       // Add slight delay for the outline for a fluid feel
       setTimeout(() => {
         cursorOutline.style.left = `${e.clientX}px`;
@@ -137,6 +141,32 @@ document.addEventListener('DOMContentLoaded', () => {
       navbar.classList.add('scrolled');
     } else {
       navbar.classList.remove('scrolled');
+    }
+
+    // --- Sticky Morph Logic ---
+    const stickyWrapper = document.querySelector('.sticky-wrapper');
+    if (stickyWrapper) {
+      const rect = stickyWrapper.getBoundingClientRect();
+      // Calculate progress from 0 to 1 as we scroll through the wrapper
+      const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
+      
+      const morphSteps = document.querySelectorAll('.morph-step');
+      const morphImages = document.querySelectorAll('.morph-image');
+      
+      if (morphSteps.length > 0 && morphImages.length > 0) {
+        // Determine which step is active (e.g. 0.0-0.33, 0.33-0.66, 0.66-1.0)
+        const stepIndex = Math.min(Math.floor(progress * morphSteps.length), morphSteps.length - 1);
+        
+        morphSteps.forEach((el, idx) => {
+          if (idx === stepIndex) el.classList.add('active');
+          else el.classList.remove('active');
+        });
+        
+        morphImages.forEach((el, idx) => {
+          if (idx === stepIndex) el.classList.add('active');
+          else el.classList.remove('active');
+        });
+      }
     }
   });
 

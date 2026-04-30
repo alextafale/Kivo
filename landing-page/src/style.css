@@ -773,3 +773,132 @@ h1, h2, h3, h4 { color: var(--text-main); font-weight: 800; line-height: 1.2; te
   100% { transform: scale(1.2) translate(20px, -20px); opacity: 0.8; }
 }
 
+/* --- V4: Flashlight Background --- */
+.flashlight-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -3;
+  pointer-events: none;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  /* Flashlight mask attached to mouse coords */
+  -webkit-mask-image: radial-gradient(circle 400px at var(--mouse-x, 50%) var(--mouse-y, 50%), black 10%, transparent 100%);
+  mask-image: radial-gradient(circle 400px at var(--mouse-x, 50%) var(--mouse-y, 50%), black 10%, transparent 100%);
+  opacity: 0.8;
+}
+
+[data-theme="light"] .flashlight-bg {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+}
+
+/* --- V4: Cinematic Text Reveal --- */
+.text-reveal {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  color: transparent;
+}
+.text-reveal::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  color: var(--text-main);
+  /* The clip path wipes from left to right */
+  clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%);
+  animation: revealText 1.5s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+  animation-delay: var(--reveal-delay, 0s);
+}
+@keyframes revealText {
+  to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+
+/* --- V4: Tech Marquee --- */
+.tech-marquee-wrapper {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  padding: 40px 0;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+}
+.tech-marquee-track {
+  display: flex;
+  gap: 80px;
+  padding-left: 80px;
+  animation: scroll-marquee 20s linear infinite;
+  align-items: center;
+}
+.tech-logo {
+  height: 40px;
+  opacity: 0.5;
+  filter: grayscale(100%);
+  transition: all 0.3s;
+}
+.tech-logo:hover {
+  opacity: 1;
+  filter: grayscale(0%);
+}
+@keyframes scroll-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* --- V4: Sticky Morph Section --- */
+.sticky-wrapper {
+  height: 400vh; /* 4 scrollable "pages" */
+  position: relative;
+}
+.sticky-container {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.morph-content {
+  flex: 1;
+  padding: 0 5%;
+  position: relative;
+}
+.morph-step {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s ease;
+}
+.morph-step.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(20px);
+}
+.morph-visual {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+.morph-image {
+  position: absolute;
+  width: 300px;
+  opacity: 0;
+  transform: scale(0.8) rotateY(-20deg);
+  transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.morph-image.active {
+  opacity: 1;
+  transform: scale(1) rotateY(0deg);
+}
+
