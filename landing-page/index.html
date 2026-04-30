@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Kivo - Pide y vende de forma conversacional. La plataforma definitiva para clientes, negocios y repartidores." />
+    <title>Kivo | Pídelo fácil y rápido</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <!-- Particles Background -->
+    <div id="particles-container"></div>
+
+    <!-- Scroll Progress -->
+    <div class="scroll-progress"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="container nav-container">
+        <a href="#" class="logo">
+          <span class="logo-text">Kivo</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#features">Características</a></li>
+          <li><a href="#how-it-works">Cómo funciona</a></li>
+          <li><a href="#download" class="btn btn-primary">Próximamente</a></li>
+        </ul>
+        <div class="mobile-menu-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container hero-container">
+        <div class="hero-content fade-in-up">
+          <h1 class="hero-title">Únete a <span class="highlight">Kivo</span> y transforma tu forma de pedir</h1>
+          <p class="hero-subtitle">Selecciona tu perfil para comenzar a pedir, vender o entregar de forma conversacional y eficiente. La revolución del delivery está aquí.</p>
+          <div class="hero-buttons">
+            <a href="/src/clientes.html" class="btn btn-primary btn-lg">Comenzar Ahora</a>
+            <a href="#features" class="btn btn-secondary btn-lg">Explorar Kivo</a>
+          </div>
+        </div>
+        <div class="hero-image fade-in-up delay-1">
+          <div class="blob-bg"></div>
+          <img src="/Splash.png" alt="App Kivo" class="app-mockup glass-effect" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Marquee -->
+    <div class="stats-marquee">
+      <div class="marquee-content">
+        <div class="marquee-item"><span>+10k</span> Usuarios Activos</div>
+        <div class="marquee-item"><span>500+</span> Negocios Afiliados</div>
+        <div class="marquee-item"><span>15min</span> Tiempo Promedio</div>
+        <div class="marquee-item"><span>24/7</span> Soporte Dedicado</div>
+        <div class="marquee-item"><span>+10k</span> Usuarios Activos</div>
+        <div class="marquee-item"><span>500+</span> Negocios Afiliados</div>
+        <div class="marquee-item"><span>15min</span> Tiempo Promedio</div>
+        <div class="marquee-item"><span>24/7</span> Soporte Dedicado</div>
+      </div>
+    </div>
+
+    <!-- Features / Roles Section -->
+    <section id="features" class="features">
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2>Una plataforma, tres perfiles</h2>
+          <p>Diseñada para conectar a todos de la manera más rápida y eficiente.</p>
+        </div>
+        
+        <div class="cards-container">
+          <!-- Client Card -->
+          <a href="/src/clientes.html" class="feature-card fade-in-up delay-1" style="display: block;">
+            <div class="card-icon-wrapper">
+              <img src="/chatbot.png" alt="Cliente" class="card-image" />
+            </div>
+            <h3>Soy un Cliente</h3>
+            <p>Pide tu comida o artículos favoritos de forma rápida y fácil mediante una interfaz conversacional amigable.</p>
+          </a>
+
+          <!-- Business Card -->
+          <a href="/src/negocios.html" class="feature-card fade-in-up delay-2" style="display: block;">
+            <div class="card-icon-wrapper">
+              <img src="/restaurant.png" alt="Negocio" class="card-image" />
+            </div>
+            <h3>Tengo un Negocio</h3>
+            <p>Gestiona tus pedidos en tiempo real, edita tu menú y llega a miles de clientes potenciales cada día.</p>
+          </a>
+
+          <!-- Delivery Card -->
+          <a href="/src/repartidores.html" class="feature-card fade-in-up delay-3" style="display: block;">
+            <div class="card-icon-wrapper">
+              <img src="/moto.png" alt="Repartidor" class="card-image" />
+            </div>
+            <h3>Soy Repartidor</h3>
+            <p>Haz entregas con rutas optimizadas, soporte en tiempo real y gana dinero con tu tiempo libre.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how-it-works" class="how-it-works">
+      <div class="container how-container">
+        <div class="how-image fade-in-up">
+          <img src="/AccountTypeSelection.png" alt="Selección de Cuenta" class="app-mockup glass-effect" />
+        </div>
+        <div class="how-content fade-in-up delay-1">
+          <h2>Todo en una sola aplicación</h2>
+          <ul class="steps">
+            <li>
+              <div class="step-icon">1</div>
+              <div class="step-text">
+                <h4>Descarga Kivo</h4>
+                <p>Disponible para iOS y Android.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-icon">2</div>
+              <div class="step-text">
+                <h4>Elige tu perfil</h4>
+                <p>Selecciona si eres Cliente, Negocio o Repartidor directamente desde el inicio.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-icon">3</div>
+              <div class="step-text">
+                <h4>Disfruta la experiencia</h4>
+                <p>Navega a través de una interfaz moderna y descubre una nueva forma de conectar.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tech Stack / Security Section -->
+    <section class="security-section" style="padding: 100px 0; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2>Tecnología de Clase Mundial</h2>
+          <p>Kivo está construido sobre infraestructura de grado empresarial para garantizar cero caídas y seguridad total.</p>
+        </div>
+        <div class="tech-grid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; margin-top: 60px;">
+          <div class="tech-item fade-in-up delay-1" style="text-align: center; opacity: 0.7; filter: grayscale(100%); transition: all 0.3s; cursor: none;">
+            <div style="margin-bottom: 10px; display: flex; justify-content: center;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <h4 style="font-size: 1.2rem;">PCI-DSS</h4>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">Pagos Encriptados</p>
+          </div>
+          <div class="tech-item fade-in-up delay-2" style="text-align: center; opacity: 0.7; filter: grayscale(100%); transition: all 0.3s; cursor: none;">
+            <div style="margin-bottom: 10px; display: flex; justify-content: center;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path></svg>
+            </div>
+            <h4 style="font-size: 1.2rem;">Kivo AI Core</h4>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">NLP Avanzado</p>
+          </div>
+          <div class="tech-item fade-in-up delay-3" style="text-align: center; opacity: 0.7; filter: grayscale(100%); transition: all 0.3s; cursor: none;">
+            <div style="margin-bottom: 10px; display: flex; justify-content: center;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+            <h4 style="font-size: 1.2rem;">Edge Compute</h4>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">Latencia < 50ms</p>
+          </div>
+          <div class="tech-item fade-in-up delay-4" style="text-align: center; opacity: 0.7; filter: grayscale(100%); transition: all 0.3s; cursor: none;">
+            <div style="margin-bottom: 10px; display: flex; justify-content: center;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            </div>
+            <h4 style="font-size: 1.2rem;">Multi-Cloud</h4>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">99.99% Uptime</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials / Social Proof -->
+    <section class="testimonials" style="padding: 150px 0; background: #0f172a; overflow: hidden; position: relative;">
+      <div class="blob-bg" style="width: 800px; height: 800px; opacity: 0.2; right: -20%; left: auto; background: linear-gradient(135deg, #a855f7, #3b82f6);"></div>
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2>Lo que dicen nuestros <span class="highlight">Pioneros</span></h2>
+          <p>Restauranteros, clientes y repartidores que ya probaron la beta de Kivo.</p>
+        </div>
+        
+        <div class="testimonials-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 60px;">
+          <!-- Review 1 -->
+          <div class="review-card fade-in-up delay-1" style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
+            <div style="font-size: 2rem; color: var(--primary-color); margin-bottom: 20px;">"</div>
+            <p style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 30px; font-style: italic;">La IA es magia pura. Le dije 'Kivo, mándame lo mismo del viernes pero quítale la cebolla' y en 3 segundos mi pedido estaba confirmado. El futuro es hoy.</p>
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <div style="width: 50px; height: 50px; border-radius: 50%; background: #3b82f6; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">M</div>
+              <div>
+                <h4 style="margin: 0; font-size: 1rem;">Miguel A.</h4>
+                <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Cliente Beta</p>
+              </div>
+            </div>
+          </div>
+          <!-- Review 2 -->
+          <div class="review-card fade-in-up delay-2" style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); position: relative; transform: translateY(-20px);">
+            <div style="font-size: 2rem; color: #f59e0b; margin-bottom: 20px;">"</div>
+            <p style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 30px; font-style: italic;">Por fin una plataforma que no nos asfixia con comisiones ocultas. Subir nuestro menú nos tomó 10 minutos desde un iPad viejo. Increíblemente fácil de usar.</p>
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <div style="width: 50px; height: 50px; border-radius: 50%; background: #f59e0b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">E</div>
+              <div>
+                <h4 style="margin: 0; font-size: 1rem;">Elena G.</h4>
+                <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Dueña de 'La Trattoria'</p>
+              </div>
+            </div>
+          </div>
+          <!-- Review 3 -->
+          <div class="review-card fade-in-up delay-3" style="background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
+            <div style="font-size: 2rem; color: #3b82f6; margin-bottom: 20px;">"</div>
+            <p style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 30px; font-style: italic;">He manejado para tres apps distintas y la transparencia del Dashboard de Kivo no tiene igual. Sé exactamente lo que ganaré antes de prender la moto.</p>
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <div style="width: 50px; height: 50px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">C</div>
+              <div>
+                <h4 style="margin: 0; font-size: 1rem;">Carlos R.</h4>
+                <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Repartidor Kivo</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Roadmap Section -->
+    <section class="roadmap" style="padding: 150px 0; background: #0b1120;">
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2>Nuestra Ruta Hacia el <span class="highlight">Lanzamiento</span></h2>
+          <p>Kivo evoluciona todos los días. Así es como llegaremos a tus manos.</p>
+        </div>
+        <div class="timeline" style="position: relative; max-width: 800px; margin: 60px auto 0; border-left: 4px solid rgba(34,197,94,0.3); padding-left: 40px;">
+          
+          <div class="timeline-item fade-in-left delay-1" style="margin-bottom: 60px; position: relative;">
+            <div style="position: absolute; left: -52px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--primary-color); box-shadow: 0 0 15px var(--primary-color);"></div>
+            <h3 style="color: var(--primary-color); margin-bottom: 10px;">Fase 1: Alpha Cerrada (Actual)</h3>
+            <p style="color: var(--text-muted);">Pruebas internas del motor de Inteligencia Artificial y optimización de rutas con un grupo cerrado de restaurantes piloto.</p>
+          </div>
+          
+          <div class="timeline-item fade-in-left delay-2" style="margin-bottom: 60px; position: relative;">
+            <div style="position: absolute; left: -52px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: #3b82f6;"></div>
+            <h3 style="color: #3b82f6; margin-bottom: 10px;">Fase 2: Beta Pública Comercial</h3>
+            <p style="color: var(--text-muted);">Apertura a los primeros 500 usuarios y negocios en la lista de espera. Ajustes de UI/UX en vivo y calibración de mapas.</p>
+          </div>
+          
+          <div class="timeline-item fade-in-left delay-3" style="position: relative;">
+            <div style="position: absolute; left: -52px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: #64748b;"></div>
+            <h3 style="color: #cbd5e1; margin-bottom: 10px;">Fase 3: Lanzamiento Oficial V1</h3>
+            <p style="color: var(--text-muted);">Despliegue total en App Store y Google Play. Campañas masivas y apertura de registros libres para todas las ciudades operativas.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq">
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2>Preguntas Frecuentes</h2>
+          <p>Todo lo que necesitas saber sobre Kivo.</p>
+        </div>
+        <div class="faq-container fade-in-up delay-1">
+          <div class="faq-item">
+            <div class="faq-question">¿Cuánto cuesta registrar mi negocio en Kivo?</div>
+            <div class="faq-answer">
+              <p>El registro inicial es completamente gratuito. Solo cobramos una pequeña comisión por las ventas que realices a través de la plataforma, asegurando que crezcamos juntos.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">¿En qué ciudades está disponible?</div>
+            <div class="faq-answer">
+              <p>Actualmente estamos expandiendo nuestras operaciones rápidamente. Descarga la aplicación y permítenos acceder a tu ubicación para ver los restaurantes y negocios cercanos a ti.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">¿Cómo me convierto en repartidor?</div>
+            <div class="faq-answer">
+              <p>Es muy sencillo. Descarga la aplicación, selecciona el perfil "Soy Repartidor", llena tus datos básicos, sube los documentos de tu vehículo y en 24 horas estarás listo para generar ingresos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section id="download" class="cta">
+      <div class="container cta-container fade-in-up">
+        <h2>¿Listo para el futuro?</h2>
+        <p>Kivo está en pleno desarrollo. Únete a nuestra lista de espera y sé de los primeros en experimentar el delivery conversacional.</p>
+        <div class="store-buttons" style="margin-top: 30px;">
+          <form class="newsletter-form" style="max-width: 500px; margin: 0 auto;">
+            <input type="email" placeholder="Tu correo electrónico" required style="padding: 20px 30px; font-size: 1.1rem;">
+            <button type="submit" class="newsletter-btn" style="width: 50px; height: 50px; right: 8px; top: 8px; bottom: 8px;">→</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Advanced Footer -->
+    <footer class="footer">
+      <div class="footer-glow"></div>
+      <div class="container">
+        <div class="footer-top fade-in-up">
+          <div class="footer-brand">
+            <div class="logo-text">Kivo</div>
+            <p>La revolución del delivery conversacional. Pide lo que quieras, gestiona tu negocio o reparte a tu propio ritmo.</p>
+            <div class="social-links">
+              <a href="#" class="social-icon" title="Facebook">FB</a>
+              <a href="#" class="social-icon" title="Twitter">X</a>
+              <a href="#" class="social-icon" title="Instagram">IG</a>
+              <a href="#" class="social-icon" title="LinkedIn">IN</a>
+            </div>
+          </div>
+
+          <div class="footer-links-wrapper">
+            <div class="footer-links">
+              <h4>Plataforma</h4>
+              <ul>
+                <li><a href="/src/clientes.html">App para Clientes</a></li>
+                <li><a href="/src/negocios.html">Kivo Negocios</a></li>
+                <li><a href="/src/repartidores.html">Kivo Repartidores</a></li>
+                <li><a href="#features">Características</a></li>
+              </ul>
+            </div>
+            
+            <div class="footer-links">
+              <h4>Compañía</h4>
+              <ul>
+                <li><a href="#">Sobre Nosotros</a></li>
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">Soporte</a></li>
+                <li><a href="#">Contacto</a></li>
+              </ul>
+            </div>
+
+            <div class="footer-newsletter">
+              <h4>Únete al futuro</h4>
+              <p>Recibe noticias, actualizaciones y ofertas exclusivas.</p>
+              <form class="newsletter-form">
+                <input type="email" placeholder="Tu correo electrónico" required>
+                <button type="submit" class="newsletter-btn">→</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-bottom fade-in-up delay-1">
+          <p>&copy; 2026 Kivo. Todos los derechos reservados.</p>
+          <div class="legal-links">
+            <a href="#">Términos de Servicio</a>
+            <a href="#">Privacidad</a>
+            <a href="#">Cookies</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

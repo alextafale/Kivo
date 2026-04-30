@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kivo | Para Repartidores</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+    <div id="particles-container"></div>
+    <div class="scroll-progress"></div>
+
+    <nav class="navbar">
+      <div class="container nav-container">
+        <a href="/index.html" class="logo">
+          <span class="logo-text">Kivo</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="/index.html">Inicio</a></li>
+          <li><a href="/src/clientes.html">Clientes</a></li>
+          <li><a href="/src/negocios.html">Negocios</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Hero Repartidores -->
+    <section class="hero" style="padding-top: 150px; padding-bottom: 80px;">
+      <div class="container hero-container">
+        <div class="hero-content fade-in-up">
+          <h1 class="hero-title">Conduce hacia tu <span class="highlight" style="background: linear-gradient(90deg, #3b82f6, #0ea5e9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">libertad</span> financiera</h1>
+          <p class="hero-subtitle">Maneja tus propios horarios, obtén rutas optimizadas y genera ingresos extra entregando pedidos en tu ciudad.</p>
+          <div class="hero-buttons">
+            <a href="#features-detail" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 10px 35px rgba(59, 130, 246, 0.5);">Quiero saber más</a>
+          </div>
+        </div>
+        <div class="hero-image fade-in-up delay-1">
+          <div class="blob-bg" style="background: linear-gradient(135deg, #3b82f6, #0ea5e9);"></div>
+          <img src="/AccountTypeSelection.png" alt="Dashboard Repartidores" class="app-mockup glass-effect" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 1: Dashboard de Entregas (Image Right) -->
+    <section id="features-detail" class="how-it-works" style="padding: 100px 0;">
+      <div class="container how-container">
+        <div class="how-content fade-in-up">
+          <h2 style="font-size: 3rem; margin-bottom: 30px;">Dashboard de Ganancias</h2>
+          <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px;">Un panel claro y directo para aceptar los pedidos que te convienen y monitorear tus ingresos al final del día.</p>
+          <ul class="steps">
+            <li>
+              <div class="step-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              </div>
+              <div class="step-text">
+                <h4>Ganancias Transparentes</h4>
+                <p>Ve exactamente cuánto ganarás, incluyendo propinas esperadas, antes de aceptar cualquier viaje. Sin tarifas escondidas.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              </div>
+              <div class="step-text">
+                <h4>Asignación Inteligente</h4>
+                <p>Nuestra plataforma te conecta rápidamente con los restaurantes más cercanos a tu ubicación actual, maximizando tu tiempo.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="how-image fade-in-left delay-1">
+          <img src="/Splash.png" alt="Dashboard Repartidor" class="app-mockup glass-effect" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 2: Rutas Optimizadas (Image Left) -->
+    <section class="how-it-works" style="padding: 100px 0; background: #0b1120;">
+      <div class="container how-container" style="flex-direction: row-reverse;">
+        <div class="how-content fade-in-up">
+          <h2 style="font-size: 3rem; margin-bottom: 30px;">Navegación Integrada</h2>
+          <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px;">No te pierdas jamás ni cambies de app. Usa nuestro mapa integrado para encontrar la ruta más rápida del restaurante al cliente.</p>
+          <ul class="steps">
+            <li>
+              <div class="step-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              </div>
+              <div class="step-text">
+                <h4>Mapas Premium</h4>
+                <p>Interfaz completa de navegación paso a paso sin tener que abrir Google Maps o Waze y gastar más batería.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+              <div class="step-text">
+                <h4>Rutas Eficientes</h4>
+                <p>El algoritmo te muestra el camino para evitar tráfico y ahorrar gasolina, permitiéndote hacer más entregas por hora.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="how-image fade-in-right delay-1">
+          <img src="/AccountTypeSelection.png" alt="Rutas Kivo" class="app-mockup glass-effect" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 3: Perfil y Soporte (Image Right) -->
+    <section class="how-it-works" style="padding: 100px 0;">
+      <div class="container how-container">
+        <div class="how-content fade-in-up">
+          <h2 style="font-size: 3rem; margin-bottom: 30px;">Siempre a tu lado</h2>
+          <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px;">Administra tus documentos en la nube y recibe asistencia inmediata de humanos reales si tienes un problema en el camino.</p>
+          <ul class="steps">
+            <li>
+              <div class="step-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              </div>
+              <div class="step-text">
+                <h4>Gestión de Documentos</h4>
+                <p>Sube y actualiza tu tarjeta de circulación, licencia de conducir o placas tomando una foto desde tu perfil.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+              </div>
+              <div class="step-text">
+                <h4>Soporte Dedicado</h4>
+                <p>¿La dirección está mal o hay un incidente vial? Nuestro equipo de soporte te asiste en tiempo real para no afectar tus métricas.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="how-image fade-in-left delay-1">
+          <img src="/Splash.png" alt="Soporte Kivo" class="app-mockup glass-effect" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Extra Benefits Grid Repartidores -->
+    <section class="features" style="padding: 100px 0; background: #0f172a;">
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2 style="font-size: 3rem;">Ventajas de Conducir con Kivo</h2>
+          <p>Diseñamos nuestra app pensando en tu seguridad y tus ganancias.</p>
+        </div>
+        <div class="cards-container">
+          <div class="feature-card fade-in-up delay-1" style="background: rgba(30, 41, 59, 0.4); border-color: rgba(59, 130, 246, 0.2);">
+            <div class="card-icon-wrapper" style="width: 80px; height: 80px; margin-bottom: 20px; background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(14,165,233,0.2));">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            </div>
+            <h3>Tu Horario, Tus Reglas</h3>
+            <p>Conéctate cuando quieras y desconéctate cuando lo necesites. Tú eres tu propio jefe y decides cuánto trabajas cada semana.</p>
+          </div>
+          <div class="feature-card fade-in-up delay-2" style="background: rgba(30, 41, 59, 0.4); border-color: rgba(59, 130, 246, 0.2);">
+            <div class="card-icon-wrapper" style="width: 80px; height: 80px; margin-bottom: 20px; background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(14,165,233,0.2));">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <h3>Seguro en Ruta</h3>
+            <p>Todos los viajes activos cuentan con cobertura de seguro contra accidentes, para que conduzcas con total tranquilidad en la ciudad.</p>
+          </div>
+          <div class="feature-card fade-in-up delay-3" style="background: rgba(30, 41, 59, 0.4); border-color: rgba(59, 130, 246, 0.2);">
+            <div class="card-icon-wrapper" style="width: 80px; height: 80px; margin-bottom: 20px; background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(14,165,233,0.2));">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <h3>Pagos Semanales</h3>
+            <p>Recibe tus ganancias y el 100% de tus propinas directamente en tu cuenta bancaria de forma rápida y segura cada semana.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Earnings Calculator Section -->
+    <section class="calculator" style="padding: 120px 0; background: #0f172a; position: relative; overflow: hidden;">
+      <div class="blob-bg" style="width: 500px; height: 500px; background: linear-gradient(135deg, #3b82f6, #0ea5e9); opacity: 0.15; right: -10%;"></div>
+      <div class="container" style="display: flex; gap: 60px; align-items: center; flex-wrap: wrap-reverse;">
+        <div class="calc-widget fade-in-right delay-1" style="flex: 1; min-width: 300px; background: rgba(30,41,59,0.7); backdrop-filter: blur(10px); padding: 40px; border-radius: 24px; border: 1px solid rgba(59,130,246,0.3); text-align: center;">
+          <h3 style="margin-bottom: 20px; color: white;">Simulador de Ingresos</h3>
+          <p style="color: var(--text-muted); margin-bottom: 30px;">Estimación basada en 4 entregas por hora.</p>
+          <div style="font-size: 4rem; font-weight: 900; color: #3b82f6; margin-bottom: 10px; text-shadow: 0 0 20px rgba(59,130,246,0.5);">~$15,000 MXN</div>
+          <div style="color: var(--text-muted); font-size: 1.2rem; margin-bottom: 30px;">Ingresos Mensuales Promedio</div>
+          <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 20px;">
+            <div style="width: 75%; height: 100%; background: #3b82f6;"></div>
+          </div>
+          <p style="font-size: 0.9rem; color: rgba(255,255,255,0.4);">*Trabajando 40 horas a la semana. Incluye propinas estimadas y bonos por lluvia.</p>
+        </div>
+        <div class="calc-content fade-in-up" style="flex: 1; min-width: 300px;">
+          <h2 style="font-size: 3.5rem; margin-bottom: 30px; line-height: 1.1;">Gana más por tu <span class="highlight" style="background: linear-gradient(90deg, #3b82f6, #0ea5e9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">esfuerzo</span></h2>
+          <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 30px;">A diferencia de otras plataformas, nuestro algoritmo maximiza el tiempo que pasas con un pedido en la mochila, reduciendo los tiempos de espera en el restaurante.</p>
+          <ul style="list-style: none; padding: 0;">
+            <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;"><span style="color: #3b82f6;">✓</span> 100% de las propinas son para ti</li>
+            <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;"><span style="color: #3b82f6;">✓</span> Bonos dinámicos en horas pico</li>
+            <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;"><span style="color: #3b82f6;">✓</span> Sin penalizaciones por rechazo</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Safety / Trust Section -->
+    <section class="safety" style="padding: 120px 0; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2 style="font-size: 3rem;">Tu seguridad es lo primero</h2>
+          <p>La calle es impredecible, pero nosotros te cubrimos la espalda.</p>
+        </div>
+        <div class="safety-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; margin-top: 60px;">
+          <div class="safety-card fade-in-up delay-1" style="padding: 30px; background: rgba(255,255,255,0.02); border-radius: 20px;">
+            <div style="margin-bottom: 20px; display: flex;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+            </div>
+            <h4 style="font-size: 1.4rem; margin-bottom: 15px;">Seguro Médico</h4>
+            <p style="color: var(--text-muted);">Cobertura total de gastos médicos en caso de accidente durante un pedido activo.</p>
+          </div>
+          <div class="safety-card fade-in-up delay-2" style="padding: 30px; background: rgba(255,255,255,0.02); border-radius: 20px;">
+            <div style="margin-bottom: 20px; display: flex;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <h4 style="font-size: 1.4rem; margin-bottom: 15px;">Botón de Pánico</h4>
+            <p style="color: var(--text-muted);">Conexión inmediata con servicios de emergencia locales directo desde la app.</p>
+          </div>
+          <div class="safety-card fade-in-up delay-3" style="padding: 30px; background: rgba(255,255,255,0.02); border-radius: 20px;">
+            <div style="margin-bottom: 20px; display: flex;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            </div>
+            <h4 style="font-size: 1.4rem; margin-bottom: 15px;">Filtro de Clientes</h4>
+            <p style="color: var(--text-muted);">Puedes reportar direcciones peligrosas o usuarios problemáticos para no volver a coincidir.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Repartidores -->
+    <section class="faq" style="background: #0b1120;">
+      <div class="container">
+        <div class="section-header fade-in-up">
+          <h2>Preguntas Frecuentes para Repartidores</h2>
+          <p>Todo lo que necesitas saber para encender motores.</p>
+        </div>
+        <div class="faq-container fade-in-up delay-1">
+          <div class="faq-item">
+            <div class="faq-question">¿Qué vehículos están permitidos?</div>
+            <div class="faq-answer">
+              <p>Puedes repartir usando motocicleta, automóvil, o bicicleta (dependiendo de la zona). Asegúrate de tener los documentos vigentes según el vehículo que elijas.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">¿Qué necesito para registrarme?</div>
+            <div class="faq-answer">
+              <p>Necesitarás una identificación oficial vigente, licencia de conducir, tarjeta de circulación (si aplica) y un teléfono inteligente con datos móviles activos.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">¿Me penalizan por rechazar viajes?</div>
+            <div class="faq-answer">
+              <p>No bloqueamos tu cuenta por rechazar viajes, pero mantener una buena tasa de aceptación te permitirá acceder a incentivos especiales y bonos por metas semanales.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action Waitlist -->
+    <section class="cta" style="background: linear-gradient(135deg, #0f172a, #1d4ed8, #0f172a);">
+      <div class="container cta-container fade-in-up">
+        <h2>Próximamente en las calles</h2>
+        <p>Kivo está en desarrollo. Únete a nuestra lista de espera para ser el primero en recibir notificaciones de reclutamiento temprano en tu ciudad.</p>
+        <div class="store-buttons" style="margin-top: 30px;">
+          <form class="newsletter-form" style="max-width: 500px; margin: 0 auto;">
+            <input type="email" placeholder="Tu correo electrónico" required style="padding: 20px 30px; font-size: 1.1rem;">
+            <button type="submit" class="newsletter-btn" style="width: 50px; height: 50px; right: 8px; top: 8px; bottom: 8px; background: #3b82f6;">→</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Advanced Footer -->
+    <footer class="footer">
+      <div class="footer-glow" style="background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);"></div>
+      <div class="container">
+        <div class="footer-top fade-in-up">
+          <div class="footer-brand">
+            <div class="logo-text">Kivo</div>
+            <p>La revolución del delivery conversacional. Pide lo que quieras, gestiona tu negocio o reparte a tu propio ritmo.</p>
+            <div class="social-links">
+              <a href="#" class="social-icon">FB</a>
+              <a href="#" class="social-icon">X</a>
+              <a href="#" class="social-icon">IG</a>
+              <a href="#" class="social-icon">IN</a>
+            </div>
+          </div>
+          <div class="footer-links-wrapper">
+            <div class="footer-links">
+              <h4>Plataforma</h4>
+              <ul>
+                <li><a href="/index.html">Inicio</a></li>
+                <li><a href="/src/clientes.html">App para Clientes</a></li>
+                <li><a href="/src/negocios.html">Kivo Negocios</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom fade-in-up delay-1">
+          <p>&copy; 2026 Kivo. Todos los derechos reservados.</p>
+          <div class="legal-links">
+            <a href="#">Términos</a>
+            <a href="#">Privacidad</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
