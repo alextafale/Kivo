@@ -241,6 +241,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // --- Waitlist Form Logic ---
+  const waitlistForm = document.getElementById('waitlist-form');
+  const waitlistSuccess = document.getElementById('waitlist-success');
+  
+  if (waitlistForm) {
+    waitlistForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('waitlist-email').value;
+      
+      // Simulate API call
+      console.log('Waitlist submission:', email);
+      
+      gsap.to(waitlistForm, {
+        opacity: 0,
+        y: -20,
+        duration: 0.5,
+        onComplete: () => {
+          waitlistForm.style.display = 'none';
+          waitlistSuccess.style.display = 'block';
+          gsap.from(waitlistSuccess, {
+            opacity: 0,
+            y: 20,
+            duration: 0.5,
+            ease: 'power3.out'
+          });
+        }
+      });
+    });
+  }
+
   // --- FAQ Accordion ---
   const faqItems = document.querySelectorAll('.faq-item');
   faqItems.forEach(item => {
