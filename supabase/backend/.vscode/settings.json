@@ -1,6 +1,7 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/venv/bin/python",
+  "python.defaultInterpreterPath": "/home/tafale/Kivo/supabase/backend/venv/bin/python",
   "python.analysis.extraPaths": [
-    "${workspaceFolder}/venv/lib/python3.12/site-packages"
-  ]
+    "/home/tafale/Kivo/supabase/backend/venv/lib/python3.12/site-packages"
+  ],
+  "pyrefly.pythonInterpreterPath": "/home/tafale/Kivo/supabase/backend/venv/bin/python"
 }

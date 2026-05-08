@@ -1,0 +1,5 @@
+# Pyrefly configuration for Kivo backend
+# Points the type checker at the virtual environment so it can find
+# pydantic, fastapi, httpx, and all other installed packages.
+
+python_interpreter = "venv/bin/python"

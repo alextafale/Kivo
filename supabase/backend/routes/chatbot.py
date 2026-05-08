@@ -1,10 +1,7 @@
 import os
 import json
-# pyrefly: ignore [missing-import]
 import httpx
-# pyrefly: ignore [missing-import]
 from fastapi import APIRouter, HTTPException
-# pyrefly: ignore [missing-import]
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -13,7 +10,7 @@ router = APIRouter(prefix="/chatbot", tags=["chatbot"])
 QWEN_MODEL = "qwen2.5:7b"
 
 KIVO_CUSTOMER_SYSTEM = (
-    "Eres Kiva, la asistente virtual de Kivo Delivery — una plataforma de entregas a domicilio en México. "
+    "Eres Kivo, el asistente virtual de Kivo Delivery — una plataforma de entregas a domicilio en México. "
     "Tu misión es ayudar a los clientes de forma rápida, cálida y profesional.\n\n"
     "PUEDES AYUDAR CON:\n"
     "- Estado de pedidos y tiempos de entrega estimados\n"
