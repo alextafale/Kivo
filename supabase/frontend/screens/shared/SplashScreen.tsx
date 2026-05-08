@@ -3,16 +3,12 @@ import {
   StyleSheet,
   View,
   Text,
-  Dimensions,
   Animated,
   Easing,
-  ImageBackground,
 } from 'react-native'
 import {
   useFonts,
   Inter_300Light,
-  Inter_400Regular,
-  Inter_500Medium,
 } from '@expo-google-fonts/inter'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -20,13 +16,9 @@ import { RootStackParamList } from '../../navigation/StacNavigation'
 import { useAuth } from '../../application/context/AuthContext'
 import { useTheme } from '../../application/context/ThemeContext'
 
-const { height: H } = Dimensions.get('window')
+const SHOW_DURATION = 900
+const NAV_DELAY = 2000
 
-// ─── Timing ─────────────────────────────────────────────────────────────────────
-const SHOW_DURATION = 1000
-const NAV_DELAY = 2200
-
-// ─── Roles ───────────────────────────────────────────────────────────────────────
 const ROLE_HOME: Record<string, keyof RootStackParamList> = {
   driver: 'DriverDashboard',
   business_admin: 'BusinessDashboard',
@@ -41,15 +33,10 @@ export default function SplashScreen({ navigation }: Props) {
   const { session, isLoading } = useAuth()
   const { colors } = useTheme()
 
-  const [fontsLoaded] = useFonts({
-    Inter_300Light,
-    Inter_400Regular,
-    Inter_500Medium,
-  })
+  const [fontsLoaded] = useFonts({ Inter_300Light })
 
-  // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current
-  const textY = useRef(new Animated.Value(20)).current
+  const textY = useRef(new Animated.Value(16)).current
   const overlayOp = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
@@ -64,21 +51,20 @@ export default function SplashScreen({ navigation }: Props) {
       Animated.timing(textY, {
         toValue: 0,
         duration: SHOW_DURATION,
-        delay: 300,
+        delay: 200,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
-      })
+      }),
     ]).start()
   }, [fontsLoaded])
 
-  // ── Navegación ────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (isLoading || !fontsLoaded) return
 
     const t = setTimeout(() => {
       Animated.timing(overlayOp, {
         toValue: 1,
-        duration: 400,
+        duration: 350,
         useNativeDriver: true,
       }).start(async () => {
         if (session) {
@@ -96,28 +82,18 @@ export default function SplashScreen({ navigation }: Props) {
   if (!fontsLoaded) return null
 
   return (
-    <ImageBackground
-      source={require('../../../../assets/logo.png')}
-      style={[styles.root, { backgroundColor: colors.pageBg }]}
-      resizeMode="cover"
-    >
-
-      {/* Texto Kivo superpuesto, un poco abajo del centro */}
-      <Animated.View style={[styles.textWrapper, {
-        opacity: fadeAnim,
-        transform: [{ translateY: textY }]
-      }]}>
-        <Text style={[styles.nameText, { color: colors.titleText }]} allowFontScaling={false}>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: textY }] }}>
+        <Text style={[styles.wordmark, { color: colors.titleText }]} allowFontScaling={false}>
           Kivo
         </Text>
       </Animated.View>
 
-      {/* Overlay de salida para transición suave */}
       <Animated.View
-        style={[StyleSheet.absoluteFill, styles.overlay, { opacity: overlayOp, backgroundColor: colors.pageBg }]}
+        style={[StyleSheet.absoluteFill, { opacity: overlayOp, backgroundColor: colors.bg }]}
         pointerEvents="none"
       />
-    </ImageBackground>
+    </View>
   )
 }
 
@@ -127,21 +103,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  textWrapper: {
-    marginTop: H * 0.18, // Posiciona el texto un poco abajo del centro
-    alignItems: 'center',
-  },
-  nameText: {
-    fontFamily: 'Inter_300Light', // Tipografía Uber Move Light
-    fontSize: 54,                 // Tamaño más grande para impacto sobre el fondo
-    letterSpacing: -2.2,          // Tracking negativo agresivo estilo branding Uber
-    textAlign: 'center',
-    // Sombra sutil para legibilidad si la imagen es compleja
-    textShadowColor: 'rgba(0, 0, 0, 0.15)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 10,
-  },
-  overlay: {
-    backgroundColor: '#FFFFFF',
+  wordmark: {
+    fontFamily: 'Inter_300Light',
+    fontSize: 54,
+    letterSpacing: -2.2,
   },
 })
