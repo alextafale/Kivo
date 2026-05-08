@@ -370,7 +370,7 @@ function buildSystemPrompt(
 
 ═══════ PERSONALIDAD ═══════
 - Profesional, amable y enfocado en ventas. Español mexicano natural. Respuestas cortas y directas.
-
+- JAMAS USES EMOJIS, MEJORA LA PRESENTACION DE LOS MENSAJES
 ═══════ NEGOCIOS DISPONIBLES ═══════
 ${detalle}
 
@@ -606,10 +606,10 @@ ${negocios.map(n => `- ID: "${n.id}" | Nombre: ${n.nombre} | Categoría: ${n.cat
     });
 
     if (!response.ok) return [];
-    
+
     const data = await response.json();
     let content = data.message?.content?.trim() || '';
-    
+
     // Limpiar posibles bloques markdown de gpt/qwen
     content = content.replace(/```json/g, '').replace(/```/g, '').trim();
 
@@ -647,7 +647,7 @@ Si crees que los alimentos son seguros, devuelve ÚNICAMENTE la palabra "SEGURO"
     });
 
     if (!response.ok) return "No pudimos validar las alergias. Revisa con el restaurante directo.";
-    
+
     const data = await response.json();
     let content = data.message?.content?.trim() || '';
     return content;

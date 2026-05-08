@@ -5,7 +5,7 @@ import {
   FlatList, KeyboardAvoidingView, Platform, Animated, ActivityIndicator,
   Dimensions, ScrollView, Easing,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
@@ -494,6 +494,7 @@ export default function Chatbot({ navigation, route }: Props) {
 
   const [direccionPredeterminada, setDireccionPredeterminada] = useState('');
   const [domicilioId, setDomicilioId] = useState<string>('');
+  const insets = useSafeAreaInsets();
   const [inputFocused, setInputFocused] = useState(false);
   const sendScale = useRef(new Animated.Value(1)).current;
 
@@ -757,7 +758,7 @@ export default function Chatbot({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Ambient background gradient */}
@@ -770,55 +771,56 @@ export default function Chatbot({ navigation, route }: Props) {
         pointerEvents="none"
       />
 
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: 'transparent' }]}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          activeOpacity={0.7}
-        >
-          <BackIcon color={colors.textPrimary} />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          {/* Avatar with pulse ring */}
-          <View style={styles.avatarHeaderWrap}>
-            <PulseRing color={colors.green} size={46} />
-            <View style={[styles.botAvatarHeader, { backgroundColor: colors.greenGlow, borderColor: colors.green + '55' }]}>
-              <RobotAvatar color={colors.green} size={22} />
-            </View>
-            <View style={[styles.onlineDot, { backgroundColor: colors.green, borderColor: colors.bg }]} />
-          </View>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>KivoBot</Text>
-            <Text style={[styles.headerSub, { color: colors.green }]}>
-              {loadingNegocios ? 'Cargando...' : `${negocios.length} negocios · En línea`}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => navigation.navigate('ChatHistorial')}
-          activeOpacity={0.7}
-        >
-          <HistoryIcon color={colors.green} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Divider with gradient accent */}
-      <LinearGradient
-        colors={[colors.green + '00', colors.green + '44', colors.green + '00']}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-        style={styles.headerAccentLine}
-      />
-
-      {/* FlatList + Input share the KeyboardAvoidingView so the list shrinks when keyboard opens */}
+      {/* KAV wraps everything so iOS correctly offsets the keyboard */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
       >
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: 'transparent' }]}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            activeOpacity={0.7}
+          >
+            <BackIcon color={colors.textPrimary} />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <View style={styles.avatarHeaderWrap}>
+              <PulseRing color={colors.green} size={46} />
+              <View style={[styles.botAvatarHeader, { backgroundColor: colors.greenGlow, borderColor: colors.green + '55' }]}>
+                <RobotAvatar color={colors.green} size={22} />
+              </View>
+              <View style={[styles.onlineDot, { backgroundColor: colors.green, borderColor: colors.bg }]} />
+            </View>
+            <View>
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>KivoBot</Text>
+              <Text style={[styles.headerSub, { color: colors.green }]}>
+                {loadingNegocios ? 'Cargando...' : `${negocios.length} negocios · En línea`}
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('ChatHistorial')}
+            activeOpacity={0.7}
+          >
+            <HistoryIcon color={colors.green} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Divider with gradient accent */}
+        <LinearGradient
+          colors={[colors.green + '00', colors.green + '44', colors.green + '00']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={styles.headerAccentLine}
+        />
+
         <FlatList
+          style={{ flex: 1 }}
           ref={flatListRef}
           data={messages}
           renderItem={renderMessage}
@@ -827,7 +829,7 @@ export default function Chatbot({ navigation, route }: Props) {
           showsVerticalScrollIndicator={false}
           onContentSizeChange={scrollToBottom}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         />
 
         {isTyping && <TypingIndicator />}
@@ -836,6 +838,7 @@ export default function Chatbot({ navigation, route }: Props) {
         <View style={[styles.inputBar, {
           backgroundColor: colors.surface,
           borderTopColor: inputFocused ? colors.green + '44' : colors.border,
+          paddingBottom: Math.max(insets.bottom, 12),
         }]}>
           <View style={[styles.inputWrap, {
             backgroundColor: colors.card,
@@ -852,7 +855,7 @@ export default function Chatbot({ navigation, route }: Props) {
               placeholderTextColor={colors.placeholderText}
               value={inputText}
               onChangeText={setInputText}
-              onFocus={() => setInputFocused(true)}
+              onFocus={() => { setInputFocused(true); scrollToBottom(); }}
               onBlur={() => setInputFocused(false)}
               multiline
               maxLength={500}
