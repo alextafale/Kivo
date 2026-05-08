@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  StatusBar, ScrollView,
+  StatusBar, ScrollView, Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -11,6 +11,7 @@ import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useCart } from '../../../application/context/CartContext'
 import { useTheme } from '../../../application/context/ThemeContext'
+import { compartirOrdenesWhatsApp } from '../../../../services/ticketService'
 
 type OrderConfirmationNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderConfirmation'>
 type OrderConfirmationRouteProp = RouteProp<RootStackParamList, 'OrderConfirmation'>
@@ -28,13 +29,38 @@ const CheckIcon = () => (
 )
 
 export default function OrderConfirmation({ navigation, route }: Props) {
-   console.log("Estas en order confirmation");
   const { colors, isDark } = useTheme();
   const { orders, totalGeneral } = route.params
   const { clearCart } = useCart()
+  const whatsappPrompted = useRef(false)
 
   useEffect(() => {
     clearCart()
+    if (whatsappPrompted.current) return
+    whatsappPrompted.current = true
+
+    const fecha = new Date().toLocaleDateString('es-MX', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
+
+    setTimeout(() => {
+      Alert.alert(
+        '¿Recibir ticket por WhatsApp?',
+        'Te compartimos el resumen de tu pedido para que lo tengas a la mano.',
+        [
+          {
+            text: 'No, gracias',
+            style: 'cancel',
+          },
+          {
+            text: 'Enviar',
+            onPress: () => compartirOrdenesWhatsApp(orders, totalGeneral, fecha),
+          },
+        ],
+        { cancelable: true }
+      )
+    }, 600)
   }, [])
 
   return (
