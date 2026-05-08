@@ -22,7 +22,8 @@
         "foregroundImage": "./assets/kivo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.pidelo.app"
+      "package": "com.pidelo.app",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/kivo.png"

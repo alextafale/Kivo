@@ -395,7 +395,7 @@ export default function DriverSupport({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#0A0000' : '#FFF5F5' }]}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="light-content" />
 
       {/* Ambient red glow at top */}
       <LinearGradient
@@ -490,8 +490,7 @@ export default function DriverSupport({ navigation }: Props) {
 
       {/* Input */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={[styles.inputBar, {
           backgroundColor: isDark ? '#120404' : '#FFF',

@@ -758,7 +758,7 @@ export default function Chatbot({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Ambient background gradient */}
       <LinearGradient
@@ -816,8 +816,7 @@ export default function Chatbot({ navigation, route }: Props) {
       {/* FlatList + Input share the KeyboardAvoidingView so the list shrinks when keyboard opens */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <FlatList
           ref={flatListRef}
