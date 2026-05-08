@@ -829,7 +829,7 @@ export default function Chatbot({ navigation, route }: Props) {
           showsVerticalScrollIndicator={false}
           onContentSizeChange={scrollToBottom}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          keyboardDismissMode={Platform.OS === 'ios' ? 'none' : 'on-drag'}
         />
 
         {isTyping && <TypingIndicator />}
@@ -855,8 +855,8 @@ export default function Chatbot({ navigation, route }: Props) {
               placeholderTextColor={colors.placeholderText}
               value={inputText}
               onChangeText={setInputText}
-              onFocus={() => { setInputFocused(true); scrollToBottom(); }}
-              onBlur={() => setInputFocused(false)}
+              onFocus={() => {}}
+              onBlur={() => {}}
               multiline
               maxLength={500}
               returnKeyType="send"
