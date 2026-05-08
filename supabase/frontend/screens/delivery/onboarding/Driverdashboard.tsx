@@ -11,6 +11,7 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
+import { useTheme } from '../../../application/context/ThemeContext'
 
 import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/RepartidorRepositoryImpl'
 import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../domain/ports/repositories/lRepartidorRepository'
@@ -92,6 +93,7 @@ const ESTADOS: DriverEstado[] = ['offline', 'available', 'busy']
 export default function DriverDashboard({ navigation }: Props) {
   console.log("Estas en DriverDashboard")
   const { session, logout } = useAuth()
+  const { colors, isDark } = useTheme()
   const [activeDriverTab, setActiveDriverTab] = useState<DriverTabName>('Home')
 
   const [repartidor, setRepartidor] = useState<RepartidorInfo | null>(null)
@@ -405,16 +407,16 @@ export default function DriverDashboard({ navigation }: Props) {
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
         <ActivityIndicator size="large" color="#22c55e" />
-        <Text style={styles.loadingText}>Cargando dashboard...</Text>
+        <Text style={[styles.loadingText, { color: colors.subtitleText }]}>Cargando dashboard...</Text>
       </SafeAreaView>
     )
   }
 
   if (fetchError && !repartidor) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
         <MaterialIcons name="warning" size={40} color="#EF4444" />
         <Text style={styles.errorText}>{fetchError}</Text>
         <TouchableOpacity
@@ -431,11 +433,14 @@ export default function DriverDashboard({ navigation }: Props) {
   const estadoConf = ESTADO_CONFIG[estado]
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F0FDF4" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.pageBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.pageBg} />
 
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
-      <LinearGradient colors={['#F0FDF4', '#fff']} style={styles.header}>
+      <LinearGradient
+        colors={isDark ? [colors.pageBg, colors.bg] : ['#F0FDF4', '#fff']}
+        style={styles.header}
+      >
         <View style={styles.headerTop}>
 
           {/* Avatar → navega a DriverProfile */}
@@ -453,17 +458,16 @@ export default function DriverDashboard({ navigation }: Props) {
                 </Text>
               </LinearGradient>
             )}
-            {/* Dot de estado sobre el avatar */}
-            <View style={[styles.avatarStatusDot, { backgroundColor: estadoConf.dot }]} />
+            <View style={[styles.avatarStatusDot, { backgroundColor: estadoConf.dot, borderColor: colors.pageBg }]} />
           </TouchableOpacity>
 
           {/* Título + estado */}
           <View style={styles.headerCenter}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <MaterialIcons name="waving-hand" size={20} color="#22c55e" />
-              <Text style={styles.headerGreeting}>Hola</Text>
+              <Text style={[styles.headerGreeting, { color: colors.subtitleText }]}>Hola</Text>
             </View>
-            <Text style={styles.headerTitle}>Mi Dashboard</Text>
+            <Text style={[styles.headerTitle, { color: colors.titleText }]}>Mi Dashboard</Text>
           </View>
 
           {/* Pill de estado */}
@@ -477,17 +481,17 @@ export default function DriverDashboard({ navigation }: Props) {
 
         {/* Acceso rápido a perfil */}
         <TouchableOpacity
-          style={styles.profileBanner}
+          style={[styles.profileBanner, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
           activeOpacity={0.8}
           onPress={() => repartidor && navigation.navigate('DriverProfile', { repartidor })}
         >
           <View style={styles.profileBannerLeft}>
-            <View style={styles.profileBannerIcon}>
+            <View style={[styles.profileBannerIcon, { backgroundColor: colors.iconBg }]}>
               <BikeIcon color="#16a34a" size={16} />
             </View>
             <View>
-              <Text style={styles.profileBannerTitle}>Ver mi perfil</Text>
-              <Text style={styles.profileBannerSub}>Foto, información y estadísticas</Text>
+              <Text style={[styles.profileBannerTitle, { color: colors.titleText }]}>Ver mi perfil</Text>
+              <Text style={[styles.profileBannerSub, { color: colors.labelText }]}>Foto, información y estadísticas</Text>
             </View>
           </View>
           <ChevronIcon />
@@ -503,35 +507,35 @@ export default function DriverDashboard({ navigation }: Props) {
 
           {/* ── STATS ─────────────────────────────────────────────────────── */}
           <View style={styles.statsRow}>
-            <View style={styles.statCard}>
+            <View style={[styles.statCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
               <PackageIcon color="#22c55e" size={18} />
-              <Text style={styles.statValue}>{repartidor?.total_entregas ?? 0}</Text>
-              <Text style={styles.statLabel}>Entregas</Text>
+              <Text style={[styles.statValue, { color: colors.titleText }]}>{repartidor?.total_entregas ?? 0}</Text>
+              <Text style={[styles.statLabel, { color: colors.labelText }]}>Entregas</Text>
             </View>
-            <View style={[styles.statCard, styles.statCardMiddle]}>
+            <View style={[styles.statCard, styles.statCardMiddle, { backgroundColor: colors.cardBg }]}>
               <StarIcon size={18} />
-              <Text style={styles.statValue}>
+              <Text style={[styles.statValue, { color: colors.titleText }]}>
                 {repartidor?.calificacion != null
                   ? repartidor.calificacion.toFixed(1)
                   : '—'}
               </Text>
-              <Text style={styles.statLabel}>Calificación</Text>
+              <Text style={[styles.statLabel, { color: colors.labelText }]}>Calificación</Text>
             </View>
-            <View style={styles.statCard}>
-              <BikeIcon color="#6B7280" size={18} />
-              <Text style={styles.statValue}>
+            <View style={[styles.statCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+              <BikeIcon color={colors.labelText} size={18} />
+              <Text style={[styles.statValue, { color: colors.titleText }]}>
                 {repartidor?.vehiculo
                   ? repartidor.vehiculo.charAt(0).toUpperCase() + repartidor.vehiculo.slice(1)
                   : '—'}
               </Text>
-              <Text style={styles.statLabel}>Vehículo</Text>
+              <Text style={[styles.statLabel, { color: colors.labelText }]}>Vehículo</Text>
             </View>
           </View>
 
           {/* ── SELECTOR DE ESTADO ────────────────────────────────────────── */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Mi estado</Text>
-            <Text style={styles.sectionSubtitle}>{estadoConf.desc}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Mi estado</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.labelText }]}>{estadoConf.desc}</Text>
             <View style={styles.estadoSelector}>
               {ESTADOS.map((e) => {
                 const conf = ESTADO_CONFIG[e]
@@ -541,6 +545,7 @@ export default function DriverDashboard({ navigation }: Props) {
                     key={e}
                     style={[
                       styles.estadoBtn,
+                      { backgroundColor: colors.cardBg, borderColor: colors.border },
                       activo && { backgroundColor: conf.bg, borderColor: conf.dot },
                     ]}
                     onPress={() => handleEstado(e)}
@@ -550,8 +555,8 @@ export default function DriverDashboard({ navigation }: Props) {
                     {updatingEstado && activo
                       ? <ActivityIndicator size="small" color={conf.color} />
                       : <>
-                        <View style={[styles.estadoBtnDot, { backgroundColor: activo ? conf.dot : '#D1D5DB' }]} />
-                        <Text style={[styles.estadoBtnText, activo && { color: conf.color, fontWeight: '700' }]}>
+                        <View style={[styles.estadoBtnDot, { backgroundColor: activo ? conf.dot : colors.border }]} />
+                        <Text style={[styles.estadoBtnText, { color: colors.subtitleText }, activo && { color: conf.color, fontWeight: '700' }]}>
                           {conf.label}
                         </Text>
                       </>
@@ -592,7 +597,7 @@ export default function DriverDashboard({ navigation }: Props) {
               {/* ── FOTO DE EVIDENCIA (solo cuando va en camino) ── */}
               {estadoPedido === 'on_the_way' && (
                 <View style={{ marginTop: 12 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: colors.titleText, marginBottom: 8 }}>
                     Foto de evidencia (opcional)
                   </Text>
 
@@ -600,7 +605,7 @@ export default function DriverDashboard({ navigation }: Props) {
                     <View style={{ position: 'relative' }}>
                       <Image
                         source={{ uri: fotoEntrega }}
-                        style={{ width: '100%', height: 160, borderRadius: 12, backgroundColor: '#F3F4F6' }}
+                        style={{ width: '100%', height: 160, borderRadius: 12, backgroundColor: colors.border }}
                         resizeMode="cover"
                       />
                       <TouchableOpacity
@@ -617,17 +622,17 @@ export default function DriverDashboard({ navigation }: Props) {
                   ) : (
                     <TouchableOpacity
                       style={{
-                        borderWidth: 1.5, borderColor: '#D1D5DB', borderStyle: 'dashed',
+                        borderWidth: 1.5, borderColor: colors.border, borderStyle: 'dashed',
                         borderRadius: 12, paddingVertical: 20, alignItems: 'center',
-                        backgroundColor: '#F9FAFB', gap: 6
+                        backgroundColor: colors.inputBg, gap: 6
                       }}
                       onPress={handleSeleccionarFoto}
                     >
-                      <MaterialIcons name="add-a-photo" size={28} color="#9CA3AF" />
-                      <Text style={{ fontSize: 13, color: '#9CA3AF', fontWeight: '500' }}>
+                      <MaterialIcons name="add-a-photo" size={28} color={colors.labelText} />
+                      <Text style={{ fontSize: 13, color: colors.labelText, fontWeight: '500' }}>
                         Tomar foto de evidencia
                       </Text>
-                      <Text style={{ fontSize: 11, color: '#D1D5DB' }}>
+                      <Text style={{ fontSize: 11, color: colors.textMuted }}>
                         No es obligatoria
                       </Text>
                     </TouchableOpacity>
@@ -686,19 +691,19 @@ export default function DriverDashboard({ navigation }: Props) {
           {pedidosPendientesConfirmacion.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Esperando confirmación</Text>
+                <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Esperando confirmación</Text>
                 <View style={[styles.countBadge, { backgroundColor: '#F59E0B' }]}>
                   <Text style={styles.countBadgeText}>{pedidosPendientesConfirmacion.length}</Text>
                 </View>
               </View>
-              <Text style={[styles.sectionSubtitle, { marginBottom: 10 }]}>
+              <Text style={[styles.sectionSubtitle, { color: colors.labelText, marginBottom: 10 }]}>
                 El cliente tiene 15 min para confirmar. Si no responde, se confirma automáticamente.
               </Text>
 
               {pedidosPendientesConfirmacion.map((p) => {
                 const minutosRestantes = Math.max(0, 15 - Math.floor(p.minutos_esperando))
                 return (
-                  <View key={p.id} style={[styles.pedidoCard, { borderColor: '#FEF3C7', borderWidth: 1.5 }]}>
+                  <View key={p.id} style={[styles.pedidoCard, { backgroundColor: colors.cardBg, borderColor: '#FEF3C7', borderWidth: 1.5 }]}>
                     <View style={styles.pedidoHeader}>
                       <View style={[styles.pedidoNumeroWrap, { backgroundColor: '#FEF3C7' }]}>
                         <Text style={[styles.pedidoNumero, { color: '#92400E' }]}>{p.order_number}</Text>
@@ -711,19 +716,19 @@ export default function DriverDashboard({ navigation }: Props) {
                       </View>
                     </View>
 
-                    <Text style={styles.pedidoNegocio}>{p.negocio_nombre}</Text>
+                    <Text style={[styles.pedidoNegocio, { color: colors.titleText }]}>{p.negocio_nombre}</Text>
 
                     <View style={styles.pedidoDireccionRow}>
                       <LocationIcon />
-                      <Text style={styles.pedidoDireccion} numberOfLines={1}>
+                      <Text style={[styles.pedidoDireccion, { color: colors.labelText }]} numberOfLines={1}>
                         {p.direccion_entrega}
                       </Text>
                     </View>
 
                     {p.foto_entrega_url && (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                        <MaterialIcons name="photo-camera" size={13} color="#9CA3AF" />
-                        <Text style={{ fontSize: 11, color: '#9CA3AF' }}>Con foto de evidencia</Text>
+                        <MaterialIcons name="photo-camera" size={13} color={colors.labelText} />
+                        <Text style={{ fontSize: 11, color: colors.labelText }}>Con foto de evidencia</Text>
                       </View>
                     )}
                   </View>
@@ -735,7 +740,7 @@ export default function DriverDashboard({ navigation }: Props) {
           {/* ── PEDIDOS DISPONIBLES ───────────────────────────────────────── */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Pedidos disponibles</Text>
+              <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Pedidos disponibles</Text>
               {pedidos.length > 0 && (
                 <View style={styles.countBadge}>
                   <Text style={styles.countBadgeText}>{pedidos.length}</Text>
@@ -744,42 +749,40 @@ export default function DriverDashboard({ navigation }: Props) {
             </View>
 
             {estado === 'offline' ? (
-              <View style={styles.emptyCard}>
-                <MaterialIcons name="bedtime" size={40} color="#9CA3AF" />
-                <Text style={styles.emptyTitle}>Estás offline</Text>
-                <Text style={styles.emptyText}>Cambia tu estado a "Disponible" para ver pedidos.</Text>
+              <View style={[styles.emptyCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <MaterialIcons name="bedtime" size={40} color={colors.labelText} />
+                <Text style={[styles.emptyTitle, { color: colors.titleText }]}>Estás offline</Text>
+                <Text style={[styles.emptyText, { color: colors.labelText }]}>Cambia tu estado a "Disponible" para ver pedidos.</Text>
               </View>
             ) : pedidos.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <MaterialIcons name="search" size={40} color="#9CA3AF" />
-                <Text style={styles.emptyTitle}>Sin pedidos por ahora</Text>
-                <Text style={styles.emptyText}>Jala hacia abajo para actualizar.</Text>
+              <View style={[styles.emptyCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <MaterialIcons name="search" size={40} color={colors.labelText} />
+                <Text style={[styles.emptyTitle, { color: colors.titleText }]}>Sin pedidos por ahora</Text>
+                <Text style={[styles.emptyText, { color: colors.labelText }]}>Jala hacia abajo para actualizar.</Text>
               </View>
             ) : (
               pedidos.map((pedido) => (
-                <View key={pedido.id} style={styles.pedidoCard}>
-                  {/* Número y total */}
+                <View key={pedido.id} style={[styles.pedidoCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                   <View style={styles.pedidoHeader}>
                     <View style={styles.pedidoNumeroWrap}>
                       <Text style={styles.pedidoNumero}>{pedido.order_number}</Text>
                     </View>
-                    <Text style={styles.pedidoTotal}>${pedido.total != null ? pedido.total.toFixed(2) : '0.00'}</Text>
+                    <Text style={[styles.pedidoTotal, { color: colors.titleText }]}>${pedido.total != null ? pedido.total.toFixed(2) : '0.00'}</Text>
                   </View>
 
-                  <Text style={styles.pedidoNegocio}>{pedido.negocio_nombre}</Text>
+                  <Text style={[styles.pedidoNegocio, { color: colors.titleText }]}>{pedido.negocio_nombre}</Text>
 
                   <View style={styles.pedidoDireccionRow}>
                     <LocationIcon />
-                    <Text style={styles.pedidoDireccion} numberOfLines={1}>
+                    <Text style={[styles.pedidoDireccion, { color: colors.labelText }]} numberOfLines={1}>
                       {pedido.direccion_entrega}
                     </Text>
                   </View>
 
-                  {/* Footer */}
                   <View style={styles.pedidoFooter}>
                     <View style={styles.pedidoEnvioWrap}>
                       <MoneyIcon />
-                      <Text style={styles.pedidoEnvio}>+${pedido.costo_envio != null ? pedido.costo_envio.toFixed(2) : '0.00'} envío envío</Text>
+                      <Text style={styles.pedidoEnvio}>+${pedido.costo_envio != null ? pedido.costo_envio.toFixed(2) : '0.00'} envío</Text>
                     </View>
                     <TouchableOpacity
                       style={styles.aceptarBtn}
@@ -831,12 +834,16 @@ export default function DriverDashboard({ navigation }: Props) {
 
           {/* ── LOGOUT ─────────────────────────────────────────── */}
           <View style={[styles.section, { marginTop: 8 }]}>
-            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={[styles.logoutBtn, { backgroundColor: colors.signOutBg, borderColor: colors.signOutBorder }]}
+              onPress={handleLogout}
+              activeOpacity={0.8}
+            >
               <Text style={styles.logoutText}>Cerrar sesión</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.versionText}>Pidelo Delivery  •  v1.0.0</Text>
+          <Text style={[styles.versionText, { color: colors.textMuted }]}>Pidelo Delivery  •  v1.0.0</Text>
           <View style={{ height: 32 }} />
         </Animated.View>
       </ScrollView>
@@ -847,6 +854,8 @@ export default function DriverDashboard({ navigation }: Props) {
         onTabChange={setActiveDriverTab}
         navigation={navigation}
         repartidor={repartidor}
+        pedidoActivoId={pedidoActivoId}
+        estadoPedido={estadoPedido}
       />
     </SafeAreaView>
   )

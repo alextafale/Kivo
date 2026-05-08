@@ -225,6 +225,77 @@ async def entregar_pedido(
 
 
 @router.get(
+    "/pedidos/{pedido_id}/detalle",
+    summary="Detalle completo del pedido activo para el repartidor",
+    description="Retorna la info del pedido activo: restaurante, cliente, dirección y artículos.",
+)
+def get_pedido_detalle(
+    pedido_id: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(require_driver),
+):
+    """
+    El repartidor consulta los detalles completos del pedido que tiene activo.
+    Solo puede consultar pedidos que le están asignados.
+    """
+    row = db.execute(
+        text("""
+            SELECT
+                p.id,
+                p.order_number,
+                p.estado,
+                p.total,
+                p.costo_envio,
+                p.direccion_entrega,
+                p.notas,
+                p.creado_en,
+                -- Restaurante
+                n.nombre         AS negocio_nombre,
+                s.direccion      AS negocio_direccion,
+                s.telefono       AS negocio_telefono,
+                ST_Y(s.ubicacion::geometry) AS negocio_lat,
+                ST_X(s.ubicacion::geometry) AS negocio_lng,
+                -- Cliente
+                pr.full_name     AS cliente_nombre,
+                pr.telefono      AS cliente_telefono
+            FROM pedidos p
+            JOIN repartidores r   ON r.id = p.repartidor_id
+            JOIN negocios n       ON n.id = p.negocio_id
+            JOIN sucursales s     ON s.id = p.sucursal_id
+            JOIN profiles pr      ON pr.id = p.user_id
+            WHERE p.id = :pedido_id
+              AND r.user_id = :user_id
+        """),
+        {"pedido_id": pedido_id, "user_id": user_id},
+    ).mappings().first()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado o no asignado a ti")
+
+    pedido = dict(row)
+
+    # Artículos del pedido
+    items = db.execute(
+        text("""
+            SELECT
+                pi.cantidad,
+                pi.precio_unitario,
+                mi.nombre,
+                mi.descripcion
+            FROM pedido_items pi
+            JOIN menu_items mi ON mi.id = pi.menu_item_id
+            WHERE pi.pedido_id = :pedido_id
+            ORDER BY mi.nombre
+        """),
+        {"pedido_id": pedido_id},
+    ).mappings().all()
+
+    pedido["items"] = [dict(i) for i in items]
+
+    return pedido
+
+
+@router.get(
     "/pedidos/pendientes-confirmacion",
     summary="Ver pedidos entregados esperando confirmación del cliente",
     description="Pedidos que el repartidor entregó pero el cliente aún no ha confirmado."

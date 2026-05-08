@@ -10,6 +10,7 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
+import { useTheme } from '../../../application/context/ThemeContext'
 import TermsAndConditionsModal from '../../../components/ui/TermsAndConditionsModal'
 import OAuthButtons from '../../../components/ui/OAuthButtons'
 import { MaterialIcons } from '@expo/vector-icons'
@@ -79,6 +80,7 @@ type Vehiculo = typeof VEHICULOS[number]
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function RegisterDriver({ navigation }: Props) {
   const { registerDriver } = useAuth()
+  const { colors, isDark } = useTheme()
 
   const [nombre, setNombre] = useState('')
   const [apellido, setApellido] = useState('')
@@ -136,20 +138,22 @@ export default function RegisterDriver({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false}>
 
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <BackIcon />
+              <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.titleText} strokeWidth="2">
+                <Path d="M19 12H5M12 19l-7-7 7-7" />
+              </Svg>
             </TouchableOpacity>
           </View>
 
           {/* Badge */}
           <View style={styles.badgeContainer}>
-            <View style={styles.badge}>
+            <View style={[styles.badge, { backgroundColor: colors.iconBg, borderColor: colors.border }]}>
               <BikeIcon />
             </View>
             <View style={styles.badgePill}>
@@ -158,8 +162,8 @@ export default function RegisterDriver({ navigation }: Props) {
           </View>
 
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Únete como repartidor</Text>
-            <Text style={styles.subtitle}>Empieza a ganar con Pidelo</Text>
+            <Text style={[styles.title, { color: colors.titleText }]}>Únete como repartidor</Text>
+            <Text style={[styles.subtitle, { color: colors.subtitleText }]}>Empieza a ganar con Pidelo</Text>
           </View>
 
           <View style={styles.formContainer}>
@@ -167,13 +171,13 @@ export default function RegisterDriver({ navigation }: Props) {
             {/* Nombre + Apellido */}
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.label}>Nombre</Text>
-                <View style={styles.inputWrapper}>
+                <Text style={[styles.label, { color: colors.titleText }]}>Nombre</Text>
+                <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                   <UserIcon />
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: colors.titleText }]}
                     placeholder="Juan"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.placeholderText}
                     value={nombre}
                     onChangeText={setNombre}
                     autoCapitalize="words"
@@ -181,12 +185,12 @@ export default function RegisterDriver({ navigation }: Props) {
                 </View>
               </View>
               <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                <Text style={styles.label}>Apellido</Text>
-                <View style={styles.inputWrapper}>
+                <Text style={[styles.label, { color: colors.titleText }]}>Apellido</Text>
+                <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                   <TextInput
-                    style={[styles.input, { paddingHorizontal: 4 }]}
+                    style={[styles.input, { color: colors.titleText, paddingHorizontal: 4 }]}
                     placeholder="Pérez"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.placeholderText}
                     value={apellido}
                     onChangeText={setApellido}
                     autoCapitalize="words"
@@ -197,13 +201,13 @@ export default function RegisterDriver({ navigation }: Props) {
 
             {/* Teléfono */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Teléfono <Text style={styles.optional}>(opcional)</Text></Text>
-              <View style={styles.inputWrapper}>
+              <Text style={[styles.label, { color: colors.titleText }]}>Teléfono <Text style={[styles.optional, { color: colors.labelText }]}>(opcional)</Text></Text>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <PhoneIcon />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.titleText }]}
                   placeholder="+52 000 000 0000"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.placeholderText}
                   value={telefono}
                   onChangeText={setTelefono}
                   keyboardType="phone-pad"
@@ -213,26 +217,24 @@ export default function RegisterDriver({ navigation }: Props) {
 
             {/* Tipo de vehículo */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Tipo de vehículo</Text>
+              <Text style={[styles.label, { color: colors.titleText }]}>Tipo de vehículo</Text>
               <View style={styles.vehiculoRow}>
                 {VEHICULOS.map((v) => (
                   <TouchableOpacity
                     key={v}
-                    style={[styles.vehiculoChip, vehiculo === v && styles.vehiculoChipActive]}
+                    style={[styles.vehiculoChip, { backgroundColor: colors.inputBg, borderColor: colors.border }, vehiculo === v && styles.vehiculoChipActive]}
                     onPress={() => setVehiculo(v)}
                   >
-                    <Text style={[styles.vehiculoChipText, vehiculo === v && styles.vehiculoChipTextActive]}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <MaterialIcons
-                          name={v === 'moto' ? 'moped' : v === 'bici' ? 'pedal-bike' : 'directions-car'}
-                          size={16}
-                          color={vehiculo === v ? '#16a34a' : '#6B7280'}
-                        />
-                        <Text style={[styles.vehiculoText, vehiculo === v && styles.vehiculoTextActive]}>
-                          {v === 'moto' ? 'Moto' : v === 'bici' ? 'Bici' : 'Auto'}
-                        </Text>
-                      </View>
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <MaterialIcons
+                        name={v === 'moto' ? 'moped' : v === 'bici' ? 'pedal-bike' : 'directions-car'}
+                        size={16}
+                        color={vehiculo === v ? '#16a34a' : colors.labelText}
+                      />
+                      <Text style={[styles.vehiculoText, { color: colors.subtitleText }, vehiculo === v && styles.vehiculoTextActive]}>
+                        {v === 'moto' ? 'Moto' : v === 'bici' ? 'Bici' : 'Auto'}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -240,13 +242,13 @@ export default function RegisterDriver({ navigation }: Props) {
 
             {/* Placa */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Placa <Text style={styles.optional}>(opcional)</Text></Text>
-              <View style={styles.inputWrapper}>
+              <Text style={[styles.label, { color: colors.titleText }]}>Placa <Text style={[styles.optional, { color: colors.labelText }]}>(opcional)</Text></Text>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <PlateIcon />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.titleText }]}
                   placeholder="ABC-123"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.placeholderText}
                   value={placa}
                   onChangeText={setPlaca}
                   autoCapitalize="characters"
@@ -256,13 +258,13 @@ export default function RegisterDriver({ navigation }: Props) {
 
             {/* Email */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Correo electrónico</Text>
-              <View style={styles.inputWrapper}>
+              <Text style={[styles.label, { color: colors.titleText }]}>Correo electrónico</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <EmailIcon />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.titleText }]}
                   placeholder="tu@email.com"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.placeholderText}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -273,13 +275,13 @@ export default function RegisterDriver({ navigation }: Props) {
 
             {/* Contraseña */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Contraseña</Text>
-              <View style={styles.inputWrapper}>
+              <Text style={[styles.label, { color: colors.titleText }]}>Contraseña</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <LockIcon />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.titleText }]}
                   placeholder="Mínimo 6 caracteres"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.placeholderText}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -293,13 +295,13 @@ export default function RegisterDriver({ navigation }: Props) {
 
             {/* Confirmar contraseña */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Confirmar contraseña</Text>
-              <View style={styles.inputWrapper}>
+              <Text style={[styles.label, { color: colors.titleText }]}>Confirmar contraseña</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <LockIcon />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.titleText }]}
                   placeholder="••••••••"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.placeholderText}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirm}
@@ -313,14 +315,14 @@ export default function RegisterDriver({ navigation }: Props) {
 
             {/* Terms */}
             <TouchableOpacity style={styles.checkboxContainer} onPress={() => setAcceptTerms(!acceptTerms)}>
-              <View style={[styles.checkbox, acceptTerms && styles.checkboxChecked]}>
+              <View style={[styles.checkbox, { borderColor: colors.border }, acceptTerms && styles.checkboxChecked]}>
                 {acceptTerms && (
                   <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
                     <Path d="M20 6L9 17l-5-5" />
                   </Svg>
                 )}
               </View>
-              <Text style={styles.checkboxText}>
+              <Text style={[styles.checkboxText, { color: colors.subtitleText }]}>
                 Acepto los{' '}
                 <Text style={styles.linkText} onPress={() => setShowTermsModal(true)}>
                   términos y condiciones
@@ -351,8 +353,8 @@ export default function RegisterDriver({ navigation }: Props) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={styles.loginContainer}>
-        <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
+      <View style={[styles.loginContainer, { borderTopColor: colors.rowDivider }]}>
+        <Text style={[styles.loginText, { color: colors.subtitleText }]}>¿Ya tienes una cuenta? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('LoginDriver')}>
           <Text style={styles.loginLink}>Inicia sesión</Text>
         </TouchableOpacity>

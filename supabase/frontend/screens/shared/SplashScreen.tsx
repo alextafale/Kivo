@@ -2,22 +2,19 @@ import React, { useEffect, useRef } from 'react'
 import {
   StyleSheet,
   View,
-  Text,
   Animated,
   Easing,
 } from 'react-native'
-import {
-  useFonts,
-  Inter_300Light,
-} from '@expo-google-fonts/inter'
+import { useFonts, Inter_300Light } from '@expo-google-fonts/inter'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/StacNavigation'
 import { useAuth } from '../../application/context/AuthContext'
 import { useTheme } from '../../application/context/ThemeContext'
 
-const SHOW_DURATION = 900
-const NAV_DELAY = 2000
+const LETTERS = ['K', 'i', 'v', 'o']
+const STAGGER_MS = 85
+const NAV_DELAY = 2200
 
 const ROLE_HOME: Record<string, keyof RootStackParamList> = {
   driver: 'DriverDashboard',
@@ -35,27 +32,37 @@ export default function SplashScreen({ navigation }: Props) {
 
   const [fontsLoaded] = useFonts({ Inter_300Light })
 
-  const fadeAnim = useRef(new Animated.Value(0)).current
-  const textY = useRef(new Animated.Value(16)).current
+  // Una pareja opacity+y por letra
+  const letterAnims = useRef(
+    LETTERS.map(() => ({
+      opacity: new Animated.Value(0),
+      y: new Animated.Value(32),
+    }))
+  ).current
+
   const overlayOp = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
     if (!fontsLoaded) return
 
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: SHOW_DURATION,
-        useNativeDriver: true,
-      }),
-      Animated.timing(textY, {
-        toValue: 0,
-        duration: SHOW_DURATION,
-        delay: 200,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start()
+    Animated.stagger(
+      STAGGER_MS,
+      letterAnims.map(({ opacity, y }) =>
+        Animated.parallel([
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 460,
+            useNativeDriver: true,
+          }),
+          Animated.timing(y, {
+            toValue: 0,
+            duration: 460,
+            easing: Easing.out(Easing.back(1.8)),
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    ).start()
   }, [fontsLoaded])
 
   useEffect(() => {
@@ -83,11 +90,24 @@ export default function SplashScreen({ navigation }: Props) {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bg }]}>
-      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: textY }] }}>
-        <Text style={[styles.wordmark, { color: colors.titleText }]} allowFontScaling={false}>
-          Kivo
-        </Text>
-      </Animated.View>
+      <View style={styles.row}>
+        {LETTERS.map((letter, i) => (
+          <Animated.Text
+            key={i}
+            style={[
+              styles.letter,
+              {
+                color: colors.titleText,
+                opacity: letterAnims[i].opacity,
+                transform: [{ translateY: letterAnims[i].y }],
+              },
+            ]}
+            allowFontScaling={false}
+          >
+            {letter}
+          </Animated.Text>
+        ))}
+      </View>
 
       <Animated.View
         style={[StyleSheet.absoluteFill, { opacity: overlayOp, backgroundColor: colors.bg }]}
@@ -103,7 +123,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  wordmark: {
+  row: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  letter: {
     fontFamily: 'Inter_300Light',
     fontSize: 54,
     letterSpacing: -2.2,

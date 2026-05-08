@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/StacNavigation';
+import { useTheme } from '../../application/context/ThemeContext';
 
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -66,6 +67,8 @@ type DriverBottomNavBarProps = {
   onTabChange: (tab: DriverTabName) => void;
   navigation: NativeStackNavigationProp<RootStackParamList, any>;
   repartidor?: any;
+  pedidoActivoId?: string | null;
+  estadoPedido?: string | null;
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -75,7 +78,10 @@ export default function DriverBottomNavBar({
   onTabChange,
   navigation,
   repartidor,
+  pedidoActivoId,
+  estadoPedido,
 }: DriverBottomNavBarProps) {
+  const { colors } = useTheme()
 
   const handlePress = (tab: DriverTabName) => {
     onTabChange(tab);
@@ -83,10 +89,17 @@ export default function DriverBottomNavBar({
     if (tab === 'Perfil' && repartidor) navigation.navigate('DriverProfile', { repartidor });
     if (tab === 'Soporte') navigation.navigate('DriverSupport');
     if (tab === 'Ruta') navigation.navigate('DriverRoutesScreen');
+    if (tab === 'Pedidos') {
+      if (pedidoActivoId && estadoPedido) {
+        navigation.navigate('DriverActiveOrder', { pedidoId: pedidoActivoId, estadoPedido });
+      } else {
+        Alert.alert('Sin pedido activo', 'No tienes ningún pedido en curso en este momento.');
+      }
+    }
   };
 
   return (
-    <View style={styles.bottomNav}>
+    <View style={[styles.bottomNav, { backgroundColor: colors.cardBg, borderTopColor: colors.border }]}>
 
       {/* Inicio */}
       <TouchableOpacity
@@ -95,7 +108,7 @@ export default function DriverBottomNavBar({
         activeOpacity={0.7}
       >
         <HomeIcon active={activeTab === 'Home'} />
-        <Text style={[styles.navText, activeTab === 'Home' && styles.navTextActive]}>
+        <Text style={[styles.navText, { color: colors.labelText }, activeTab === 'Home' && styles.navTextActive]}>
           Inicio
         </Text>
       </TouchableOpacity>
@@ -107,7 +120,7 @@ export default function DriverBottomNavBar({
         activeOpacity={0.7}
       >
         <BikeIcon active={activeTab === 'Ruta'} />
-        <Text style={[styles.navText, activeTab === 'Ruta' && styles.navTextActive]}>
+        <Text style={[styles.navText, { color: colors.labelText }, activeTab === 'Ruta' && styles.navTextActive]}>
           Ruta
         </Text>
       </TouchableOpacity>
@@ -138,7 +151,7 @@ export default function DriverBottomNavBar({
         activeOpacity={0.7}
       >
         <ProfileIcon active={activeTab === 'Perfil'} />
-        <Text style={[styles.navText, activeTab === 'Perfil' && styles.navTextActive]}>
+        <Text style={[styles.navText, { color: colors.labelText }, activeTab === 'Perfil' && styles.navTextActive]}>
           Perfil
         </Text>
       </TouchableOpacity>
@@ -150,7 +163,7 @@ export default function DriverBottomNavBar({
         activeOpacity={0.7}
       >
         <SupportIcon active={activeTab === 'Soporte'} />
-        <Text style={[styles.navText, activeTab === 'Soporte' && styles.navTextActive]}>
+        <Text style={[styles.navText, { color: colors.labelText }, activeTab === 'Soporte' && styles.navTextActive]}>
           Soporte
         </Text>
       </TouchableOpacity>

@@ -12,6 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RouteProp } from '@react-navigation/native'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
+import { useTheme } from '../../../application/context/ThemeContext'
 import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/RepartidorRepositoryImpl'
 
 const repartidorRepo = new RepartidorRepositoryImpl()
@@ -141,6 +142,7 @@ const VEHICULO_ICON: Record<Vehiculo, string> = {
 export default function DriverOnboarding({ navigation, route }: Props) {
   console.log("Estas en driver onboarding")
   const { session } = useAuth()
+  const { colors, isDark } = useTheme()
   const [step, setStep]               = useState(0)
   const [saving, setSaving]           = useState(false)
   // Si viene del registro, los datos ya están capturados — auto-registrar sin mostrar el form
@@ -199,26 +201,29 @@ export default function DriverOnboarding({ navigation, route }: Props) {
   ]
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* Header */}
-        <LinearGradient colors={['#F0FDF4', '#FFFFFF']} style={styles.headerGradient}>
-          <Text style={styles.headerTitle}>Configura tu perfil</Text>
+        <LinearGradient
+          colors={isDark ? ['#0A0A0A', '#000000'] : ['#F0FDF4', '#FFFFFF']}
+          style={styles.headerGradient}
+        >
+          <Text style={[styles.headerTitle, { color: colors.titleText }]}>Configura tu perfil</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MaterialIcons name="bolt" size={15} color="#9CA3AF" />
-            <Text style={styles.headerSubtitle}>Un paso rápido</Text>
+            <MaterialIcons name="bolt" size={15} color={colors.labelText} />
+            <Text style={[styles.headerSubtitle, { color: colors.subtitleText }]}>Un paso rápido</Text>
           </View>
           <StepIndicator current={step} total={2} />
         </LinearGradient>
 
         {/* Step title */}
         <View style={styles.stepHeader}>
-          <View style={styles.stepIconWrap}>{STEPS[step].icon}</View>
+          <View style={[styles.stepIconWrap, { backgroundColor: colors.iconBg }]}>{STEPS[step].icon}</View>
           <View>
-            <Text style={styles.stepTitle}>{STEPS[step].title}</Text>
-            <Text style={styles.stepSubtitle}>{STEPS[step].subtitle}</Text>
+            <Text style={[styles.stepTitle, { color: colors.titleText }]}>{STEPS[step].title}</Text>
+            <Text style={[styles.stepSubtitle, { color: colors.subtitleText }]}>{STEPS[step].subtitle}</Text>
           </View>
         </View>
 
@@ -227,7 +232,7 @@ export default function DriverOnboarding({ navigation, route }: Props) {
           <View style={styles.form}>
             <View style={styles.autoSubmitCard}>
               <ActivityIndicator size="large" color="#22c55e" />
-              <Text style={styles.autoSubmitText}>Configurando tu perfil...</Text>
+              <Text style={[styles.autoSubmitText, { color: colors.subtitleText }]}>Configurando tu perfil...</Text>
             </View>
           </View>
         )}
@@ -235,17 +240,17 @@ export default function DriverOnboarding({ navigation, route }: Props) {
         {/* ── Paso 0B: selector manual (entrada directa al onboarding) ─── */}
         {step === 0 && !autoSubmitting && (
           <View style={styles.form}>
-            <Text style={fieldStyles.label}>Tipo de vehículo *</Text>
+            <Text style={[fieldStyles.label, { color: colors.titleText }]}>Tipo de vehículo *</Text>
             <View style={styles.vehiculoRow}>
               {VEHICULOS.map((v) => (
                 <TouchableOpacity
                   key={v}
-                  style={[styles.vehiculoChip, vehiculo === v && styles.vehiculoChipActive]}
+                  style={[styles.vehiculoChip, { backgroundColor: colors.inputBg, borderColor: colors.border }, vehiculo === v && styles.vehiculoChipActive]}
                   onPress={() => setVehiculo(v)}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <MaterialIcons name={VEHICULO_ICON[v] as any} size={16} color={vehiculo === v ? '#16a34a' : '#6B7280'} />
-                    <Text style={[styles.vehiculoChipText, vehiculo === v && styles.vehiculoChipTextActive]}>
+                    <MaterialIcons name={VEHICULO_ICON[v] as any} size={16} color={vehiculo === v ? '#16a34a' : colors.labelText} />
+                    <Text style={[styles.vehiculoChipText, { color: colors.subtitleText }, vehiculo === v && styles.vehiculoChipTextActive]}>
                       {VEHICULO_LABEL[v]}
                     </Text>
                   </View>
@@ -255,48 +260,52 @@ export default function DriverOnboarding({ navigation, route }: Props) {
 
             <View style={{ height: 16 }} />
 
-            <Field
-              label="Placa"
-              value={placa}
-              onChange={setPlaca}
-              placeholder="ABC-123"
-              hint="Opcional. Puedes agregarlo después."
-              autoCapitalize="characters"
-            />
+            <View style={fieldStyles.group}>
+              <Text style={[fieldStyles.label, { color: colors.titleText }]}>Placa</Text>
+              <TextInput
+                style={[fieldStyles.input, { color: colors.titleText, backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                value={placa}
+                onChangeText={setPlaca}
+                placeholder="ABC-123"
+                placeholderTextColor={colors.placeholderText}
+                autoCapitalize="characters"
+              />
+              <Text style={[fieldStyles.hint, { color: colors.labelText }]}>Opcional. Puedes agregarlo después.</Text>
+            </View>
           </View>
         )}
 
         {/* ── Paso 1: Confirmación ─────────────────────────────────────── */}
         {step === 1 && (
           <View style={styles.form}>
-            <View style={styles.successCard}>
+            <View style={[styles.successCard, { backgroundColor: colors.iconBg, borderColor: colors.border }]}>
               <MaterialIcons name="celebration" size={48} color="#22c55e" />
-              <Text style={styles.successTitle}>¡Registro completado!</Text>
-              <Text style={styles.successText}>
+              <Text style={[styles.successTitle, { color: colors.titleText }]}>¡Registro completado!</Text>
+              <Text style={[styles.successText, { color: colors.subtitleText }]}>
                 Tu perfil de repartidor ha sido creado exitosamente. Ya puedes ver pedidos disponibles y comenzar a ganar.
               </Text>
 
               {/* Resumen */}
-              <View style={styles.summaryBox}>
+              <View style={[styles.summaryBox, { backgroundColor: colors.cardBg }]}>
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryKey}>Vehículo</Text>
-                  <Text style={styles.summaryValue}>{VEHICULO_LABEL[vehiculo]}</Text>
+                  <Text style={[styles.summaryKey, { color: colors.subtitleText }]}>Vehículo</Text>
+                  <Text style={[styles.summaryValue, { color: colors.titleText }]}>{VEHICULO_LABEL[vehiculo]}</Text>
                 </View>
                 {placa.trim() !== '' && (
                   <View style={styles.summaryRow}>
-                    <Text style={styles.summaryKey}>Placa</Text>
-                    <Text style={styles.summaryValue}>{placa.toUpperCase()}</Text>
+                    <Text style={[styles.summaryKey, { color: colors.subtitleText }]}>Placa</Text>
+                    <Text style={[styles.summaryValue, { color: colors.titleText }]}>{placa.toUpperCase()}</Text>
                   </View>
                 )}
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryKey}>Estado inicial</Text>
+                  <Text style={[styles.summaryKey, { color: colors.subtitleText }]}>Estado inicial</Text>
                   <View style={[styles.estadoPill, { backgroundColor: '#DCFCE7' }]}>
                     <Text style={[styles.estadoPillText, { color: '#16a34a' }]}>Disponible</Text>
                   </View>
                 </View>
               </View>
 
-              <Text style={styles.successHint}>
+              <Text style={[styles.successHint, { color: colors.labelText }]}>
                 Tu estado inicial es "Disponible". Comenzarás a recibir pedidos en tu zona inmediatamente.
               </Text>
             </View>
@@ -308,10 +317,10 @@ export default function DriverOnboarding({ navigation, route }: Props) {
 
       {/* Footer — ocultar mientras se auto-registra */}
       {!autoSubmitting && (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { backgroundColor: colors.bg, borderTopColor: colors.border }]}>
           {step > 0 && step < 1 && (
-            <TouchableOpacity style={styles.backBtn} onPress={() => setStep(s => s - 1)}>
-              <Text style={styles.backBtnText}>← Atrás</Text>
+            <TouchableOpacity style={[styles.backBtn, { borderColor: colors.border }]} onPress={() => setStep(s => s - 1)}>
+              <Text style={[styles.backBtnText, { color: colors.titleText }]}>← Atrás</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity

@@ -20,6 +20,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import * as Location from 'expo-location';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/StacNavigation';
+import { useTheme } from '../../../application/context/ThemeContext';
 import {
   askDriverSupport,
   buildWhatsAppMessage,
@@ -205,6 +206,7 @@ const ActionButton = ({ action }: { action: SupportAction }) => {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function DriverSupport({ navigation }: Props) {
+  const { colors, isDark } = useTheme()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -292,8 +294,8 @@ export default function DriverSupport({ navigation }: Props) {
           </View>
         )}
         <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
-          <View style={[styles.bubble, isUser ? styles.userBubble : styles.botBubble]}>
-            <Text style={[styles.msgText, { color: isUser ? '#fff' : '#1a1a1a' }]}>
+          <View style={[styles.bubble, isUser ? styles.userBubble : [styles.botBubble, { backgroundColor: colors.cardBg }]]}>
+            <Text style={[styles.msgText, { color: isUser ? '#fff' : colors.titleText }]}>
               {item.text}
             </Text>
             <Text style={[styles.msgTime, { color: isUser ? 'rgba(255,255,255,0.6)' : '#9CA3AF', textAlign: isUser ? 'right' : 'left' }]}>
@@ -313,8 +315,8 @@ export default function DriverSupport({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a0000" />
+    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#0A0000' : '#FFF5F5' }]}>
+      <StatusBar barStyle="light-content" backgroundColor={isDark ? '#0A0000' : '#1a0000'} />
 
       {/* Header */}
       <LinearGradient
@@ -354,7 +356,7 @@ export default function DriverSupport({ navigation }: Props) {
 
       {/* Quick suggestions */}
       {showSuggestions && (
-        <View style={styles.suggestionsContainer}>
+        <View style={[styles.suggestionsContainer, { backgroundColor: colors.cardBg, borderTopColor: isDark ? '#330000' : '#FECACA' }]}>
           <Text style={styles.suggestionsLabel}>Situaciones frecuentes:</Text>
           <FlatList
             horizontal
@@ -381,12 +383,12 @@ export default function DriverSupport({ navigation }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <View style={styles.inputBar}>
-          <View style={styles.inputWrap}>
+        <View style={[styles.inputBar, { backgroundColor: colors.cardBg, borderTopColor: isDark ? '#330000' : '#FECACA' }]}>
+          <View style={[styles.inputWrap, { backgroundColor: isDark ? '#1A0000' : '#FFF5F5', borderColor: isDark ? '#330000' : '#FECACA' }]}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.titleText }]}
               placeholder="Describe tu situación..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.placeholderText}
               value={inputText}
               onChangeText={setInputText}
               multiline

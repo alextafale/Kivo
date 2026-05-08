@@ -10,6 +10,7 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
+import { useTheme } from '../../../application/context/ThemeContext'
 import OAuthButtons from '../../../components/ui/OAuthButtons'
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'LoginDriver'> }
@@ -52,6 +53,7 @@ const EyeIcon = ({ visible }: { visible: boolean }) => (
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function LoginDriver({ navigation }: Props) {
   const { login } = useAuth()
+  const { colors, isDark } = useTheme()
 
   const [email, setEmail]               = useState('')
   const [password, setPassword]         = useState('')
@@ -75,20 +77,22 @@ export default function LoginDriver({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false}>
 
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.navigate('AccountTypeSelection')} style={styles.backButton}>
-              <BackIcon />
+              <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.titleText} strokeWidth="2">
+                <Path d="M19 12H5M12 19l-7-7 7-7" />
+              </Svg>
             </TouchableOpacity>
           </View>
 
           {/* Badge de repartidor */}
           <View style={styles.badgeContainer}>
-            <View style={styles.badge}>
+            <View style={[styles.badge, { backgroundColor: colors.iconBg, borderColor: colors.border }]}>
               <BikeIcon />
             </View>
             <View style={styles.badgePill}>
@@ -97,20 +101,20 @@ export default function LoginDriver({ navigation }: Props) {
           </View>
 
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Panel Repartidor</Text>
-            <Text style={styles.subtitle}>Inicia sesión para comenzar a repartir</Text>
+            <Text style={[styles.title, { color: colors.titleText }]}>Panel Repartidor</Text>
+            <Text style={[styles.subtitle, { color: colors.subtitleText }]}>Inicia sesión para comenzar a repartir</Text>
           </View>
 
           <View style={styles.formContainer}>
             {/* Email */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Correo electrónico</Text>
-              <View style={styles.inputWrapper}>
+              <Text style={[styles.label, { color: colors.titleText }]}>Correo electrónico</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <EmailIcon />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.titleText }]}
                   placeholder="tu@email.com"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.placeholderText}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -121,13 +125,13 @@ export default function LoginDriver({ navigation }: Props) {
 
             {/* Password */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Contraseña</Text>
-              <View style={styles.inputWrapper}>
+              <Text style={[styles.label, { color: colors.titleText }]}>Contraseña</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <LockIcon />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: colors.titleText }]}
                   placeholder="••••••••"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.placeholderText}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -161,8 +165,8 @@ export default function LoginDriver({ navigation }: Props) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={styles.signupContainer}>
-        <Text style={styles.signupText}>¿No tienes una cuenta? </Text>
+      <View style={[styles.signupContainer, { borderTopColor: colors.rowDivider }]}>
+        <Text style={[styles.signupText, { color: colors.subtitleText }]}>¿No tienes una cuenta? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('RegisterDriver')}>
           <Text style={styles.signupLink}>Regístrate</Text>
         </TouchableOpacity>
