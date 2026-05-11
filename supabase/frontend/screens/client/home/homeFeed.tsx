@@ -246,8 +246,16 @@ export default function HomeFeed() {
 
         {/* ── HEADER ── */}
         <View style={[styles.header, { backgroundColor: colors.cardBg }]}>
-          <View>
-            <Text style={[styles.logoText, { color: colors.titleText }]}>Kivo</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.greetingText, { color: colors.labelText }]}>
+              {(() => {
+                const h = new Date().getHours();
+                return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+              })()}
+            </Text>
+            <Text style={[styles.logoText, { color: colors.titleText }]} numberOfLines={1}>
+              {profile?.nombre ?? 'Bienvenido'}
+            </Text>
             <View style={styles.locationRow}>
               <PinIcon />
               <Text style={[styles.locationText, { color: colors.labelText }]} numberOfLines={1}>
@@ -268,31 +276,12 @@ export default function HomeFeed() {
           </TouchableOpacity>
         </View>
 
-        {/* ── SEARCH BAR — toca para abrir chatbot ── */}
-        <TouchableOpacity
-          style={[styles.searchBar, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
-          onPress={() => navigation.navigate('Chatbot')}
-          activeOpacity={0.85}
-        >
-          <SearchIcon color={colors.labelText} />
-          <Text style={[styles.searchPlaceholder, { color: colors.labelText }]}>
-            {searchQuery || 'Pregunta al asistente o busca...'}
-          </Text>
-          <LinearGradient
-            colors={['#22c55e', '#15803d']}
-            style={styles.searchChatBtn}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          >
-            <BotIcon />
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* ── SEARCH INPUT cuando escribe ── */}
-        <View style={[styles.realSearchWrap, { backgroundColor: colors.searchBg }]}>
+        {/* ── BUSCADOR CON IA ── */}
+        <View style={[styles.realSearchWrap, { backgroundColor: colors.searchBg, marginTop: 12 }]}>
           <SearchIcon color={colors.labelText} />
           <TextInput
             style={[styles.realSearchInput, { color: colors.titleText }]}
-            placeholder="Comida rápida, antojos..."
+            placeholder="Busca restaurantes o antojo..."
             placeholderTextColor={colors.labelText}
             value={searchQuery}
             onChangeText={(text) => {
@@ -302,8 +291,8 @@ export default function HomeFeed() {
             returnKeyType="search"
             onSubmitEditing={handleSemanticSearch}
           />
-          <TouchableOpacity 
-            style={[styles.aiButton, isAIThinking && styles.aiButtonDisabled]} 
+          <TouchableOpacity
+            style={[styles.aiButton, isAIThinking && styles.aiButtonDisabled]}
             onPress={handleSemanticSearch}
             disabled={isAIThinking}
           >
@@ -311,9 +300,9 @@ export default function HomeFeed() {
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <MaterialIcons name="auto-awesome" size={14} color="#fff" />
-              <Text style={styles.aiButtonText}>IA</Text>
-            </View>
+                <MaterialIcons name="auto-awesome" size={14} color="#fff" />
+                <Text style={styles.aiButtonText}>IA</Text>
+              </View>
             )}
           </TouchableOpacity>
         </View>
@@ -570,7 +559,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, backgroundColor: '#FFF',
   },
-  logoText: { fontSize: 26, fontWeight: '800', color: '#111827', letterSpacing: -0.5 },
+  greetingText: { fontSize: 12, fontWeight: '500', color: '#6B7280', marginBottom: 1 },
+  logoText: { fontSize: 22, fontWeight: '800', color: '#111827', letterSpacing: -0.5 },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   locationText: { fontSize: 12, color: '#374151', fontWeight: '500', maxWidth: 180 },
   avatarWrap: { borderRadius: 22, overflow: 'hidden', borderWidth: 2, borderColor: '#22c55e' },

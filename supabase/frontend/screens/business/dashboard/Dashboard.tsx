@@ -194,12 +194,19 @@ export default function BusinessDashboard({ navigation }: Props) {
           <View style={styles.headerLeft}>
             <View style={styles.logoContainer}>
               <LinearGradient
-                colors={['#F59E0B', '#D97706']}
+                colors={['#22c55e', '#16a34a']}
                 style={styles.logo}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.logoText}>GT</Text>
+                <Text style={styles.logoText}>
+                  {(negocio?.nombre ?? 'N')
+                    .split(' ')
+                    .slice(0, 2)
+                    .map((w: string) => w[0])
+                    .join('')
+                    .toUpperCase()}
+                </Text>
               </LinearGradient>
             </View>
             <View>
@@ -209,7 +216,7 @@ export default function BusinessDashboard({ navigation }: Props) {
           </View>
           <View style={styles.headerRight}>
             <Text style={[styles.storeStatusLabel, storeOpen && styles.storeStatusLabelActive]}>
-              STORE STATUS
+              {storeOpen ? 'ABIERTO' : 'CERRADO'}
             </Text>
             <Switch
               value={storeOpen}
@@ -221,17 +228,19 @@ export default function BusinessDashboard({ navigation }: Props) {
           </View>
         </View>
 
-        {/* Daily Sales */}
+        {/* Ventas del día */}
         <View style={[styles.salesSection, { backgroundColor: colors.cardBg }]}>
-          <Text style={[styles.sectionLabel, { color: colors.subtitleText }]}>Daily Sales</Text>
+          <Text style={[styles.sectionLabel, { color: colors.subtitleText }]}>Ventas de hoy</Text>
           <View style={styles.salesHeader}>
             <Text style={[styles.salesAmount, { color: colors.titleText }]}>${formattedSales}</Text>
-            <Text style={[styles.salesCurrency, { color: colors.subtitleText }]}>USD</Text>
+            <Text style={[styles.salesCurrency, { color: colors.subtitleText }]}>MXN</Text>
           </View>
-          <View style={styles.salesChange}>
-            <TrendUpIcon />
-            <Text style={styles.salesChangeText}>+12.4%</Text>
-          </View>
+          {deliveredToday.length > 0 && (
+            <View style={styles.salesChange}>
+              <TrendUpIcon />
+              <Text style={styles.salesChangeText}>{deliveredToday.length} pedidos entregados</Text>
+            </View>
+          )}
           <View style={styles.progressBarContainer}>
             <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
               <LinearGradient
@@ -241,7 +250,7 @@ export default function BusinessDashboard({ navigation }: Props) {
                 end={{ x: 1, y: 0 }}
               />
             </View>
-            <Text style={styles.progressText}>Target: $2,000.00 today</Text>
+            <Text style={styles.progressText}>Meta: $2,000.00 hoy</Text>
           </View>
         </View>
 
@@ -262,7 +271,7 @@ export default function BusinessDashboard({ navigation }: Props) {
                 <ShoppingBagIcon />
               </View>
               <Text style={styles.activeOrdersNumber}>{activeOrdersCount}</Text>
-              <Text style={styles.activeOrdersLabel}>Active Orders</Text>
+              <Text style={styles.activeOrdersLabel}>Pedidos activos</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -272,62 +281,74 @@ export default function BusinessDashboard({ navigation }: Props) {
                 <StarIcon size={24} />
               </View>
               <View style={styles.reviewsContent}>
-                <Text style={[styles.reviewsRating, { color: colors.titleText }]}>{deliveryScore}</Text>
+                <Text style={[styles.reviewsRating, { color: colors.titleText }]}>
+                  {deliveryScore > 0 ? deliveryScore.toFixed(1) : '—'}
+                </Text>
                 <View style={styles.reviewsStars}>
                   <StarIcon size={16} />
                 </View>
               </View>
-              <Text style={[styles.reviewsCount, { color: colors.subtitleText }]}>{deliveryReviews} Reviews</Text>
+              <Text style={[styles.reviewsCount, { color: colors.subtitleText }]}>
+                {deliveryReviews} {deliveryReviews === 1 ? 'reseña' : 'reseñas'}
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* Recent Orders */}
+        {/* Pedidos recientes */}
         <View style={styles.ordersSection}>
           <View style={styles.ordersSectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Recent Orders</Text>
+            <Text style={[styles.sectionTitle, { color: colors.titleText }]}>Pedidos recientes</Text>
             <TouchableOpacity onPress={() => navigation.navigate('ManageOrders')}>
-              <Text style={styles.viewAllText}>View All →</Text>
+              <Text style={styles.viewAllText}>Ver todos →</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.ordersList}>
-            {pedidos.slice(0, 5).map((order) => {
-              const statusInfo = ESTADO_CONFIG[order.status] || { label: order.status, color: '#000', bg: '#EEE' };
-              const OrderIcon = order.icon === 'pizza' ? PizzaIcon : BurgerIcon;
+          {pedidos.length === 0 ? (
+            <View style={[styles.emptyOrders, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+              <Text style={[styles.emptyOrdersText, { color: colors.subtitleText }]}>Sin pedidos por ahora</Text>
+            </View>
+          ) : (
+            <View style={styles.ordersList}>
+              {pedidos.slice(0, 5).map((order) => {
+                const statusInfo = ESTADO_CONFIG[order.status] || { label: order.status, color: '#000', bg: '#EEE' };
+                const OrderIcon = order.status === 'delivered' ? CheckCircleIcon : BurgerIcon;
 
-              return (
-                <TouchableOpacity
-                  key={order.id}
-                  style={[styles.orderItem, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}
-                  onPress={() => navigation.navigate('ManageOrders')}
-                >
-                  <View style={[
-                    styles.orderIconContainer,
-                    { backgroundColor: isDark ? colors.border : '#F9FAFB' },
-                    order.status === 'delivered' && [styles.orderIconDelivered, { backgroundColor: isDark ? '#15803d40' : '#F3F4F6' }]
-                  ]}>
-                    {order.status === 'delivered' ? <CheckCircleIcon /> : <OrderIcon />}
-                  </View>
-                  <View style={styles.orderContent}>
-                    <Text style={[styles.orderNumber, { color: colors.titleText }]}>{order.orderNumber}</Text>
-                    <Text style={[styles.orderItems, { color: colors.titleText }]}>{order.notas ? 'Con notas especiales' : 'Pedido de cliente'}</Text>
-                    <Text style={[styles.orderMeta, { color: colors.subtitleText }]}>
-                      {new Date(order.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {order.clienteNombre || 'Cliente'}
-                    </Text>
-                  </View>
-                  <View style={[styles.orderStatusBadge, { backgroundColor: statusInfo.bg }]}>
-                    <Text style={[styles.orderStatusText, { color: statusInfo.color }]}>
-                      {statusInfo.label}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                return (
+                  <TouchableOpacity
+                    key={order.id}
+                    style={[styles.orderItem, { backgroundColor: colors.cardBg, shadowColor: isDark ? '#000' : '#000' }]}
+                    onPress={() => navigation.navigate('ManageOrders')}
+                  >
+                    <View style={[
+                      styles.orderIconContainer,
+                      { backgroundColor: isDark ? colors.border : '#F9FAFB' },
+                      order.status === 'delivered' && [styles.orderIconDelivered, { backgroundColor: isDark ? '#15803d40' : '#F3F4F6' }]
+                    ]}>
+                      <OrderIcon />
+                    </View>
+                    <View style={styles.orderContent}>
+                      <Text style={[styles.orderNumber, { color: colors.titleText }]}>{order.orderNumber}</Text>
+                      <Text style={[styles.orderItems, { color: colors.titleText }]}>
+                        {order.notas ? 'Con notas especiales' : 'Pedido de cliente'}
+                      </Text>
+                      <Text style={[styles.orderMeta, { color: colors.subtitleText }]}>
+                        {new Date(order.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {order.clienteNombre || 'Cliente'}
+                      </Text>
+                    </View>
+                    <View style={[styles.orderStatusBadge, { backgroundColor: statusInfo.bg }]}>
+                      <Text style={[styles.orderStatusText, { color: statusInfo.color }]}>
+                        {statusInfo.label}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
 
-        {/* Ads Banner */}
+        {/* Banner promocional */}
         <View style={styles.adsBanner}>
           <LinearGradient
             colors={['#1F2937', '#111827']}
@@ -336,9 +357,9 @@ export default function BusinessDashboard({ navigation }: Props) {
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.adsContent}>
-              <Text style={styles.adsTitle}>Grow your sales with</Text>
-              <Text style={styles.adsTitle}>Kivu Ads</Text>
-              <Text style={styles.adsSubtitle}>Target customers in your 5km radius</Text>
+              <Text style={styles.adsTitle}>Impulsa tus ventas</Text>
+              <Text style={styles.adsTitle}>con Kivo Ads</Text>
+              <Text style={styles.adsSubtitle}>Llega a clientes en tu zona de reparto</Text>
               <TouchableOpacity style={styles.adsButton}>
                 <LinearGradient
                   colors={['#22c55e', '#16a34a']}
@@ -346,7 +367,7 @@ export default function BusinessDashboard({ navigation }: Props) {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Text style={styles.adsButtonText}>#BOOST NOW</Text>
+                  <Text style={styles.adsButtonText}>PROMOCIONAR</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -682,6 +703,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     letterSpacing: 0.5,
+  },
+  emptyOrders: {
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center' as const,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  emptyOrdersText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
   fab: {
     position: 'absolute',

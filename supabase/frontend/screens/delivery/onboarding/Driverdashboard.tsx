@@ -12,6 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../../navigation/StacNavigation'
 import { useAuth } from '../../../application/context/AuthContext'
 import { useTheme } from '../../../application/context/ThemeContext'
+import { useProfile } from '../../../application/hooks/useProfile'
 
 import { RepartidorRepositoryImpl } from '../../../infraestructure/repositories/RepartidorRepositoryImpl'
 import type { DriverEstado, RepartidorInfo, PedidoDisponible } from '../../../domain/ports/repositories/lRepartidorRepository'
@@ -94,6 +95,7 @@ export default function DriverDashboard({ navigation }: Props) {
   console.log("Estas en DriverDashboard")
   const { session, logout } = useAuth()
   const { colors, isDark } = useTheme()
+  const { profile } = useProfile()
   const [activeDriverTab, setActiveDriverTab] = useState<DriverTabName>('Home')
 
   const [repartidor, setRepartidor] = useState<RepartidorInfo | null>(null)
@@ -465,9 +467,16 @@ export default function DriverDashboard({ navigation }: Props) {
           <View style={styles.headerCenter}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <MaterialIcons name="waving-hand" size={20} color="#22c55e" />
-              <Text style={[styles.headerGreeting, { color: colors.subtitleText }]}>Hola</Text>
+              <Text style={[styles.headerGreeting, { color: colors.subtitleText }]}>
+                {(() => {
+                  const h = new Date().getHours()
+                  return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches'
+                })()}
+              </Text>
             </View>
-            <Text style={[styles.headerTitle, { color: colors.titleText }]}>Mi Dashboard</Text>
+            <Text style={[styles.headerTitle, { color: colors.titleText }]} numberOfLines={1}>
+              {profile?.nombre ?? session?.email?.split('@')[0] ?? 'Repartidor'}
+            </Text>
           </View>
 
           {/* Pill de estado */}
