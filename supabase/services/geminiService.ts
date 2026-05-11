@@ -533,7 +533,7 @@ export async function cargarSesionesPrevias(userId: string): Promise<SesionResum
 // ─── Qwen — vía Render (backend intermedio) ───────────────────────────────────
 // ─── Qwen — directo a Cloudflare Tunnel ───────────────────────────────────────
 
-const OLLAMA_URL = 'http://172.31.99.161:11434/api/chat'
+const OLLAMA_URL = 'http://192.168.1.93:11434/api/chat'
 function toQwenHistory(history: GeminiMessage[]): QwenMessage[] {
   return history.map(m => ({
     role: m.role === 'model' ? 'assistant' : 'user',

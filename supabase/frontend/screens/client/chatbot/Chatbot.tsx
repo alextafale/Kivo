@@ -338,22 +338,22 @@ const TypingIndicator = () => {
 interface PedidoCardProps { pedido: ChatbotOrder; onVerCarrito: () => void }
 
 const ArrowIcon = ({ color }: { color: string }) => (
-  <Svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
+  <Svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round">
     <Path d="M5 12h14M12 5l7 7-7 7" />
   </Svg>
 );
 
 const PinIcon = ({ color }: { color: string }) => (
-  <Svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+  <Svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
     <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
     <Circle cx="12" cy="9" r="2.5" />
   </Svg>
 );
 
 const NoteIcon = ({ color }: { color: string }) => (
-  <Svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+  <Svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
     <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+    <Path d="M14 2v6h6M16 13H8M16 17H8" />
   </Svg>
 );
 
@@ -363,15 +363,14 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
   const envio = 12;
   const total = subtotal + envio;
 
-  // Entry animation
-  const entryScale = useRef(new Animated.Value(0.93)).current;
+  const entryScale = useRef(new Animated.Value(0.94)).current;
   const entryOpacity = useRef(new Animated.Value(0)).current;
   const pressScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(entryScale, { toValue: 1, damping: 18, stiffness: 200, useNativeDriver: true }),
-      Animated.timing(entryOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+      Animated.spring(entryScale, { toValue: 1, damping: 16, stiffness: 180, useNativeDriver: true }),
+      Animated.timing(entryOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -383,85 +382,120 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
   const initials = (pedido.negocio?.nombre ?? '?')
     .split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
+  const ctaColor = isDark ? '#000' : '#fff';
+
   return (
     <Animated.View style={[
       styles.pedidoCard,
       { backgroundColor: colors.card, borderColor: colors.border },
       { opacity: entryOpacity, transform: [{ scale: entryScale }] },
     ]}>
-      {/* Restaurant header */}
-      <View style={[styles.pedidoRestaurantRow, { borderBottomColor: colors.border }]}>
-        <View style={[styles.pedidoInitialsCircle, { backgroundColor: colors.greenGlow }]}>
-          <Text style={[styles.pedidoInitialsText, { color: colors.green }]}>{initials}</Text>
+
+      {/* ── HEADER OSCURO ── */}
+      <LinearGradient
+        colors={isDark ? ['#0d1a0d', '#111f11'] : ['#111827', '#1a2e1a']}
+        style={styles.pedidoHeader}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+      >
+        {/* Nombre del restaurante */}
+        <View style={styles.pedidoHeaderTop}>
+          <View style={styles.pedidoAvatarWrap}>
+            <Text style={styles.pedidoAvatarText}>{initials}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.pedidoHeaderLabel}>Pedido en</Text>
+            <Text style={styles.pedidoHeaderName} numberOfLines={1}>
+              {pedido.negocio?.nombre}
+            </Text>
+          </View>
+          <View style={styles.pedidoConfirmBadge}>
+            <CheckIcon color="#22c55e" />
+            <Text style={styles.pedidoConfirmText}>Listo</Text>
+          </View>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.pedidoRestaurantLabel, { color: colors.textSec }]}>Pedido en</Text>
-          <Text style={[styles.pedidoRestaurantName, { color: colors.textPrimary }]} numberOfLines={1}>
-            {pedido.negocio?.nombre}
-          </Text>
+
+        {/* Total grande */}
+        <View style={styles.pedidoTotalRow}>
+          <View>
+            <Text style={styles.pedidoTotalHeaderLabel}>Total</Text>
+            <Text style={styles.pedidoTotalHeaderValue}>${total.toFixed(2)}</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.pedidoTotalHeaderLabel}>Artículos</Text>
+            <Text style={styles.pedidoTotalHeaderSub}>
+              {pedido.items.reduce((s, i) => s + i.quantity, 0)} productos
+            </Text>
+          </View>
         </View>
-        <View style={[styles.pedidoReadyBadge, { backgroundColor: colors.greenGlow }]}>
-          <CheckIcon color={colors.green} />
-          <Text style={[styles.pedidoReadyText, { color: colors.green }]}>Listo</Text>
-        </View>
+      </LinearGradient>
+
+      {/* ── TEAR SEPARATOR ── */}
+      <View style={[styles.pedidoTear, { backgroundColor: colors.card }]}>
+        <View style={[styles.pedidoNotch, { backgroundColor: isDark ? '#0d1a0d' : '#111827' }]} />
+        <View style={[styles.pedidoTearLine, { borderColor: colors.border }]} />
+        <View style={[styles.pedidoNotch, { backgroundColor: isDark ? '#0d1a0d' : '#111827' }]} />
       </View>
 
-      {/* Items */}
-      <View style={styles.pedidoItems}>
+      {/* ── ITEMS ── */}
+      <View style={styles.pedidoItemsWrap}>
         {pedido.items.map((item, i) => (
-          <View key={i} style={[
-            styles.pedidoRow,
-            { borderBottomColor: colors.border },
-            i < pedido.items.length - 1 && styles.pedidoRowDivider,
-          ]}>
-            <View style={[styles.pedidoQtyBadge, { backgroundColor: colors.greenGlow }]}>
-              <Text style={[styles.pedidoQtyText, { color: colors.green }]}>{item.quantity}</Text>
+          <View
+            key={i}
+            style={[
+              styles.pedidoItemRow,
+              i < pedido.items.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+            ]}
+          >
+            <View style={[styles.pedidoQtyPill, { backgroundColor: colors.greenGlow }]}>
+              <Text style={[styles.pedidoQtyNum, { color: colors.green }]}>{item.quantity}</Text>
             </View>
-            <Text style={[styles.pedidoItemText, { color: colors.textPrimary }]} numberOfLines={1}>
+            <Text style={[styles.pedidoItemName, { color: colors.textPrimary }]} numberOfLines={1}>
               {item.name}
             </Text>
-            <Text style={[styles.pedidoItemPrice, { color: colors.textSec }]}>
+            <Text style={[styles.pedidoItemAmt, { color: colors.textPrimary }]}>
               ${(item.price * item.quantity).toFixed(2)}
             </Text>
           </View>
         ))}
       </View>
 
-      {/* Breakdown */}
-      <View style={[styles.pedidoBreakdown, { borderTopColor: colors.border }]}>
-        <View style={styles.pedidoBreakdownRow}>
-          <Text style={[styles.pedidoBreakdownLabel, { color: colors.textSec }]}>Subtotal</Text>
-          <Text style={[styles.pedidoBreakdownVal, { color: colors.textSec }]}>${subtotal.toFixed(2)}</Text>
+      {/* ── RESUMEN ── */}
+      <View style={[styles.pedidoResumen, { backgroundColor: isDark ? colors.surface : '#F9FAFB', borderColor: colors.border }]}>
+        <View style={styles.pedidoResumenRow}>
+          <Text style={[styles.pedidoResumenLabel, { color: colors.textSec }]}>Subtotal</Text>
+          <Text style={[styles.pedidoResumenVal, { color: colors.textSec }]}>${subtotal.toFixed(2)}</Text>
         </View>
-        <View style={styles.pedidoBreakdownRow}>
-          <Text style={[styles.pedidoBreakdownLabel, { color: colors.textSec }]}>Envío</Text>
-          <Text style={[styles.pedidoBreakdownVal, { color: colors.textSec }]}>${envio.toFixed(2)}</Text>
+        <View style={[styles.pedidoResumenRow, { borderTopWidth: 1, borderTopColor: colors.border }]}>
+          <Text style={[styles.pedidoResumenLabel, { color: colors.textSec }]}>Costo de envío</Text>
+          <Text style={[styles.pedidoResumenVal, { color: colors.textSec }]}>${envio.toFixed(2)}</Text>
         </View>
       </View>
 
-      {/* Total highlight row */}
-      <View style={[styles.pedidoTotalStrip, { backgroundColor: colors.greenGlow, borderColor: colors.border }]}>
-        <Text style={[styles.pedidoTotalStripLabel, { color: colors.textPrimary }]}>Total</Text>
-        <Text style={[styles.pedidoTotalStripValue, { color: colors.green }]}>${total.toFixed(2)}</Text>
-      </View>
-
-      {/* Delivery address */}
-      <View style={[styles.pedidoMetaRow, { borderTopColor: colors.border }]}>
-        <PinIcon color={colors.green} />
-        <Text style={[styles.pedidoMetaText, { color: colors.textSec }]} numberOfLines={2}>
-          {pedido.direccionEntrega}
-        </Text>
-      </View>
-
-      {!!pedido.notas && (
-        <View style={[styles.pedidoMetaRow, { paddingTop: 2, paddingBottom: 12, borderTopWidth: 0 }]}>
-          <NoteIcon color={colors.textSec} />
-          <Text style={[styles.pedidoMetaText, { color: colors.textSec }]}>{pedido.notas}</Text>
+      {/* ── DIRECCIÓN / NOTAS ── */}
+      {!!pedido.direccionEntrega && (
+        <View style={[styles.pedidoMetaBlock, { borderTopColor: colors.border }]}>
+          <View style={[styles.pedidoMetaIconWrap, { backgroundColor: colors.greenGlow }]}>
+            <PinIcon color={colors.green} />
+          </View>
+          <Text style={[styles.pedidoMetaText, { color: colors.textSec }]} numberOfLines={2}>
+            {pedido.direccionEntrega}
+          </Text>
         </View>
       )}
 
-      {/* CTA */}
-      <Animated.View style={[styles.carritoBtnWrap, { transform: [{ scale: pressScale }] }]}>
+      {!!pedido.notas && (
+        <View style={[styles.pedidoMetaBlock, { borderTopColor: colors.border, borderTopWidth: 0, paddingTop: 0 }]}>
+          <View style={[styles.pedidoMetaIconWrap, { backgroundColor: isDark ? '#3730a330' : '#EEF2FF' }]}>
+            <NoteIcon color={isDark ? '#818cf8' : '#6366f1'} />
+          </View>
+          <Text style={[styles.pedidoMetaText, { color: colors.textSec, fontStyle: 'italic' }]}>
+            {pedido.notas}
+          </Text>
+        </View>
+      )}
+
+      {/* ── CTA ── */}
+      <Animated.View style={[styles.pedidoCTAWrap, { transform: [{ scale: pressScale }] }]}>
         <TouchableOpacity
           onPressIn={onPressIn}
           onPressOut={onPressOut}
@@ -470,16 +504,15 @@ const PedidoCard = ({ pedido, onVerCarrito }: PedidoCardProps) => {
         >
           <LinearGradient
             colors={[colors.green, colors.greenDark]}
-            style={styles.carritoBtnGradient}
+            style={styles.pedidoCTAGrad}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           >
-            <Text style={[styles.carritoBtnText, { color: isDark ? '#000' : '#fff' }]}>
-              Ir al carrito
-            </Text>
-            <ArrowIcon color={isDark ? '#000' : '#fff'} />
+            <Text style={[styles.pedidoCTAText, { color: ctaColor }]}>Ir al carrito</Text>
+            <ArrowIcon color={ctaColor} />
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
+
     </Animated.View>
   );
 };
@@ -596,6 +629,10 @@ export default function Chatbot({ navigation, route }: Props) {
         whatsapp: negocio.whatsapp,
         telefono: negocio.telefono,
         direccion: negocio.direccion,
+        categoria: negocio.categoria,
+        calificacion: negocio.calificacion,
+        horario: negocio.horario,
+        descripcion: negocio.descripcion,
       },
       items: pedidoJson.items,
       direccionEntrega: pedidoJson.direccionEntrega || direccionPredeterminada,
@@ -1022,68 +1059,89 @@ const styles = StyleSheet.create({
 
   // ── Pedido Card ──
   pedidoCard: {
-    borderRadius: 18, marginTop: 10,
+    borderRadius: 20, marginTop: 10,
     borderWidth: 1, overflow: 'hidden',
-    maxWidth: width * 0.84,
+    maxWidth: width * 0.86,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  pedidoRestaurantRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 14, borderBottomWidth: 1,
-  },
-  pedidoInitialsCircle: {
-    width: 40, height: 40, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  pedidoInitialsText: { fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
-  pedidoRestaurantLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 1 },
-  pedidoRestaurantName: { fontSize: 14, fontWeight: '700' },
-  pedidoReadyBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderRadius: 10, paddingHorizontal: 9, paddingVertical: 4,
-  },
-  pedidoReadyText: { fontSize: 11, fontWeight: '700' },
 
-  pedidoItems: { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 4 },
-  pedidoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
-  pedidoRowDivider: { borderBottomWidth: 1 },
-  pedidoQtyBadge: {
+  // Header oscuro
+  pedidoHeader: { padding: 16, paddingBottom: 14 },
+  pedidoHeaderTop: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  pedidoAvatarWrap: {
+    width: 38, height: 38, borderRadius: 11,
+    backgroundColor: 'rgba(34,197,94,0.2)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(34,197,94,0.35)',
+  },
+  pedidoAvatarText: { fontSize: 14, fontWeight: '800', color: '#22c55e' },
+  pedidoHeaderLabel: { fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.4)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 },
+  pedidoHeaderName: { fontSize: 14, fontWeight: '700', color: '#fff', letterSpacing: -0.2 },
+  pedidoConfirmBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(34,197,94,0.15)',
+    borderWidth: 1, borderColor: 'rgba(34,197,94,0.3)',
+    borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4,
+  },
+  pedidoConfirmText: { fontSize: 10, fontWeight: '700', color: '#22c55e' },
+  pedidoTotalRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
+    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.07)',
+    paddingTop: 12,
+  },
+  pedidoTotalHeaderLabel: { fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 3 },
+  pedidoTotalHeaderValue: { fontSize: 28, fontWeight: '900', color: '#22c55e', letterSpacing: -1 },
+  pedidoTotalHeaderSub: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.55)', textAlign: 'right' },
+
+  // Tear separator
+  pedidoTear: { flexDirection: 'row', alignItems: 'center' },
+  pedidoNotch: { width: 18, height: 18, borderRadius: 9, flexShrink: 0, marginHorizontal: -9 },
+  pedidoTearLine: { flex: 1, borderTopWidth: 1.5, borderStyle: 'dashed' as const },
+
+  // Items
+  pedidoItemsWrap: { paddingHorizontal: 14, paddingVertical: 4 },
+  pedidoItemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9 },
+  pedidoQtyPill: {
     width: 26, height: 26, borderRadius: 8,
     alignItems: 'center', justifyContent: 'center',
   },
-  pedidoQtyText: { fontSize: 12, fontWeight: '800' },
-  pedidoItemText: { flex: 1, fontSize: 13, fontWeight: '500' },
-  pedidoItemPrice: { fontSize: 13, fontWeight: '600' },
+  pedidoQtyNum: { fontSize: 12, fontWeight: '800' },
+  pedidoItemName: { flex: 1, fontSize: 13, fontWeight: '500' },
+  pedidoItemAmt: { fontSize: 13, fontWeight: '700' },
 
-  pedidoBreakdown: {
-    marginHorizontal: 14, borderTopWidth: 1,
-    paddingTop: 10, paddingBottom: 6, gap: 4,
+  // Resumen
+  pedidoResumen: {
+    marginHorizontal: 14, marginBottom: 2,
+    borderRadius: 12, borderWidth: 1, overflow: 'hidden',
   },
-  pedidoBreakdownRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  pedidoBreakdownLabel: { fontSize: 12 },
-  pedidoBreakdownVal: { fontSize: 12 },
+  pedidoResumenRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8 },
+  pedidoResumenLabel: { fontSize: 12 },
+  pedidoResumenVal: { fontSize: 12, fontWeight: '600' },
 
-  pedidoTotalStrip: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginHorizontal: 14, marginTop: 8, marginBottom: 4,
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1,
-  },
-  pedidoTotalStripLabel: { fontSize: 14, fontWeight: '700' },
-  pedidoTotalStripValue: { fontSize: 18, fontWeight: '800' },
-
-  pedidoMetaRow: {
-    flexDirection: 'row', alignItems: 'flex-start',
-    gap: 6, marginHorizontal: 14, paddingTop: 10, paddingBottom: 10,
+  // Meta (dirección / notas)
+  pedidoMetaBlock: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    marginHorizontal: 14, paddingVertical: 10,
     borderTopWidth: 1,
   },
-  pedidoMetaText: { flex: 1, fontSize: 11.5, lineHeight: 16 },
-
-  carritoBtnWrap: { margin: 14, marginTop: 6, borderRadius: 14, overflow: 'hidden' },
-  carritoBtnGradient: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', gap: 8, paddingVertical: 13,
+  pedidoMetaIconWrap: {
+    width: 24, height: 24, borderRadius: 7,
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0, marginTop: 1,
   },
-  carritoBtnText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.2 },
+  pedidoMetaText: { flex: 1, fontSize: 12, lineHeight: 17 },
+
+  // CTA
+  pedidoCTAWrap: { margin: 14, marginTop: 10, borderRadius: 14, overflow: 'hidden' },
+  pedidoCTAGrad: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 8, paddingVertical: 14,
+  },
+  pedidoCTAText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.2 },
 
   // ── Input ──
   inputBar: {

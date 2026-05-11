@@ -203,6 +203,12 @@ export default function CartScreen({ navigation }: Props) {
         orderNumber: result.order.orderNumber,
         negocioNombre: chatbotOrder.negocio.nombre,
         negocioDireccion: chatbotOrder.negocio.direccion,
+        negocioCategoria: chatbotOrder.negocio.categoria,
+        negocioCalificacion: chatbotOrder.negocio.calificacion,
+        negocioHorario: chatbotOrder.negocio.horario,
+        negocioDescripcion: chatbotOrder.negocio.descripcion,
+        negocioTelefono: chatbotOrder.negocio.telefono,
+        negocioWhatsapp: chatbotOrder.negocio.whatsapp,
         usuarioNombre: profile
           ? `${profile.nombre ?? ''} ${profile.apellido ?? ''}`.trim() || 'Cliente'
           : 'Cliente',

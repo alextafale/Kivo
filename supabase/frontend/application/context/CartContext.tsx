@@ -8,6 +8,10 @@ export interface ChatbotOrder {
     whatsapp: string;
     telefono?: string;
     direccion?: string;
+    categoria?: string;
+    calificacion?: number;
+    horario?: string;
+    descripcion?: string;
   } | null;
   items: { name: string; price: number; quantity: number }[];
   direccionEntrega: string;
