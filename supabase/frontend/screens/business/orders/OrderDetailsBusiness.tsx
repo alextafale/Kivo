@@ -43,15 +43,13 @@ export default function OrderDetail({ route, navigation }: Props) {
 
   const fetchItems = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const response = await fetch(`${process.env.API_BASE_URL}/pedidos/${pedidoId}/items`, {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      })
+      const { data, error } = await supabase
+        .from('pedido_items')
+        .select('id, nombre, precio_unitario, cantidad, subtotal, notas')
+        .eq('pedido_id', pedidoId)
 
-      if (response.ok) {
-        const data = await response.json()
-        setItems(data)
-      }
+      if (error) throw error
+      setItems(data ?? [])
     } catch (e) {
       console.error(e)
     } finally {
