@@ -11,7 +11,7 @@ import {
     TouchableOpacity,
     Linking,
 } from 'react-native'
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE, UrlTile } from 'react-native-maps'
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps'
 import { useNavigation } from '@react-navigation/native'
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons'
 import type { ActiveOrder, Coordinates } from '../../../domain/entities/ActiveOrder'
@@ -203,13 +203,8 @@ const RouteMap = ({
                 initialRegion={{ ...initialRegion, ...DELTA }}
                 showsUserLocation={false} 
                 showsMyLocationButton={false}
-                mapType="none" // Para que no cargue Google/Apple maps de fondo
             >
-                <UrlTile
-                    urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    maximumZ={19}
-                    flipY={false}
-                />
+
                 {/* Marcador del repartidor */}
                 {driverLocation && (
                     <Marker
