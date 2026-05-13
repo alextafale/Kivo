@@ -920,3 +920,176 @@ h1, h2, h3, h4 { color: var(--text-main); font-weight: 800; line-height: 1.2; te
   transform: scale(1) rotateY(0deg);
 }
 
+/* ============================================================
+   RESPONSIVE — TABLET (≤ 900px)
+   ============================================================ */
+@media (max-width: 900px) {
+  .hero-container { flex-direction: column; gap: 50px; text-align: center; }
+  .hero-content { max-width: 100% !important; }
+  .hero-title { font-size: 3.8rem !important; letter-spacing: -1px !important; }
+  .hero-subtitle { font-size: 1.2rem; margin: 0 auto 40px; }
+  .hero-buttons { justify-content: center; }
+  .hero-image { width: 100%; justify-content: center; }
+  .parallax-orbit, .parallax-layer-3 { display: none !important; }
+
+  .how-container { flex-direction: column !important; gap: 50px; }
+  .how-image { display: flex; justify-content: center; }
+
+  .sticky-wrapper { height: auto !important; }
+  .sticky-container {
+    position: relative !important;
+    height: auto !important;
+    flex-direction: column;
+    padding: 80px 24px;
+    gap: 50px;
+  }
+  .morph-content { padding: 0 !important; }
+  .morph-step {
+    position: relative !important;
+    top: auto !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    margin-bottom: 20px;
+  }
+  .morph-step.active { transform: none !important; }
+  .morph-visual {
+    position: relative !important;
+    flex-wrap: wrap;
+    gap: 20px;
+    height: auto;
+  }
+  .morph-image {
+    position: relative !important;
+    opacity: 1 !important;
+    transform: none !important;
+    width: 140px;
+  }
+
+  .section-header h2 { font-size: 2.6rem !important; letter-spacing: -1px; }
+  .section-header p { font-size: 1.1rem; }
+
+  .cards-container { gap: 30px; }
+  .feature-card { padding: 40px 28px; }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE (≤ 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* --- Navbar móvil --- */
+  .mobile-menu-btn { display: flex; }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: rgba(10, 15, 30, 0.97);
+    backdrop-filter: blur(30px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 24px 24px;
+  }
+  .nav-links.open { display: flex; }
+  .nav-links li { border-bottom: 1px solid var(--border-color); }
+  .nav-links li:last-child { border-bottom: none; padding-top: 12px; }
+  .nav-links a:not(.btn) { display: block; padding: 14px 0; font-size: 1rem; }
+  .nav-links .btn { width: 100%; text-align: center; }
+  .theme-switch { margin-left: 0; }
+
+  /* --- Hero --- */
+  .hero-title { font-size: 2.8rem !important; }
+  .hero-buttons { flex-direction: column; align-items: stretch; gap: 14px; }
+  .hero-buttons .btn { text-align: center; }
+  .app-mockup { width: 220px !important; }
+
+  /* --- Secciones --- */
+  .features { padding: 80px 0; }
+  .how-it-works { padding: 70px 0 !important; }
+  .faq { padding: 80px 0; }
+
+  .how-content h2 { font-size: 2rem !important; }
+  .steps li { gap: 18px; padding: 18px; }
+  .step-icon { width: 60px; height: 60px; flex-shrink: 0; }
+  .step-text h4 { font-size: 1.3rem; }
+  .step-text p { font-size: 1rem; }
+
+  /* --- Marquee --- */
+  .marquee-item { font-size: 1.1rem; gap: 12px; }
+  .marquee-item span { font-size: 1.6rem; }
+  .marquee-content { gap: 60px; }
+
+  /* --- Bento --- */
+  .bento-grid { grid-template-columns: 1fr; }
+  .bento-item.large, .bento-item.wide, .bento-item.tall { grid-column: span 1; grid-row: auto; }
+
+  /* --- Pricing --- */
+  .pricing-grid { grid-template-columns: 1fr; gap: 20px; }
+  .pricing-card.featured { transform: none; }
+
+  /* --- Chat demo --- */
+  .live-chat .container { flex-direction: column !important; gap: 40px !important; }
+  .chat-content, .chat-demo-container { min-width: unset !important; flex: unset !important; width: 100%; }
+
+  /* --- Testimonials --- */
+  .testimonials-grid { grid-template-columns: 1fr !important; }
+  .review-card { transform: none !important; }
+
+  /* --- CTA --- */
+  .cta { padding: 80px 0; }
+  .cta h2 { font-size: 2.4rem !important; letter-spacing: -1px; }
+  .cta p { font-size: 1.1rem !important; }
+
+  /* --- FAQ --- */
+  .faq-question { font-size: 1.1rem; padding: 20px 24px; }
+  .faq-answer { font-size: 1rem; padding: 0 24px; }
+  .faq-item.active .faq-answer { padding-bottom: 24px; }
+
+  /* --- Footer --- */
+  .footer { padding: 80px 0 30px; }
+  .footer-top { flex-direction: column; gap: 40px; }
+  .footer-brand { min-width: unset; }
+  .footer-links-wrapper { flex-direction: column; gap: 30px; }
+  .footer-bottom { flex-direction: column; text-align: center; gap: 16px; }
+
+  /* --- Cursor: desactivar en touch --- */
+  .cursor-dot, .cursor-outline { display: none; }
+  * { cursor: auto !important; }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE PEQUEÑO (≤ 480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  .container { padding: 0 16px; }
+
+  .hero { padding-top: 120px !important; padding-bottom: 60px !important; }
+  .hero-title { font-size: 2.1rem !important; }
+  .hero-subtitle { font-size: 1rem; }
+
+  .section-header h2 { font-size: 2rem !important; }
+
+  .btn { padding: 14px 22px; font-size: 0.85rem; letter-spacing: 0.5px; }
+  .btn-lg { padding: 16px 28px; }
+
+  .app-mockup { width: 180px !important; }
+  .feature-card { padding: 32px 20px; }
+  .feature-card h3 { font-size: 1.6rem; }
+  .feature-card p { font-size: 1rem; }
+
+  .pricing-card { padding: 30px 24px; }
+  .pricing-price { font-size: 3rem; }
+
+  .cta h2 { font-size: 1.9rem !important; }
+  .cta p { font-size: 1rem !important; }
+
+  .newsletter-form input { padding: 14px 16px; font-size: 0.95rem; }
+
+  .morph-image { width: 100px; }
+  .logo-text { font-size: 1.8rem !important; }
+}
+
