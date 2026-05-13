@@ -426,8 +426,26 @@ h1, h2, h3, h4 { color: var(--text-main); font-weight: 800; line-height: 1.2; te
   background: rgba(255,255,255,0.05) !important;
 }
 
+/* --- Mobile Menu Button (hidden on desktop) --- */
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: none;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.mobile-menu-btn:hover { border-color: var(--primary-color); }
+.mobile-menu-btn svg { stroke: var(--text-main); transition: var(--transition); }
+.mobile-menu-btn.active svg { stroke: var(--primary-color); }
+
 /* --- Advanced Footer --- */
-.footer { 
+.footer {
   background-color: #000; 
   padding: 120px 0 40px; 
   border-top: 1px solid rgba(255,255,255,0.1); 
