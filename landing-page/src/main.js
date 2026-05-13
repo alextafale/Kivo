@@ -26,27 +26,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Custom Cursor ---
+  // --- Custom Cursor (throttled with rAF) ---
   const cursorDot = document.querySelector('.cursor-dot');
   const cursorOutline = document.querySelector('.cursor-outline');
-  
-  if (cursorDot && cursorOutline) {
-    window.addEventListener('mousemove', (e) => {
-      cursorDot.style.left = `${e.clientX}px`;
-      cursorDot.style.top = `${e.clientY}px`;
-      
-      // Update global CSS vars for Flashlight effect
-      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
-      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
-      
-      // Add slight delay for the outline for a fluid feel
-      setTimeout(() => {
-        cursorOutline.style.left = `${e.clientX}px`;
-        cursorOutline.style.top = `${e.clientY}px`;
-      }, 50);
-    });
 
-    // Add hover state to interactive elements
+  if (cursorDot && cursorOutline) {
+    let mouseX = 0, mouseY = 0;
+    let outlineX = 0, outlineY = 0;
+    let rafId = null;
+
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+      // Update CSS vars for Flashlight effect (cheap, no layout)
+      document.documentElement.style.setProperty('--mouse-x', `${mouseX}px`);
+      document.documentElement.style.setProperty('--mouse-y', `${mouseY}px`);
+
+      // Move dot immediately
+      cursorDot.style.left = `${mouseX}px`;
+      cursorDot.style.top = `${mouseY}px`;
+
+      // Schedule outline update with rAF instead of setTimeout
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          outlineX += (mouseX - outlineX) * 0.25;
+          outlineY += (mouseY - outlineY) * 0.25;
+          cursorOutline.style.left = `${outlineX}px`;
+          cursorOutline.style.top = `${outlineY}px`;
+          rafId = null;
+        });
+      }
+    }, { passive: true });
+
+    // Hover state for interactive elements
     const interactables = document.querySelectorAll('a, button, .feature-card, .faq-item, .steps li');
     interactables.forEach(el => {
       el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
@@ -72,128 +85,118 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Check for saved theme or default to dark
   const savedTheme = localStorage.getItem('theme') || 'dark';
   setTheme(savedTheme);
 
   if (themeToggle) {
     themeToggle.addEventListener('click', () => {
       const currentTheme = document.documentElement.getAttribute('data-theme');
-      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-      setTheme(newTheme);
-      
-      // Simple Animation for theme switch
+      setTheme(currentTheme === 'light' ? 'dark' : 'light');
       themeToggle.style.transform = 'scale(1.2)';
       setTimeout(() => themeToggle.style.transform = 'scale(1)', 200);
     });
   }
 
-  // --- Scroll Progress Bar ---
+  // --- Scroll Progress Bar (passive + throttled) ---
   const scrollProgress = document.querySelector('.scroll-progress');
   if (scrollProgress) {
+    let ticking = false;
     window.addEventListener('scroll', () => {
-      const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      const scrolled = (window.scrollY / windowHeight) * 100;
-      scrollProgress.style.width = `${scrolled}%`;
-    });
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+          scrollProgress.style.width = `${(window.scrollY / windowHeight) * 100}%`;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
   }
 
-  // --- Particles Background Generator ---
+  // --- Particles Background (reduced to 20) ---
   const particlesContainer = document.getElementById('particles-container');
   if (particlesContainer) {
-    for (let i = 0; i < 50; i++) {
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < 20; i++) {
       const particle = document.createElement('div');
       particle.classList.add('particle');
-      
-      const size = Math.random() * 8 + 2;
-      particle.style.width = `${size}px`;
-      particle.style.height = `${size}px`;
-      
-      particle.style.left = `${Math.random() * 100}vw`;
-      particle.style.top = `${Math.random() * 100}vh`;
-      
-      const delay = Math.random() * 5;
-      const duration = Math.random() * 10 + 10;
-      particle.style.animationDelay = `${delay}s`;
-      particle.style.animationDuration = `${duration}s`;
-      
-      particlesContainer.appendChild(particle);
+      const size = Math.random() * 6 + 2;
+      particle.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${Math.random() * 100}vw;
+        top:${Math.random() * 100}vh;
+        animation-delay:${Math.random() * 5}s;
+        animation-duration:${Math.random() * 10 + 15}s;
+      `;
+      fragment.appendChild(particle);
     }
+    particlesContainer.appendChild(fragment);
   }
 
-  // --- 3D Tilt Effect for Mockups & Cards (Vanilla JS Tilt) ---
+  // --- 3D Tilt Effect (throttled with rAF) ---
   const tiltElements = document.querySelectorAll('.app-mockup, .feature-card');
   tiltElements.forEach(el => {
+    let tiltRaf = null;
     el.addEventListener('mousemove', (e) => {
-      const rect = el.getBoundingClientRect();
-      const x = e.clientX - rect.left; // x position within the element.
-      const y = e.clientY - rect.top;  // y position within the element.
-      
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      
-      const rotateX = ((y - centerY) / centerY) * -15; // Max 15 deg
-      const rotateY = ((x - centerX) / centerX) * 15;
-      
-      el.style.transform = `perspective(1500px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
-      el.style.transition = 'none';
+      if (tiltRaf) return;
+      tiltRaf = requestAnimationFrame(() => {
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const rotateX = ((y - rect.height / 2) / rect.height) * -12;
+        const rotateY = ((x - rect.width / 2) / rect.width) * 12;
+        el.style.transform = `perspective(1500px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.04,1.04,1.04)`;
+        el.style.transition = 'none';
+        const glare = el.querySelector('.glare-fx');
+        if (glare) glare.style.transform = `translate(${x - rect.width/2}px, ${y - rect.height/2}px)`;
+        tiltRaf = null;
+      });
+    }, { passive: true });
 
-      const glare = el.querySelector('.glare-fx');
-      if (glare) {
-        glare.style.transform = `translate(${x - centerX}px, ${y - centerY}px)`;
-      }
-    });
-    
     el.addEventListener('mouseleave', () => {
-      el.style.transform = `perspective(1500px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
-      el.style.transition = 'transform 0.5s ease-out';
-      
+      el.style.transform = 'perspective(1500px) rotateX(0) rotateY(0) scale3d(1,1,1)';
+      el.style.transition = 'transform 0.4s ease-out';
       const glare = el.querySelector('.glare-fx');
-      if (glare) {
-        glare.style.transform = `translate(0, 0)`;
-      }
+      if (glare) glare.style.transform = 'translate(0,0)';
     });
   });
 
-  // --- Scroll Parallax & Navbar ---
+  // --- Scroll: Navbar + Parallax + Sticky Morph (single listener, throttled) ---
   const navbar = document.querySelector('.navbar');
+  let scrollTicking = false;
+
   window.addEventListener('scroll', () => {
-    // Parallax Variable
-    document.documentElement.style.setProperty('--scroll', window.scrollY);
+    if (!scrollTicking) {
+      requestAnimationFrame(() => {
+        const scrollY = window.scrollY;
 
-    // Navbar
-    if (window.scrollY > 50) {
-      navbar.classList.add('scrolled');
-    } else {
-      navbar.classList.remove('scrolled');
-    }
+        // CSS var for parallax
+        document.documentElement.style.setProperty('--scroll', scrollY);
 
-    // --- Sticky Morph Logic ---
-    const stickyWrapper = document.querySelector('.sticky-wrapper');
-    if (stickyWrapper) {
-      const rect = stickyWrapper.getBoundingClientRect();
-      // Calculate progress from 0 to 1 as we scroll through the wrapper
-      const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
-      
-      const morphSteps = document.querySelectorAll('.morph-step');
-      const morphImages = document.querySelectorAll('.morph-image');
-      
-      if (morphSteps.length > 0 && morphImages.length > 0) {
-        // Determine which step is active (e.g. 0.0-0.33, 0.33-0.66, 0.66-1.0)
-        const stepIndex = Math.min(Math.floor(progress * morphSteps.length), morphSteps.length - 1);
-        
-        morphSteps.forEach((el, idx) => {
-          if (idx === stepIndex) el.classList.add('active');
-          else el.classList.remove('active');
-        });
-        
-        morphImages.forEach((el, idx) => {
-          if (idx === stepIndex) el.classList.add('active');
-          else el.classList.remove('active');
-        });
-      }
+        // Navbar
+        if (navbar) {
+          navbar.classList.toggle('scrolled', scrollY > 50);
+        }
+
+        // Sticky Morph
+        const stickyWrapper = document.querySelector('.sticky-wrapper');
+        if (stickyWrapper) {
+          const rect = stickyWrapper.getBoundingClientRect();
+          const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
+          const morphSteps = document.querySelectorAll('.morph-step');
+          const morphImages = document.querySelectorAll('.morph-image');
+          if (morphSteps.length > 0 && morphImages.length > 0) {
+            const stepIndex = Math.min(Math.floor(progress * morphSteps.length), morphSteps.length - 1);
+            morphSteps.forEach((el, idx) => el.classList.toggle('active', idx === stepIndex));
+            morphImages.forEach((el, idx) => el.classList.toggle('active', idx === stepIndex));
+          }
+        }
+
+        scrollTicking = false;
+      });
+      scrollTicking = true;
     }
-  });
+  }, { passive: true });
 
   // --- Magnetic Buttons ---
   const magneticBtns = document.querySelectorAll('.magnetic-btn');
@@ -210,27 +213,23 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- Scroll Animations (Intersection Observer) ---
-  const observerOptions = {
-    root: null,
-    rootMargin: '0px',
-    threshold: 0.1
-  };
-
-  const observer = new IntersectionObserver((entries, observer) => {
+  const observer = new IntersectionObserver((entries, obs) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
+        obs.unobserve(entry.target);
       }
     });
-  }, observerOptions);
+  }, { rootMargin: '0px', threshold: 0.08 });
 
-  const elementsToAnimate = document.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right');
-  elementsToAnimate.forEach(el => {
-    observer.observe(el);
+  document.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right').forEach(el => observer.observe(el));
+
+  // --- Lazy load images below the fold ---
+  document.querySelectorAll('img:not([loading])').forEach((img, i) => {
+    if (i > 0) img.setAttribute('loading', 'lazy'); // first image eager, rest lazy
   });
 
-  // --- Smooth Page Transitions ---
+  // --- Smooth Page Transitions (250ms instead of 500ms) ---
   const links = document.querySelectorAll('a[href^="/"], a[href^="./"], a[href^="../"]');
   links.forEach(link => {
     link.addEventListener('click', function(e) {
@@ -238,16 +237,12 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const href = this.href;
       document.body.classList.add('fade-out');
-      setTimeout(() => {
-        window.location.href = href;
-      }, 500); 
+      setTimeout(() => { window.location.href = href; }, 250);
     });
   });
 
   window.addEventListener('pageshow', (event) => {
-    if (event.persisted) {
-      document.body.classList.remove('fade-out');
-    }
+    if (event.persisted) document.body.classList.remove('fade-out');
   });
 
   // --- Waitlist Form Logic ---
@@ -258,11 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
     waitlistForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const email = document.getElementById('waitlist-email').value;
-      
-      // Simulate API call
       console.log('Waitlist submission:', email);
       
-      waitlistForm.style.transition = 'opacity 0.5s, transform 0.5s';
+      waitlistForm.style.transition = 'opacity 0.3s, transform 0.3s';
       waitlistForm.style.opacity = '0';
       waitlistForm.style.transform = 'translateY(-20px)';
       
@@ -271,14 +264,11 @@ document.addEventListener('DOMContentLoaded', () => {
         waitlistSuccess.style.display = 'block';
         waitlistSuccess.style.opacity = '0';
         waitlistSuccess.style.transform = 'translateY(20px)';
-        waitlistSuccess.style.transition = 'opacity 0.5s, transform 0.5s';
-        
-        // Force reflow
+        waitlistSuccess.style.transition = 'opacity 0.3s, transform 0.3s';
         void waitlistSuccess.offsetWidth;
-        
         waitlistSuccess.style.opacity = '1';
         waitlistSuccess.style.transform = 'translateY(0)';
-      }, 500);
+      }, 300);
     });
   }
 
@@ -288,11 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const question = item.querySelector('.faq-question');
     if (question) {
       question.addEventListener('click', () => {
-        faqItems.forEach(otherItem => {
-          if (otherItem !== item) {
-            otherItem.classList.remove('active');
-          }
-        });
+        faqItems.forEach(other => { if (other !== item) other.classList.remove('active'); });
         item.classList.toggle('active');
       });
     }

@@ -99,7 +99,7 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 export default function BusinessDashboard({ navigation }: Props) {
   const [storeOpen, setStoreOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabName>('Dashboard');
+  const [activeTab, setActiveTab] = useState<TabName>('Dashboard' as TabName);
   const [deliveryScore, setDeliveryScore] = useState(0);
   const [deliveryReviews, setDeliveryReviews] = useState(0);
 
