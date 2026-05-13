@@ -211,7 +211,7 @@ export default function SettingsScreen({ navigation }: Props) {
     try {
       // 1. Obtener reseñas de la sucursal
       const res = await fetch(
-        `${process.env.API_BASE_URL}/reviews?sucursal_id=${sucursalId}`,
+        `${process.env.EXPO_PUBLIC_API_URL}/reviews?sucursal_id=${sucursalId}`,
         { headers: { Authorization: `Bearer ${session.accessToken}` } }
       );
       let reviews: any[] = [];
@@ -226,7 +226,7 @@ export default function SettingsScreen({ navigation }: Props) {
       }
 
       // 2. Enviar al endpoint de análisis de Qwen
-      const apiBase = process.env.API_BASE_URL?.replace('/api/v1', '') ?? '';
+      const apiBase = process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') ?? '';
       const analysisRes = await fetch(`${apiBase}/api/v1/chatbot/review-analysis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -264,7 +264,7 @@ export default function SettingsScreen({ navigation }: Props) {
 
     try {
       const res = await fetch(
-        `${process.env.API_BASE_URL}/negocios/${negocioId}/pedidos`,
+        `${process.env.EXPO_PUBLIC_API_URL}/negocios/${negocioId}/pedidos`,
         {
           headers: { Authorization: `Bearer ${session.accessToken}` },
           method: 'GET',
@@ -412,9 +412,10 @@ export default function SettingsScreen({ navigation }: Props) {
       const formData = buildFormData();
 
       const res = await fetch(
-        `${process.env.API_BASE_URL}/negocios/${negocioId}`,
+        `${process.env.EXPO_PUBLIC_API_URL}/negocios/${negocioId}`,
         {
           method: "PUT",
+          headers: { Authorization: `Bearer ${session?.accessToken}` },
           body: formData,
         }
       );

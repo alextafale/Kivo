@@ -113,7 +113,7 @@
           <!-- Main Phone Mockup -->
           <div class="floating-3d glare-wrapper" style="border-radius: 30px; box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);">
             <div class="glare-fx"></div>
-            <img src="/Splash.png" alt="App Kivo" class="app-mockup" style="border-radius: 30px;" />
+            <img src="/pages/splashscreen.jpeg" alt="App Kivo" class="app-mockup" style="border-radius: 30px; height: auto; object-fit: contain;" />
           </div>
         </div>
       </div>
@@ -151,32 +151,9 @@
             <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.1rem;"><span style="color: var(--primary-color);">✓</span> Sugerencias personalizadas al instante</li>
           </ul>
         </div>
-        <div class="chat-demo-container fade-in-left delay-2 floating-3d glare-wrapper" style="flex: 1; min-width: 300px;">
-          <div class="glare-fx"></div>
-          <div class="chat-demo">
-            <div style="text-align: center; margin-bottom: 20px; font-weight: 600; color: var(--text-muted); font-size: 0.9rem;">Hoy, 14:30</div>
-            
-            <div class="chat-bubble chat-user fade-in-up delay-1">
-              "Kivo, mándame una hamburguesa doble con queso y unas papas grandes de Burger King, pero sin cebolla por favor."
-            </div>
-            
-            <div class="chat-bubble chat-bot fade-in-up delay-2">
-              <span style="color: var(--primary-color);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline; vertical-align:middle; margin-right:5px;"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></span> ¡Entendido! Una hamburguesa doble c/ queso (sin cebolla) y papas grandes de Burger King.<br><br>El total es de <strong>$185 MXN</strong> y llega en aprox. 25 min.<br><br>¿Confirmo el pedido al domicilio de tu oficina?
-            </div>
-
-            <div class="chat-bubble chat-user fade-in-up delay-3">
-              Sí, confirma y cóbralo a la tarjeta terminada en 4567.
-            </div>
-
-            <div class="chat-bubble chat-bot fade-in-up delay-4" style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--primary-color);">
-              <strong style="color: var(--primary-color);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline; vertical-align:-3px; margin-right:5px;"><polyline points="20 6 9 17 4 12"></polyline></svg> ¡Pedido Confirmado!</strong><br>El restaurante ya lo está preparando. Puedes seguir el repartidor en tiempo real en tu mapa.
-            </div>
-            
-            <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 30px;">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-              <span style="color: var(--text-muted); opacity: 0.5;">Escribe o di tu pedido...</span>
-            </div>
-          </div>
+        <div class="fade-in-left delay-2" style="flex: 1; min-width: 300px; display: flex; justify-content: center; align-items: center; position: relative; height: 520px;">
+          <img src="/pages/chatbotcliente2.jpeg" alt="Kivo Chat" style="position: absolute; width: 210px; height: auto; border-radius: 38px; border: 10px solid #0d0d0d; object-fit: contain; box-shadow: 0 30px 60px rgba(0,0,0,0.55); transform: rotate(-6deg) translateX(-70px) translateY(10px); z-index: 1;" />
+          <img src="/pages/chatbotcliente.jpeg" alt="Kivo Chat" style="position: absolute; width: 210px; height: auto; border-radius: 38px; border: 10px solid #0d0d0d; object-fit: contain; box-shadow: 0 40px 80px rgba(0,0,0,0.65), 0 0 50px rgba(34,197,94,0.25); transform: rotate(4deg) translateX(70px) translateY(-10px); z-index: 2;" />
         </div>
       </div>
     </section>
@@ -273,9 +250,15 @@
 
         <!-- Visuals that morph -->
         <div class="morph-visual">
-          <img src="/pages/chatbotcliente.jpeg" alt="Cliente" class="morph-image active glass-deep" style="border-radius: 30px; box-shadow: 0 30px 60px rgba(34, 197, 94, 0.2); object-fit: cover;" />
-          <img src="/pages/negocioperfil.jpeg" alt="Negocio" class="morph-image glass-deep" style="border-radius: 30px; box-shadow: 0 30px 60px rgba(59, 130, 246, 0.2); object-fit: cover;" />
-          <img src="/pages/dashboardrepartidor.jpeg" alt="Repartidor" class="morph-image glass-deep" style="border-radius: 30px; box-shadow: 0 30px 60px rgba(168, 85, 247, 0.2); object-fit: cover;" />
+          <div class="morph-image active" style="box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 50px rgba(34,197,94,0.25);">
+            <img src="/pages/dashboardcliente.jpeg" alt="Cliente" />
+          </div>
+          <div class="morph-image" style="box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 50px rgba(59,130,246,0.25);">
+            <img src="/pages/negocioperfil.jpeg" alt="Negocio" />
+          </div>
+          <div class="morph-image" style="box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 50px rgba(168,85,247,0.25);">
+            <img src="/pages/dashboardrepartidor.jpeg" alt="Repartidor" />
+          </div>
         </div>
       </div>
     </section>

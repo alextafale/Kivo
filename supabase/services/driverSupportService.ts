@@ -2,7 +2,7 @@
 // Servicio de Qwen para el SOS del repartidor — llama directo a Ollama
 
 // ─── Constante de URL ────────────────────────────────────────────────────────
-const OLLAMA_URL = 'http://192.168.1.93:11434/api/chat';
+const OLLAMA_URL = 'http://192.168.1.105:11434/api/chat';
 
 // Número de WhatsApp del equipo de soporte Kivo (formato internacional sin +)
 export const SUPPORT_WHATSAPP = '523521065471'; // ← cambia al número real

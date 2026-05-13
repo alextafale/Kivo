@@ -116,7 +116,7 @@ export default function BusinessDashboard({ navigation }: Props) {
   const fetchPedidos = useCallback(async () => {
     if (!negocioId || !session?.accessToken) return;
     try {
-      const res = await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/pedidos`, {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/negocios/${negocioId}/pedidos`, {
         headers: { Authorization: `Bearer ${session.accessToken}` },
         method: 'GET',
       });
@@ -132,8 +132,8 @@ export default function BusinessDashboard({ navigation }: Props) {
   const fetchSucursalesInfo = async () => {
     if (!negocioId || !session?.accessToken) return;
     try {
-      const res = await fetch(`${process.env.API_BASE_URL}/negocios/${negocioId}/sucursales`, {
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/negocios/${negocioId}/sucursales`, {
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessToken}` },
       });
       if (res.ok) {
         const data: Sucursal[] = await res.json();

@@ -158,9 +158,15 @@ export default function MenuEditor({ navigation }: Props) {
   const [categoriaIdsMap, setCategoriaIdsMap] = useState<Record<string, string>>({});
 
   const fetchMenu = useCallback(async () => {
-    if (!sucursalId) return;
+    if (!sucursalId || !session?.accessToken) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
     try {
-      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}`);
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/sucursales/${sucursalId}`, {
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+      });
 
       if (res.ok) {
         const data = await res.json();
@@ -219,7 +225,7 @@ export default function MenuEditor({ navigation }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [sucursalId]);
+  }, [sucursalId, session?.accessToken]);
 
   useFocusEffect(
     useCallback(() => {

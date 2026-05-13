@@ -124,10 +124,10 @@ export default function ManageOrders({ navigation }: Props) {
 
       const pedidoIds = (pedidosData ?? []).map((p: any) => p.id)
 
-      // Step 2: items via SECURITY DEFINER RPC — bypasses the nested RLS chain on negocio_admins
+      // Step 2: items via SECURITY DEFINER RPC
       const itemsMap: Record<string, PedidoItem[]> = {}
       if (pedidoIds.length > 0) {
-        const { data: itemsData } = await supabase
+        const { data: itemsData, error: itemsError } = await supabase
           .rpc('get_pedido_items_for_negocio', { p_negocio_id: negocioId })
 
         for (const item of (itemsData ?? []) as any[]) {
@@ -184,7 +184,7 @@ export default function ManageOrders({ navigation }: Props) {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { Alert.alert('Error', 'Sesión expirada.'); return }
 
-      const response = await fetch(`${process.env.API_BASE_URL}/pedidos/${pedidoId}/estado`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/pedidos/${pedidoId}/estado`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ estado: nuevoEstado }),
