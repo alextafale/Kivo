@@ -911,6 +911,8 @@ h1, h2, h3, h4 { color: var(--text-main); font-weight: 800; line-height: 1.2; te
 .morph-image {
   position: absolute;
   width: 300px;
+  height: 420px;
+  object-fit: cover;
   opacity: 0;
   transform: scale(0.8) rotateY(-20deg);
   transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
